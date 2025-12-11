@@ -1,0 +1,1 @@
+// page manager products for admin panel
