@@ -25,7 +25,9 @@ public class User {
     @Column(name = "password", nullable = false, length = 255)
     private String password;
 
-    @Column(name = "role", nullable = false, length = 20)
+    // Use columnDefinition for default value because @Column has no 'default'
+    // attribute
+    @Column(name = "role", nullable = false, length = 20, columnDefinition = "VARCHAR(20) DEFAULT 'USER'")
     private String role;
 
     @Column(name = "status", nullable = false, length = 20)
