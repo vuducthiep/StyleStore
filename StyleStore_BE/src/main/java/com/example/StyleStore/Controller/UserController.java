@@ -1,4 +1,4 @@
-package com.example.StyleStore.Controller;
+package com.example.StyleStore.controller;
 
 import com.example.StyleStore.model.User;
 import com.example.StyleStore.service.UserService;
