@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import type { AdminUser } from './UserTable';
+import { useToast } from '../../../components/ToastProvider';
 
 interface UserModalProps {
 	isOpen: boolean;
@@ -21,6 +22,7 @@ const UserModal: React.FC<UserModalProps> = ({ isOpen, userId, onClose, onSaved 
 	const [isLoading, setIsLoading] = useState(false);
 	const [isSaving, setIsSaving] = useState(false);
 	const [error, setError] = useState('');
+	const { pushToast } = useToast();
 
 	const token = useMemo(() => localStorage.getItem('token'), []);
 
@@ -90,6 +92,7 @@ const UserModal: React.FC<UserModalProps> = ({ isOpen, userId, onClose, onSaved 
 				return;
 			}
 			onSaved?.();
+			pushToast('Cập nhật người dùng thành công', 'success');
 			onClose();
 		} catch (e) {
 			console.error('Update user error:', e);
