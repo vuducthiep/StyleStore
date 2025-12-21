@@ -23,59 +23,65 @@ import java.util.List;
 @RequiredArgsConstructor
 public class AuthService {
 
-    private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
-    private final JwtService jwtService;
-    private final AuthenticationManager authenticationManager;
+        private final UserRepository userRepository;
+        private final PasswordEncoder passwordEncoder;
+        private final JwtService jwtService;
+        private final AuthenticationManager authenticationManager;
 
-    public AuthResponse register(RegisterRequest request) {
-        if (userRepository.existsByEmail(request.email())) {
-            throw new RuntimeException("Email đã tồn tại!");
+        public AuthResponse register(RegisterRequest request) {
+                if (userRepository.existsByEmail(request.email())) {
+                        throw new RuntimeException("Email đã tồn tại!");
+                }
+
+                // gender phải có giá trị hợp lệ và không vượt quá 10 ký tự
+                String genderValue = (request.gender() != null && !request.gender().isBlank())
+                                ? request.gender().toUpperCase()
+                                : "OTHER";
+                if (genderValue.length() > 10) {
+                        genderValue = genderValue.substring(0, 10);
+                }
+
+                User user = User.builder()
+                                .fullName(request.fullName())
+                                .email(request.email())
+                                .password(passwordEncoder.encode(request.password()))
+                                .phoneNumber(request.phoneNumber())
+                                .gender(genderValue)
+                                .address(request.address())
+                                .role(Role.USER)
+                                .status(UserStatus.ACTIVE)
+                                .build();
+
+                userRepository.save(user);
+
+                UserDetails userDetails = new org.springframework.security.core.userdetails.User(
+                                user.getEmail(),
+                                user.getPassword(),
+                                getAuthorities(user.getRole()));
+
+                String jwt = jwtService.generateToken(userDetails, user.getId(), user.getRole().name());
+
+                return new AuthResponse(jwt, user.getId(), user.getFullName(), user.getEmail(), user.getRole().name());
         }
 
-        User user = User.builder()
-                .fullName(request.fullName())
-                .email(request.email())
-                .password(passwordEncoder.encode(request.password()))
-                .phoneNumber(request.phoneNumber())
-                .gender(request.gender() != null && !request.gender().isBlank()
-                        ? request.gender().toUpperCase() // Lưu String dưới dạng "MALE", "FEMALE", "OTHER"
-                        : null)
-                .address(request.address())
-                .role(Role.USER)
-                .status(UserStatus.ACTIVE)
-                .build();
+        public AuthResponse login(LoginRequest request) {
+                authenticationManager.authenticate(
+                                new UsernamePasswordAuthenticationToken(request.email(), request.password()));
 
-        userRepository.save(user);
+                User user = userRepository.findByEmail(request.email())
+                                .orElseThrow(() -> new RuntimeException("User không tồn tại"));
 
-        UserDetails userDetails = new org.springframework.security.core.userdetails.User(
-                user.getEmail(),
-                user.getPassword(),
-                getAuthorities(user.getRole()));
+                UserDetails userDetails = new org.springframework.security.core.userdetails.User(
+                                user.getEmail(),
+                                user.getPassword(),
+                                getAuthorities(user.getRole()));
 
-        String jwt = jwtService.generateToken(userDetails, user.getId(), user.getRole().name());
+                String jwt = jwtService.generateToken(userDetails, user.getId(), user.getRole().name());
 
-        return new AuthResponse(jwt, user.getId(), user.getFullName(), user.getEmail(), user.getRole().name());
-    }
+                return new AuthResponse(jwt, user.getId(), user.getFullName(), user.getEmail(), user.getRole().name());
+        }
 
-    public AuthResponse login(LoginRequest request) {
-        authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.email(), request.password()));
-
-        User user = userRepository.findByEmail(request.email())
-                .orElseThrow(() -> new RuntimeException("User không tồn tại"));
-
-        UserDetails userDetails = new org.springframework.security.core.userdetails.User(
-                user.getEmail(),
-                user.getPassword(),
-                getAuthorities(user.getRole()));
-
-        String jwt = jwtService.generateToken(userDetails, user.getId(), user.getRole().name());
-
-        return new AuthResponse(jwt, user.getId(), user.getFullName(), user.getEmail(), user.getRole().name());
-    }
-
-    private Collection<? extends GrantedAuthority> getAuthorities(Role role) {
-        return List.of(new SimpleGrantedAuthority("ROLE_" + role.name()));
-    }
+        private Collection<? extends GrantedAuthority> getAuthorities(Role role) {
+                return List.of(new SimpleGrantedAuthority("ROLE_" + role.name()));
+        }
 }
