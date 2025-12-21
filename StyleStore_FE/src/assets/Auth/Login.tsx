@@ -8,14 +8,12 @@ interface LoginFormData {
 }
 
 interface ApiResponse {
-    message: string;
-    token?: string;
-    user?: {
-        id: number;
-        email: string;
-        fullName: string;
-        role: string;
-    };
+    message?: string;
+    accessToken?: string;
+    userId?: number;
+    fullName?: string;
+    email?: string;
+    role?: string;
 }
 
 const Login: React.FC = () => {
@@ -52,7 +50,7 @@ const Login: React.FC = () => {
             });
 
             const raw = await response.text();
-            const data: ApiResponse = raw ? JSON.parse(raw) : ({} as ApiResponse);
+            const data: ApiResponse = raw ? JSON.parse(raw) : {} as ApiResponse;
 
             if (!response.ok) {
                 // 401/403 thường do sai email hoặc mật khẩu hoặc bị chặn bảo mật
@@ -63,14 +61,19 @@ const Login: React.FC = () => {
                 return;
             }
 
-            // Save token to localStorage
-            if (data.token) {
-                localStorage.setItem('token', data.token);
-                localStorage.setItem('user', JSON.stringify(data.user));
+            // Save token & user info
+            if (data.accessToken) {
+                localStorage.setItem('token', data.accessToken);
+                localStorage.setItem('user', JSON.stringify({
+                    id: data.userId,
+                    email: data.email,
+                    fullName: data.fullName,
+                    role: data.role,
+                }));
             }
 
-            // Redirect based on user role
-            if (data.user?.role === 'ADMIN') {
+            const role = data.role ?? '';
+            if (role === 'ADMIN') {
                 navigate('/admin/dashboard');
             } else {
                 navigate('/');

@@ -6,7 +6,7 @@ const Home: React.FC = () => {
         <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-200 p-6">
             <div className="bg-white shadow-lg rounded-xl p-8 max-w-xl w-full text-center border border-slate-100">
                 <h1 className="text-3xl font-bold text-slate-800 mb-3">Chào mừng đến StyleStore</h1>
-                <p className="text-slate-600 mb-6">Bạn đã đăng nhập thành công.</p>
+
                 <div className="flex justify-center gap-4">
                     <Link
                         to="/admin/dashboard"
