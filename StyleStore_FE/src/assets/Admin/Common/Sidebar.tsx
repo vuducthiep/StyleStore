@@ -51,8 +51,8 @@ const Sidebar: React.FC = () => {
                             key={item.path}
                             to={item.path}
                             className={`flex items-center gap-4 px-4 py-3 rounded-lg transition-all duration-200 ${isActive(item.path)
-                                    ? 'bg-white text-blue-700 shadow-lg'
-                                    : 'text-white hover:bg-blue-600'
+                                ? 'bg-white text-blue-700 shadow-lg'
+                                : 'text-white hover:bg-blue-600'
                                 }`}
                         >
                             <span className="text-xl">{item.icon}</span>
@@ -78,10 +78,6 @@ const Sidebar: React.FC = () => {
                 </div>
             </div>
 
-            {/* Main Content Margin */}
-            <div className={`transition-all duration-300 ${isOpen ? 'ml-64' : 'ml-20 lg:ml-64'}`}>
-                {/* Content goes here */}
-            </div>
         </>
     );
 };

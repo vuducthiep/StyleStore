@@ -4,6 +4,7 @@ import AdminLayout from './assets/Admin/AdminLayout';
 import Login from './assets/Auth/Login';
 import Register from './assets/Auth/Register';
 import Home from './assets/Customer/Home';
+import UserManager from './assets/Admin/UserManage/UserManager';
 
 const App: React.FC = () => {
   return (
@@ -16,7 +17,7 @@ const App: React.FC = () => {
         {/* Admin Routes */}
         <Route element={<AdminLayout />}>
           <Route path="/admin/dashboard" element={<div>Dashboard Coming Soon...</div>} />
-          <Route path="/admin/user-manager" element={<div>User Manager Coming Soon...</div>} />
+          <Route path="/admin/user-manager" element={<UserManager />} />
           <Route path="/admin/product-manager" element={<div>Product Manager Coming Soon...</div>} />
         </Route>
 
