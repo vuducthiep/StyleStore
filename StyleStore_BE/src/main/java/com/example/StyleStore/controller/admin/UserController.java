@@ -1,5 +1,6 @@
 package com.example.StyleStore.controller.admin;
 
+import com.example.StyleStore.dto.ApiResponse;
 import com.example.StyleStore.model.User;
 import com.example.StyleStore.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,17 +13,17 @@ import org.springframework.data.domain.Sort;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
 import java.util.Optional;
 
 @RestController
-@RequestMapping("/api/users")
+@RequestMapping("/api/admin/users")
 @CrossOrigin(origins = "*")
 public class UserController {
     @Autowired
@@ -31,7 +32,7 @@ public class UserController {
     // for test api - only ADMIN can access (with pagination)
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public Page<User> getAllUsers(
+    public ResponseEntity<ApiResponse<Page<User>>> getAllUsers(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "createdAt") String sortBy,
@@ -41,27 +42,39 @@ public class UserController {
                 ? Sort.by(sortBy).ascending()
                 : Sort.by(sortBy).descending();
         Pageable pageable = PageRequest.of(page, size, sort);
-        return userService.getUsers(pageable);
+        Page<User> result = userService.getUsers(pageable);
+        return ResponseEntity.ok(ApiResponse.ok("Lấy danh sách người dùng thành công", result));
     }
 
     @GetMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN') or #id == authentication.principal.id")
-    public ResponseEntity<User> getUserById(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<User>> getUserById(@PathVariable Long id) {
         Optional<User> user = userService.getUserById(id);
-        return user.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
+        return user
+                .map(u -> ResponseEntity.ok(ApiResponse.ok("Lấy người dùng thành công", u)))
+                .orElseGet(() -> ResponseEntity.status(404).body(ApiResponse.fail("Không tìm thấy người dùng")));
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN') or #id == authentication.principal.id")
-    public ResponseEntity<User> updateUser(@PathVariable Long id, @RequestBody User newUser) {
+    public ResponseEntity<ApiResponse<User>> updateUser(@PathVariable Long id, @RequestBody User newUser) {
         if (newUser == null) {
-            return ResponseEntity.badRequest().build();
+            return ResponseEntity.badRequest().body(ApiResponse.fail("Yêu cầu không hợp lệ"));
         }
         try {
             User updatedUser = userService.updateUser(id, newUser);
-            return ResponseEntity.ok(updatedUser);
+            return ResponseEntity.ok(ApiResponse.ok("Cập nhật người dùng thành công", updatedUser));
         } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
+            return ResponseEntity.status(404).body(ApiResponse.fail("Không tìm thấy người dùng"));
         }
+    }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN') or #id == authentication.principal.id")
+    public ResponseEntity<ApiResponse<Void>> deleteUser(@PathVariable Long id) {
+        boolean deleted = userService.deleteUser(id);
+        return deleted
+                ? ResponseEntity.ok(ApiResponse.ok("Xóa người dùng thành công", null))
+                : ResponseEntity.status(404).body(ApiResponse.fail("Không tìm thấy người dùng"));
     }
 }

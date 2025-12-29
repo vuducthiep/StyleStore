@@ -1,4 +1,19 @@
-import React from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
+import ConfirmDialog from '../../../components/ConfirmDialog';
+import { buildAuthHeaders, isAuthTokenMissingError } from '../../../services/auth';
+
+type ApiResponse<T> = {
+    success: boolean;
+    message?: string;
+    data?: T;
+};
+
+type PageResult<T> = {
+    content: T[];
+    number: number;
+    totalPages: number;
+    totalElements: number;
+};
 
 export interface AdminUser {
     id: number;
@@ -11,31 +26,160 @@ export interface AdminUser {
 }
 
 interface UserTableProps {
-    users: AdminUser[];
-    isLoading: boolean;
-    error: string;
-    onRetry: () => void;
-    currentPage: number;
-    totalPages: number;
-    totalElements: number;
-    onPageChange: (page: number) => void;
+    refreshKey?: number;
     onEdit?: (user: AdminUser) => void;
     onDelete?: (user: AdminUser) => void;
 }
 
-const UserTable: React.FC<UserTableProps> = ({ users, isLoading, error, onRetry, currentPage, totalPages, totalElements, onPageChange, onEdit, onDelete }) => {
+const UserTable: React.FC<UserTableProps> = ({ refreshKey = 0, onEdit, onDelete }) => {
+    const [users, setUsers] = useState<AdminUser[]>([]);
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState('');
+    const [page, setPage] = useState(0);
+    const [size] = useState(10);
+    const [totalPages, setTotalPages] = useState(0);
+    const [totalElements, setTotalElements] = useState(0);
+    const [deletingId, setDeletingId] = useState<number | null>(null);
+    const [confirmUser, setConfirmUser] = useState<AdminUser | null>(null);
+
+    const fetchUsers = useCallback(async (pageIndex = 0) => {
+        setIsLoading(true);
+        setError('');
+
+        try {
+            const authHeaders = buildAuthHeaders();
+            // Fetch users list from backend
+            const res = await fetch(`http://localhost:8080/api/admin/users?page=${pageIndex}&size=${size}&sortBy=createdAt&sortDir=desc`, {
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...authHeaders,
+                },
+            });
+
+            if (!res.ok) {
+                const text = await res.text();
+                const data = text ? JSON.parse(text) : {};
+                const message = data.message || `Lỗi tải danh sách user (code ${res.status}).`;
+                setError(message);
+                return;
+            }
+
+            const data: ApiResponse<PageResult<AdminUser>> = await res.json();
+            if (!data.success) {
+                setError(data.message || 'Lỗi tải danh sách user.');
+                return;
+            }
+
+            const pageData = data.data;
+            if (!pageData) {
+                setError('Dữ liệu trả về không hợp lệ.');
+                return;
+            }
+
+            setUsers(pageData.content || []);
+            setPage(pageData.number ?? pageIndex);
+            setTotalPages(pageData.totalPages ?? 0);
+            setTotalElements(pageData.totalElements ?? 0);
+        } catch (e) {
+            if (isAuthTokenMissingError(e)) {
+                setError('Bạn chưa đăng nhập hoặc thiếu token.');
+                return;
+            }
+            console.error('Fetch users error:', e);
+            setError('Không thể kết nối máy chủ.');
+        } finally {
+            setIsLoading(false);
+        }
+    }, [size]);
+
+    useEffect(() => {
+        fetchUsers(page);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [fetchUsers, page, refreshKey]);
+
+    const handlePageChange = (nextPage: number) => {
+        setPage(nextPage);
+        fetchUsers(nextPage);
+    };
+
+    const handleDelete = (user: AdminUser) => {
+        if (onDelete) {
+            onDelete(user);
+            return;
+        }
+        setConfirmUser(user);
+    };
+
+    const confirmDelete = async () => {
+        if (!confirmUser) return;
+        setDeletingId(confirmUser.id);
+        setError('');
+        try {
+            const authHeaders = buildAuthHeaders();
+            const res = await fetch(`http://localhost:8080/api/admin/users/${confirmUser.id}`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...authHeaders,
+                },
+            });
+
+            if (!res.ok) {
+                const text = await res.text();
+                const data = text ? JSON.parse(text) : {};
+                const message = data.message || `Xóa người dùng thất bại (code ${res.status}).`;
+                setError(message);
+                return;
+            }
+
+            const data: ApiResponse<null> = await res.json();
+            if (!data.success) {
+                setError(data.message || 'Xóa người dùng thất bại.');
+                return;
+            }
+
+            const nextUsers = users.filter((u) => u.id !== confirmUser.id);
+            const nextTotal = Math.max(0, totalElements - 1);
+            if (nextUsers.length === 0 && page > 0) {
+                setPage((prev) => prev - 1);
+                fetchUsers(page - 1);
+                return;
+            }
+            setUsers(nextUsers);
+            setTotalElements(nextTotal);
+        } catch (e) {
+            if (isAuthTokenMissingError(e)) {
+                setError('Bạn chưa đăng nhập hoặc thiếu token.');
+                return;
+            }
+            console.error('Delete user error:', e);
+            setError('Không thể kết nối máy chủ.');
+        } finally {
+            setDeletingId(null);
+            setConfirmUser(null);
+        }
+    };
+
     return (
         <div className="w-full flex-1 bg-white shadow rounded-lg overflow-hidden border border-slate-200">
             <div className="p-4 flex items-center justify-between">
                 <h2 className="text-lg font-semibold text-slate-800">Danh sách người dùng</h2>
-                {error && (
+                <div className="flex items-center gap-2">
+                    {error && (
+                        <button
+                            onClick={() => fetchUsers(page)}
+                            className="text-sm px-3 py-1 rounded bg-red-100 text-red-700 hover:bg-red-200"
+                        >
+                            Thử lại
+                        </button>
+                    )}
                     <button
-                        onClick={onRetry}
-                        className="text-sm px-3 py-1 rounded bg-red-100 text-red-700 hover:bg-red-200"
+                        onClick={() => fetchUsers(page)}
+                        className="text-sm px-3 py-1 rounded border border-slate-200 hover:bg-slate-50"
                     >
-                        Thử lại
+                        Tải lại
                     </button>
-                )}
+                </div>
             </div>
 
             {isLoading ? (
@@ -85,7 +229,8 @@ const UserTable: React.FC<UserTableProps> = ({ users, isLoading, error, onRetry,
                                             </button>
                                             <button
                                                 type="button"
-                                                onClick={() => onDelete?.(user)}
+                                                onClick={() => handleDelete(user)}
+                                                disabled={deletingId === user.id}
                                                 className="p-2 rounded border border-slate-200 hover:border-red-500 hover:text-red-600 transition"
                                                 title="Xóa"
                                             >
@@ -106,19 +251,19 @@ const UserTable: React.FC<UserTableProps> = ({ users, isLoading, error, onRetry,
             {!isLoading && !error && totalPages > 1 && (
                 <div className="flex items-center justify-between px-4 py-3 border-t border-slate-100 text-sm text-slate-700">
                     <span>
-                        Trang {currentPage + 1}/{totalPages} • Tổng {totalElements} người dùng
+                        Trang {page + 1}/{totalPages} • Tổng {totalElements} người dùng
                     </span>
                     <div className="flex gap-2">
                         <button
-                            onClick={() => onPageChange(Math.max(currentPage - 1, 0))}
-                            disabled={currentPage === 0}
+                            onClick={() => handlePageChange(Math.max(page - 1, 0))}
+                            disabled={page === 0}
                             className="px-3 py-1 rounded border border-slate-300 disabled:opacity-50 hover:bg-slate-50"
                         >
                             Trước
                         </button>
                         <button
-                            onClick={() => onPageChange(Math.min(currentPage + 1, totalPages - 1))}
-                            disabled={currentPage >= totalPages - 1}
+                            onClick={() => handlePageChange(Math.min(page + 1, totalPages - 1))}
+                            disabled={page >= totalPages - 1}
                             className="px-3 py-1 rounded border border-slate-300 disabled:opacity-50 hover:bg-slate-50"
                         >
                             Sau
@@ -126,6 +271,17 @@ const UserTable: React.FC<UserTableProps> = ({ users, isLoading, error, onRetry,
                     </div>
                 </div>
             )}
+
+            <ConfirmDialog
+                open={!!confirmUser}
+                title="Xác nhận xóa"
+                message={confirmUser ? `Bạn có chắc chắn muốn xóa người dùng "${confirmUser.fullName}"?` : ''}
+                confirmText="Xóa"
+                cancelText="Hủy"
+                isLoading={deletingId !== null}
+                onConfirm={confirmDelete}
+                onCancel={() => setConfirmUser(null)}
+            />
         </div>
     );
 };

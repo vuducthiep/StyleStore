@@ -1,6 +1,13 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import type { AdminUser } from './UserTable';
 import { useToast } from '../../../components/ToastProvider';
+import { buildAuthHeaders, isAuthTokenMissingError } from '../../../services/auth';
+
+type ApiResponse<T> = {
+	success: boolean;
+	message?: string;
+	data?: T;
+};
 
 interface UserModalProps {
 	isOpen: boolean;
@@ -24,22 +31,17 @@ const UserModal: React.FC<UserModalProps> = ({ isOpen, userId, onClose, onSaved 
 	const [error, setError] = useState('');
 	const { pushToast } = useToast();
 
-	const token = useMemo(() => localStorage.getItem('token'), []);
-
 	useEffect(() => {
 		if (!isOpen || !userId) return;
-		if (!token) {
-			setError('Bạn chưa đăng nhập hoặc thiếu token.');
-			return;
-		}
 		const fetchDetail = async () => {
 			setIsLoading(true);
 			setError('');
 			try {
-				const res = await fetch(`http://localhost:8080/api/users/${userId}`, {
+				const authHeaders = buildAuthHeaders();
+				const res = await fetch(`http://localhost:8080/api/admin/users/${userId}`, {
 					headers: {
 						'Content-Type': 'application/json',
-						Authorization: `Bearer ${token}`,
+						...authHeaders,
 					},
 				});
 				if (!res.ok) {
@@ -49,15 +51,28 @@ const UserModal: React.FC<UserModalProps> = ({ isOpen, userId, onClose, onSaved 
 					setError(message);
 					return;
 				}
-				const data: AdminUser = await res.json();
+				const data: ApiResponse<AdminUser> = await res.json();
+				if (!data.success) {
+					setError(data.message || 'Không tải được thông tin người dùng.');
+					return;
+				}
+				const user = data.data;
+				if (!user) {
+					setError('Dữ liệu trả về không hợp lệ.');
+					return;
+				}
 				setForm({
-					fullName: data.fullName || '',
-					email: data.email || '',
-					phoneNumber: data.phoneNumber || '',
-					role: data.role || 'USER',
-					status: data.status || 'ACTIVE',
+					fullName: user.fullName || '',
+					email: user.email || '',
+					phoneNumber: user.phoneNumber || '',
+					role: user.role || 'USER',
+					status: user.status || 'ACTIVE',
 				});
 			} catch (e) {
+				if (isAuthTokenMissingError(e)) {
+					setError('Bạn chưa đăng nhập hoặc thiếu token.');
+					return;
+				}
 				console.error('Fetch user detail error:', e);
 				setError('Không thể kết nối máy chủ.');
 			} finally {
@@ -65,22 +80,23 @@ const UserModal: React.FC<UserModalProps> = ({ isOpen, userId, onClose, onSaved 
 			}
 		};
 		fetchDetail();
-	}, [isOpen, userId, token]);
+	}, [isOpen, userId]);
 
 	const handleChange = (key: keyof UserForm, value: string) => {
 		setForm((prev) => ({ ...prev, [key]: value }));
 	};
 
 	const handleSave = async () => {
-		if (!userId || !token) return;
+		if (!userId) return;
 		setIsSaving(true);
 		setError('');
 		try {
-			const res = await fetch(`http://localhost:8080/api/users/${userId}`, {
+			const authHeaders = buildAuthHeaders();
+			const res = await fetch(`http://localhost:8080/api/admin/users/${userId}`, {
 				method: 'PUT',
 				headers: {
 					'Content-Type': 'application/json',
-					Authorization: `Bearer ${token}`,
+					...authHeaders,
 				},
 				body: JSON.stringify(form),
 			});
@@ -91,10 +107,19 @@ const UserModal: React.FC<UserModalProps> = ({ isOpen, userId, onClose, onSaved 
 				setError(message);
 				return;
 			}
+			const data: ApiResponse<AdminUser> = await res.json();
+			if (!data.success) {
+				setError(data.message || 'Cập nhật thất bại.');
+				return;
+			}
 			onSaved?.();
 			pushToast('Cập nhật người dùng thành công', 'success');
 			onClose();
 		} catch (e) {
+			if (isAuthTokenMissingError(e)) {
+				setError('Bạn chưa đăng nhập hoặc thiếu token.');
+				return;
+			}
 			console.error('Update user error:', e);
 			setError('Không thể kết nối máy chủ.');
 		} finally {

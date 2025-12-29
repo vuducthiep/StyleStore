@@ -39,6 +39,18 @@ public class UserService {
         return userRepository.save(user);
     }
 
+    public boolean deleteUserByEmail(String email) {
+        return userRepository.deleteByEmail(email);
+    }
+
+    public boolean deleteUser(Long id) {
+        if (!userRepository.existsById(id)) {
+            return false;
+        }
+        userRepository.deleteById(id);
+        return true;
+    }
+
     public User updateUser(Long id, User newUser) {
         return userRepository.findById(id)
                 .map(user -> {

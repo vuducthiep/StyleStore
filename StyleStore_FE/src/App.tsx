@@ -4,7 +4,7 @@ import AdminLayout from './assets/Admin/AdminLayout';
 import Login from './assets/Auth/Login';
 import Register from './assets/Auth/Register';
 import Home from './assets/Customer/Home';
-import UserManager from './assets/Admin/UserManage/UserManager';
+import UserManager from './assets/Admin/UserManage/UserManager.page';
 
 const App: React.FC = () => {
   return (
