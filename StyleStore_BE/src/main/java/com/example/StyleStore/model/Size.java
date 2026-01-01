@@ -2,6 +2,8 @@ package com.example.StyleStore.model;
 
 import jakarta.persistence.*;
 import lombok.*;
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.util.List;
 
 @Getter
@@ -11,6 +13,7 @@ import java.util.List;
 @Builder
 @Entity
 @Table(name = "sizes")
+@JsonIgnoreProperties({ "hibernateLazyInitializer", "handler" })
 public class Size {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -20,5 +23,6 @@ public class Size {
     private String name; // S, M, L, XL, XXL.
 
     @OneToMany(mappedBy = "size", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonBackReference
     private List<ProductSize> productSizes;
 }
