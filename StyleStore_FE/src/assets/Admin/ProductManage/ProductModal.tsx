@@ -47,8 +47,6 @@ type SizeOption = { id: number; name: string };
 
 type AdminProductDetail = AdminProduct & { productSizes?: ProductSizeDto[] };
 
-const IMGBB_API_KEY = '34aba8863dffdda79f5a5ffbba4955a0'; //ImgBB API key
-
 const ProductModal: React.FC<ProductModalProps> = ({ isOpen, productId, onClose, onSaved }) => {
     const [form, setForm] = useState<ProductForm>({ name: '', description: '', gender: '', price: '', thumbnail: '', status: 'ACTIVE' });
     const [isLoading, setIsLoading] = useState(false);
@@ -246,11 +244,15 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, productId, onClose,
 
         setIsUploading(true);
         try {
+            const authHeaders = buildAuthHeaders();
             const formData = new FormData();
             formData.append('image', imageFile);
 
-            const res = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {
+            const res = await fetch('http://localhost:8080/api/admin/upload/image', {
                 method: 'POST',
+                headers: {
+                    ...authHeaders,
+                },
                 body: formData,
             });
 
@@ -258,7 +260,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, productId, onClose,
                 throw new Error('Upload ảnh thất bại');
             }
 
-            const data = await res.json();
+            const data: ApiResponse<{ url: string }> = await res.json();
             if (data.success && data.data?.url) {
                 return data.data.url;
             }
