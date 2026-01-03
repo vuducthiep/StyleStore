@@ -1,13 +1,17 @@
 package com.example.StyleStore.service;
 
 import com.example.StyleStore.model.Product;
+import com.example.StyleStore.model.ProductSize;
+import com.example.StyleStore.model.Size;
 import com.example.StyleStore.repository.ProductRepository;
+import com.example.StyleStore.repository.SizeRepository;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -15,6 +19,9 @@ import java.util.Optional;
 public class ProductService {
     @Autowired
     private ProductRepository productRepository;
+
+    @Autowired
+    private SizeRepository sizeRepository;
 
     public Page<Product> getProducts(Pageable pageable) {
         return productRepository.findAll(pageable);
@@ -25,6 +32,32 @@ public class ProductService {
     }
 
     public Product createProduct(Product product) {
+        // Lấy tất cả sizes từ database
+        List<Size> allSizes = sizeRepository.findAll();
+
+        // Tạo ProductSize cho tất cả size, mặc định stock = 0
+        List<ProductSize> productSizes = new ArrayList<>();
+        for (Size size : allSizes) {
+            // Tìm xem size này có trong danh sách gửi lên không
+            Integer stock = 0;
+            if (product.getProductSizes() != null) {
+                for (ProductSize ps : product.getProductSizes()) {
+                    if (ps.getSize() != null && ps.getSize().getId().equals(size.getId())) {
+                        stock = ps.getStock() != null ? ps.getStock() : 0;
+                        break;
+                    }
+                }
+            }
+
+            ProductSize productSize = ProductSize.builder()
+                    .product(product)
+                    .size(size)
+                    .stock(stock)
+                    .build();
+            productSizes.add(productSize);
+        }
+
+        product.setProductSizes(productSizes);
         return productRepository.save(product);
     }
 
