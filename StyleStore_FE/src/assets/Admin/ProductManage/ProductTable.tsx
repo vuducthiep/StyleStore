@@ -199,6 +199,7 @@ const ProductTable: React.FC<ProductTableProps> = ({ refreshKey = 0, onEdit, onD
                         <thead className="bg-slate-50 text-slate-600">
                             <tr>
                                 <th className="px-4 py-2 text-left">ID</th>
+                                <th className="px-4 py-2 text-left">Hình ảnh</th>
                                 <th className="px-4 py-2 text-left">Tên sản phẩm</th>
                                 <th className="px-4 py-2 text-left">Giới tính</th>
                                 <th className="px-4 py-2 text-left">Giá</th>
@@ -212,6 +213,19 @@ const ProductTable: React.FC<ProductTableProps> = ({ refreshKey = 0, onEdit, onD
                             {products.map((product) => (
                                 <tr key={product.id} className="hover:bg-slate-50">
                                     <td className="px-4 py-2">{product.id}</td>
+                                    <td className="px-4 py-2">
+                                        {product.thumbnail ? (
+                                            <img
+                                                src={product.thumbnail}
+                                                alt={product.name}
+                                                className="w-12 h-12 object-cover rounded border border-slate-200"
+                                            />
+                                        ) : (
+                                            <div className="w-12 h-12 bg-slate-100 rounded border border-slate-200 flex items-center justify-center text-slate-400 text-xs">
+                                                No img
+                                            </div>
+                                        )}
+                                    </td>
                                     <td className="px-4 py-2 font-medium">{product.name}</td>
                                     <td className="px-4 py-2">{product.gender || '-'}</td>
                                     <td className="px-4 py-2">

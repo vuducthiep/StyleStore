@@ -9,6 +9,13 @@ type ApiResponse<T> = {
     data?: T;
 };
 
+interface Category {
+    id: number;
+    name: string;
+    description?: string;
+    status?: string;
+}
+
 interface ProductModalProps {
     isOpen: boolean;
     productId: number | null;
@@ -27,20 +34,114 @@ interface ProductForm {
         id: number;
         name: string;
     };
+    productSizes?: ProductSizeDto[];
 }
+
+type ProductSizeDto = {
+    id?: number;
+    size: { id: number; name?: string };
+    stock: number | '';
+};
+
+type SizeOption = { id: number; name: string };
+
+type AdminProductDetail = AdminProduct & { productSizes?: ProductSizeDto[] };
+
+const IMGBB_API_KEY = '34aba8863dffdda79f5a5ffbba4955a0'; //ImgBB API key
 
 const ProductModal: React.FC<ProductModalProps> = ({ isOpen, productId, onClose, onSaved }) => {
     const [form, setForm] = useState<ProductForm>({ name: '', description: '', gender: '', price: '', thumbnail: '', status: 'ACTIVE' });
     const [isLoading, setIsLoading] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
+    const [isUploading, setIsUploading] = useState(false);
     const [error, setError] = useState('');
+    const [categories, setCategories] = useState<Category[]>([]);
+    const [sizes, setSizes] = useState<SizeOption[]>([]);
+    const [productDetailSizes, setProductDetailSizes] = useState<ProductSizeDto[] | null>(null);
+    const [imageFile, setImageFile] = useState<File | null>(null);
+    const [imagePreview, setImagePreview] = useState<string>('');
     const { pushToast } = useToast();
+
+    const mergeSizesWithStocks = (allSizes: SizeOption[], existing: ProductSizeDto[] | null | undefined): ProductSizeDto[] => {
+        return allSizes.map((s) => {
+            const matched = existing?.find((ps) => ps.size?.id === s.id);
+            return {
+                id: matched?.id,
+                size: { id: s.id, name: s.name },
+                stock: matched?.stock ?? 0,
+            };
+        });
+    };
+
+    // Fetch categories
+    useEffect(() => {
+        if (!isOpen) return;
+        const fetchCategories = async () => {
+            try {
+                const authHeaders = buildAuthHeaders();
+                const res = await fetch('http://localhost:8080/api/admin/categories', {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...authHeaders,
+                    },
+                });
+                if (res.ok) {
+                    const data: ApiResponse<Category[]> = await res.json();
+                    if (data.success && data.data) {
+                        setCategories(data.data);
+                    }
+                }
+            } catch (e) {
+                console.error('Fetch categories error:', e);
+            }
+        };
+
+
+        const fetchSizes = async () => {
+            try {
+                const authHeaders = buildAuthHeaders();
+                const res = await fetch('http://localhost:8080/api/admin/sizes', {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...authHeaders,
+                    },
+                });
+                if (res.ok) {
+                    const payload = await res.json();
+                    if (Array.isArray(payload)) {
+                        setSizes(payload);
+                    } else {
+                        const data: ApiResponse<SizeOption[]> = payload;
+                        if (data.success && data.data) {
+                            setSizes(data.data);
+                        }
+                    }
+                }
+            } catch (e) {
+                console.error('Fetch sizes error:', e);
+            }
+        };
+
+        fetchCategories();
+        fetchSizes();
+    }, [isOpen]);
+
+    // When creating new product and sizes are loaded, initialize productSizes with empty stock
+    useEffect(() => {
+        if (isOpen && !productId && sizes.length > 0) {
+            setForm((prev) => ({
+                ...prev,
+                productSizes: sizes.map((s) => ({ size: { id: s.id, name: s.name }, stock: '' })),
+            }));
+        }
+    }, [isOpen, productId, sizes]);
 
     useEffect(() => {
         if (!isOpen) return;
         if (!productId) {
             // Reset form for creating new product
             setForm({ name: '', description: '', gender: '', price: '', thumbnail: '', status: 'ACTIVE' });
+            setProductDetailSizes(null);
             setError('');
             return;
         }
@@ -63,7 +164,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, productId, onClose,
                     setError(message);
                     return;
                 }
-                const data: ApiResponse<AdminProduct> = await res.json();
+                const data: ApiResponse<AdminProductDetail> = await res.json();
                 if (!data.success) {
                     setError(data.message || 'Không tải được thông tin sản phẩm.');
                     return;
@@ -81,7 +182,26 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, productId, onClose,
                     thumbnail: product.thumbnail || '',
                     status: product.status || 'ACTIVE',
                     category: product.category,
+                    productSizes: sizes.length
+                        ? mergeSizesWithStocks(sizes, product.productSizes?.map((ps) => ({
+                            id: ps.id,
+                            size: { id: ps.size.id, name: ps.size.name },
+                            stock: ps.stock ?? 0,
+                        })))
+                        : product.productSizes?.map((ps) => ({
+                            id: ps.id,
+                            size: { id: ps.size.id, name: ps.size.name },
+                            stock: ps.stock ?? 0,
+                        })),
                 });
+                setProductDetailSizes(
+                    product.productSizes?.map((ps) => ({
+                        id: ps.id,
+                        size: { id: ps.size.id, name: ps.size.name },
+                        stock: ps.stock ?? 0,
+                    })) || null
+                );
+                setImagePreview(product.thumbnail || '');
             } catch (e) {
                 if (isAuthTokenMissingError(e)) {
                     setError('Bạn chưa đăng nhập hoặc thiếu token.');
@@ -96,8 +216,60 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, productId, onClose,
         fetchDetail();
     }, [isOpen, productId]);
 
+    // When sizes load for edit, merge to ensure all sizes appear with default 0
+    useEffect(() => {
+        if (!isOpen || !productId || sizes.length === 0 || !productDetailSizes) return;
+        setForm((prev) => ({
+            ...prev,
+            productSizes: mergeSizesWithStocks(sizes, prev.productSizes || productDetailSizes),
+        }));
+    }, [isOpen, productId, sizes, productDetailSizes]);
+
     const handleChange = <K extends keyof ProductForm>(key: K, value: ProductForm[K]) => {
         setForm((prev) => ({ ...prev, [key]: value }));
+    };
+
+    const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            setImageFile(file);
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setImagePreview(reader.result as string);
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    const uploadImage = async (): Promise<string | null> => {
+        if (!imageFile) return form.thumbnail || null;
+
+        setIsUploading(true);
+        try {
+            const formData = new FormData();
+            formData.append('image', imageFile);
+
+            const res = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {
+                method: 'POST',
+                body: formData,
+            });
+
+            if (!res.ok) {
+                throw new Error('Upload ảnh thất bại');
+            }
+
+            const data = await res.json();
+            if (data.success && data.data?.url) {
+                return data.data.url;
+            }
+            throw new Error('Không nhận được URL ảnh');
+        } catch (e) {
+            console.error('Upload image error:', e);
+            setError('Upload ảnh thất bại. Vui lòng thử lại.');
+            return null;
+        } finally {
+            setIsUploading(false);
+        }
     };
 
     const handleSave = async () => {
@@ -109,10 +281,25 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, productId, onClose,
             setError('Giá sản phẩm không được để trống');
             return;
         }
+        if (!form.category?.id) {
+            setError('Vui lòng chọn danh mục');
+            return;
+        }
 
         setIsSaving(true);
         setError('');
         try {
+            // Upload image if new file selected
+            let thumbnailUrl: string | undefined = form.thumbnail;
+            if (imageFile) {
+                const uploadedUrl = await uploadImage();
+                if (!uploadedUrl) {
+                    setIsSaving(false);
+                    return;
+                }
+                thumbnailUrl = uploadedUrl;
+            }
+
             const authHeaders = buildAuthHeaders();
             const method = productId ? 'PUT' : 'POST';
             const url = productId ? `http://localhost:8080/api/admin/products/${productId}` : 'http://localhost:8080/api/admin/products';
@@ -123,7 +310,15 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, productId, onClose,
                     'Content-Type': 'application/json',
                     ...authHeaders,
                 },
-                body: JSON.stringify(form),
+                body: JSON.stringify({
+                    ...form,
+                    thumbnail: thumbnailUrl || form.thumbnail,
+                    productSizes: form.productSizes?.map((ps) => ({
+                        id: ps.id,
+                        size: { id: ps.size.id },
+                        stock: ps.stock === '' ? 0 : Number(ps.stock),
+                    })),
+                }),
             });
 
             if (!res.ok) {
@@ -162,7 +357,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, productId, onClose,
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-            <div className="w-full max-w-lg rounded-xl bg-white shadow-lg border border-slate-200">
+            <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-xl bg-white shadow-lg border border-slate-200">
                 <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200">
                     <div>
                         <h3 className="text-lg font-semibold text-slate-900">
@@ -228,15 +423,96 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, productId, onClose,
                                     </label>
                                 </div>
                                 <label className="text-sm text-slate-700">
-                                    Link ảnh đại diện
-                                    <input
-                                        type="text"
+                                    Danh mục <span className="text-red-500">*</span>
+                                    <select
                                         className="mt-1 w-full rounded border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
-                                        value={form.thumbnail || ''}
-                                        onChange={(e) => handleChange('thumbnail', e.target.value)}
-                                        placeholder="Nhập URL ảnh"
-                                    />
+                                        value={form.category?.id || ''}
+                                        onChange={(e) => {
+                                            const selectedCategory = categories.find(c => c.id === parseInt(e.target.value));
+                                            handleChange('category', selectedCategory);
+                                        }}
+                                    >
+                                        <option value="">-- Chọn danh mục --</option>
+                                        {categories.map((cat) => (
+                                            <option key={cat.id} value={cat.id}>
+                                                {cat.name}
+                                            </option>
+                                        ))}
+                                    </select>
                                 </label>
+                                <label className="text-sm text-slate-700">
+                                    Hình ảnh sản phẩm
+                                    <input
+                                        type="file"
+                                        accept="image/*"
+                                        className="mt-1 w-full rounded border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                                        onChange={handleImageChange}
+                                        disabled={isUploading}
+                                    />
+                                    {imagePreview && (
+                                        <div className="mt-2">
+                                            <img
+                                                src={imagePreview}
+                                                alt="Preview"
+                                                className="w-32 h-32 object-cover rounded border border-slate-200"
+                                            />
+                                        </div>
+                                    )}
+                                    {isUploading && (
+                                        <div className="mt-2 text-xs text-blue-600">Đang upload ảnh...</div>
+                                    )}
+                                </label>
+                                <div className="space-y-3">
+                                    <div className="text-sm font-medium text-slate-800">Kích thước & tồn kho</div>
+                                    {(form.productSizes || []).map((ps, idx) => (
+                                        <div key={idx} className="grid grid-cols-2 gap-3 items-center">
+                                            <label className="text-sm text-slate-700 flex flex-col">
+                                                <span className="mb-1">Size</span>
+                                                <select
+                                                    className="w-full rounded border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                                                    value={ps.size?.id || ''}
+                                                    onChange={(e) => {
+                                                        const sizeId = parseInt(e.target.value);
+                                                        const selected = sizes.find((s) => s.id === sizeId);
+                                                        setForm((prev) => {
+                                                            const next = [...(prev.productSizes || [])];
+                                                            next[idx] = {
+                                                                ...next[idx],
+                                                                size: selected ? { id: selected.id, name: selected.name } : ps.size,
+                                                            } as ProductSizeDto;
+                                                            return { ...prev, productSizes: next };
+                                                        });
+                                                    }}
+                                                >
+                                                    <option value="">-- Chọn size --</option>
+                                                    {sizes.map((s) => (
+                                                        <option key={s.id} value={s.id}>
+                                                            {s.name}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            </label>
+                                            <label className="text-sm text-slate-700 flex flex-col">
+                                                <span className="mb-1">Tồn kho</span>
+                                                <input
+                                                    type="number"
+                                                    className="w-full rounded border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                                                    value={ps.stock}
+                                                    onChange={(e) => {
+                                                        const val = e.target.value === '' ? '' : parseInt(e.target.value);
+                                                        setForm((prev) => {
+                                                            const next = [...(prev.productSizes || [])];
+                                                            next[idx] = { ...next[idx], stock: isNaN(val as number) ? '' : val } as ProductSizeDto;
+                                                            return { ...prev, productSizes: next };
+                                                        });
+                                                    }}
+                                                    placeholder="0"
+                                                    min={0}
+                                                />
+                                            </label>
+                                        </div>
+                                    ))}
+                                </div>
                                 <label className="text-sm text-slate-700">
                                     Trạng thái
                                     <select
@@ -264,9 +540,9 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, productId, onClose,
                     <button
                         onClick={handleSave}
                         className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 transition disabled:opacity-50"
-                        disabled={isSaving || isLoading}
+                        disabled={isSaving || isLoading || isUploading}
                     >
-                        {isSaving ? 'Đang lưu...' : 'Lưu'}
+                        {isSaving ? 'Đang lưu...' : isUploading ? 'Đang upload...' : 'Lưu'}
                     </button>
                 </div>
             </div>

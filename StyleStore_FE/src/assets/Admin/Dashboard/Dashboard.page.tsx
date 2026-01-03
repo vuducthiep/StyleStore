@@ -1,1 +1,1 @@
-// Main Layout for Admin Dashboard
+// Main Layout for Admin Dashboard (chart only)
