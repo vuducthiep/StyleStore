@@ -140,6 +140,8 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, productId, onClose,
             // Reset form for creating new product
             setForm({ name: '', description: '', gender: '', price: '', thumbnail: '', status: 'ACTIVE' });
             setProductDetailSizes(null);
+            setImageFile(null);
+            setImagePreview('');
             setError('');
             return;
         }
@@ -147,6 +149,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, productId, onClose,
         const fetchDetail = async () => {
             setIsLoading(true);
             setError('');
+            setImageFile(null);
             try {
                 const authHeaders = buildAuthHeaders();
                 const res = await fetch(`http://localhost:8080/api/admin/products/${productId}`, {
