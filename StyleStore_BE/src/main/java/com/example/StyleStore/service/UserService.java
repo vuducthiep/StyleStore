@@ -1,13 +1,20 @@
 package com.example.StyleStore.service;
 
+import com.example.StyleStore.dto.MonthlyUserDto;
 import com.example.StyleStore.model.User;
 import com.example.StyleStore.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+
+import java.time.LocalDateTime;
+import java.time.YearMonth;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class UserService {
@@ -79,4 +86,33 @@ public class UserService {
                 .orElseThrow(() -> new RuntimeException("User not found"));
     }
 
+    // public List<MonthlyUserDto> getMonthlyUserRegistrations(LocalDateTime from,
+    // LocalDateTime to) {
+    // return userRepository.countMonthlyUsers(from, to)
+    // .stream()
+    // .map(r -> new MonthlyUserDto(r.getYear(), r.getMonth(), r.getCount()))
+    // .collect(Collectors.toList());
+    // }
+
+    // get 12 months user registrations
+    public List<MonthlyUserDto> getRecent12MonthsUserRegistrations() {
+        YearMonth now = YearMonth.now();
+        YearMonth start = now.minusMonths(11);
+        LocalDateTime from = start.atDay(1).atStartOfDay();
+        LocalDateTime to = now.plusMonths(1).atDay(1).atStartOfDay();
+
+        Map<YearMonth, Long> aggregated = userRepository.countMonthlyUsers(from, to)
+                .stream()
+                .collect(Collectors.toMap(
+                        r -> YearMonth.of(r.getYear(), r.getMonth()),
+                        UserRepository.MonthlyUserProjection::getCount));
+
+        List<MonthlyUserDto> result = new ArrayList<>();
+        for (int i = 0; i < 12; i++) {
+            YearMonth ym = start.plusMonths(i);
+            long count = aggregated.getOrDefault(ym, 0L);
+            result.add(new MonthlyUserDto(ym.getYear(), ym.getMonthValue(), count));
+        }
+        return result;
+    }
 }
