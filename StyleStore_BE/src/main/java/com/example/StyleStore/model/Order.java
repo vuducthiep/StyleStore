@@ -1,8 +1,11 @@
 package com.example.StyleStore.model;
 
+import com.example.StyleStore.model.enums.OrderStatus;
+import com.example.StyleStore.model.enums.PaymentMethod;
 import jakarta.persistence.*;
-import java.time.LocalDateTime;
 import lombok.*;
+
+import java.time.LocalDateTime;
 
 @Getter
 @Setter
@@ -27,11 +30,13 @@ public class Order {
     @Column(name = "shipping_address", nullable = false, length = 255)
     private String shippingAddress;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "payment_method", nullable = false, length = 20)
-    private String paymentMethod;
+    private PaymentMethod paymentMethod;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 20)
-    private String status;
+    private OrderStatus status;
 
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
