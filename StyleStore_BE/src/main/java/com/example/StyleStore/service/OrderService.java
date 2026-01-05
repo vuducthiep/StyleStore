@@ -3,6 +3,7 @@ package com.example.StyleStore.service;
 import com.example.StyleStore.dto.MonthlyRevenueDto;
 import com.example.StyleStore.model.enums.OrderStatus;
 import com.example.StyleStore.repository.OrderRepository;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -22,6 +23,7 @@ public class OrderService {
         this.orderRepository = orderRepository;
     }
 
+    @Cacheable(cacheNames = "stats:revenue:monthly", key = "'fixed'")
     public List<MonthlyRevenueDto> getRecent12MonthsRevenue() {
         YearMonth now = YearMonth.now();
         YearMonth start = now.minusMonths(11);

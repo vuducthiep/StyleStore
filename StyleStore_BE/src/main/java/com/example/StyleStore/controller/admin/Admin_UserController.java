@@ -1,7 +1,6 @@
 package com.example.StyleStore.controller.admin;
 
 import com.example.StyleStore.dto.ApiResponse;
-import com.example.StyleStore.dto.MonthlyUserDto;
 import com.example.StyleStore.model.User;
 import com.example.StyleStore.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,7 +20,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
 import java.util.Optional;
 
 @RestController
@@ -80,11 +78,4 @@ public class Admin_UserController {
                 : ResponseEntity.status(404).body(ApiResponse.fail("Không tìm thấy người dùng"));
     }
 
-    @GetMapping("/monthly-user-registrations")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<List<MonthlyUserDto>>> getRecent12MonthsUserRegistrations() {
-        List<MonthlyUserDto> result = userService.getRecent12MonthsUserRegistrations();
-        return ResponseEntity
-                .ok(ApiResponse.ok("Lấy số lượng người dùng đăng ký trong 12 tháng gần nhất thành công", result));
-    }
 }

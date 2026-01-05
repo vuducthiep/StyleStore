@@ -4,6 +4,7 @@ import com.example.StyleStore.dto.MonthlyUserDto;
 import com.example.StyleStore.model.User;
 import com.example.StyleStore.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -95,6 +96,7 @@ public class UserService {
     // }
 
     // get 12 months user registrations
+    @Cacheable(cacheNames = "stats:users:monthly", key = "'fixed'")
     public List<MonthlyUserDto> getRecent12MonthsUserRegistrations() {
         YearMonth now = YearMonth.now();
         YearMonth start = now.minusMonths(11);
@@ -116,6 +118,7 @@ public class UserService {
         return result;
     }
 
+    @Cacheable(cacheNames = "stats:users:activeCount", key = "'fixed'")
     public long getTotalActiveUserCount() {
         return userRepository.countActiveUsers();
     }

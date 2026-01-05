@@ -7,6 +7,7 @@ import com.example.StyleStore.repository.ProductRepository;
 import com.example.StyleStore.repository.SizeRepository;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -112,6 +113,7 @@ public class ProductService {
                 .orElseThrow(() -> new RuntimeException("Product not found with id: " + id));
     }
 
+    @Cacheable(cacheNames = "stats:products:count", key = "'fixed'")
     public long getTotalProductCount() {
         return productRepository.count();
     }
