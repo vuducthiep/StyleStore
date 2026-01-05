@@ -115,4 +115,8 @@ public class UserService {
         }
         return result;
     }
+
+    public long getTotalActiveUserCount() {
+        return userRepository.countActiveUsers();
+    }
 }

@@ -36,4 +36,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
     List<MonthlyUserProjection> countMonthlyUsers(
             @Param("from") LocalDateTime from,
             @Param("to") LocalDateTime to);
+
+    @Query(value = "SELECT COUNT(*) FROM users WHERE status = 'ACTIVE'", nativeQuery = true)
+    long countActiveUsers();
 }

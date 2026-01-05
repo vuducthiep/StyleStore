@@ -111,4 +111,8 @@ public class ProductService {
                 })
                 .orElseThrow(() -> new RuntimeException("Product not found with id: " + id));
     }
+
+    public long getTotalProductCount() {
+        return productRepository.count();
+    }
 }

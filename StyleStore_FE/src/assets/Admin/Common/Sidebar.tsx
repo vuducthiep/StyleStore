@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
+import { DashboardOutlined, UserOutlined, ShoppingOutlined, LogoutOutlined } from '@ant-design/icons';
 
 interface SidebarItem {
     label: string;
     path: string;
-    icon: string;
+    icon: React.ReactNode;
 }
 
 const Sidebar: React.FC = () => {
@@ -13,9 +14,9 @@ const Sidebar: React.FC = () => {
     const location = useLocation();
 
     const menuItems: SidebarItem[] = [
-        { label: 'Dashboard', path: '/admin/dashboard', icon: '📊' },
-        { label: 'User Manager', path: '/admin/user-manager', icon: '👥' },
-        { label: 'Product Manager', path: '/admin/product-manager', icon: '📦' },
+        { label: 'Dashboard', path: '/admin/dashboard', icon: <DashboardOutlined /> },
+        { label: 'User Manager', path: '/admin/user-manager', icon: <UserOutlined /> },
+        { label: 'Product Manager', path: '/admin/product-manager', icon: <ShoppingOutlined /> },
     ];
 
     const isActive = (path: string) => location.pathname === path;
@@ -32,14 +33,14 @@ const Sidebar: React.FC = () => {
 
             {/* Sidebar */}
             <div
-                className={`fixed left-0 top-0 h-screen bg-gradient-to-b from-blue-700 to-blue-900 text-white transition-all duration-300 ${isOpen ? 'w-64' : 'w-20'
+                className={`fixed left-0 top-0 h-screen bg-gradient-to-b from-gray-900 to-gray-950 text-white transition-all duration-300 ${isOpen ? 'w-64' : 'w-20'
                     } lg:w-64 overflow-y-auto z-40`}
             >
                 {/* Logo */}
-                <div className="flex items-center justify-center py-8 border-b border-blue-600">
+                <div className="flex items-center justify-center py-8 border-b border-gray-700">
                     <div className={`text-center ${isOpen ? '' : 'hidden lg:block'}`}>
                         <h2 className="text-2xl font-bold">StyleStore</h2>
-                        <p className="text-xs text-blue-200 mt-1">Admin Panel</p>
+                        <p className="text-xs text-gray-400 mt-1">Admin Panel</p>
                     </div>
                     {!isOpen && <span className="text-2xl hidden lg:block">SS</span>}
                 </div>
@@ -51,8 +52,8 @@ const Sidebar: React.FC = () => {
                             key={item.path}
                             to={item.path}
                             className={`flex items-center gap-4 px-4 py-3 rounded-lg transition-all duration-200 ${isActive(item.path)
-                                ? 'bg-white text-blue-700 shadow-lg'
-                                : 'text-white hover:bg-blue-600'
+                                ? 'bg-blue-600 text-white shadow-lg'
+                                : 'text-gray-300 hover:bg-gray-800'
                                 }`}
                         >
                             <span className="text-xl">{item.icon}</span>
@@ -69,10 +70,10 @@ const Sidebar: React.FC = () => {
                             localStorage.removeItem('token');
                             window.location.href = '/login';
                         }}
-                        className={`w-full flex items-center gap-4 px-4 py-3 rounded-lg bg-red-600 hover:bg-red-700 transition-all duration-200 ${!isOpen ? 'justify-center' : ''
+                        className={`w-full flex items-center gap-4 px-4 py-3 rounded-lg bg-red-700 hover:bg-red-800 transition-all duration-200 ${!isOpen ? 'justify-center' : ''
                             }`}
                     >
-                        <span className="text-xl">🚪</span>
+                        <LogoutOutlined className="text-xl" />
                         {isOpen && <span className="font-medium">Logout</span>}
                     </button>
                 </div>
