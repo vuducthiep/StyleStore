@@ -1,12 +1,12 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import AdminLayout from './assets/Admin/AdminLayout';
-import Login from './assets/Auth/Login';
-import Register from './assets/Auth/Register';
-import Home from './assets/Customer/Home';
-import UserManager from './assets/Admin/UserManage/UserManager.page';
-import ProductManager from './assets/Admin/ProductManage/ProductManage.page';
-import DashboardPage from './assets/Admin/Dashboard/Dashboard.page';
+import AdminLayout from './layouts/AdminLayout';
+import Login from './pages/Auth/Login';
+import Register from './pages/Auth/Register';
+import Home from './pages/Customer/Home';
+import UserManager from './pages/Admin/UserManage/UserManager.page';
+import ProductManager from './pages/Admin/ProductManage/ProductManage.page';
+import DashboardPage from './pages/Admin/Dashboard/Dashboard.page';
 
 const App: React.FC = () => {
   return (

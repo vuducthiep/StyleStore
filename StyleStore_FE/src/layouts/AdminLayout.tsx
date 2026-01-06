@@ -1,6 +1,6 @@
 import React from 'react';
 import { Outlet } from 'react-router-dom';
-import Sidebar from './Common/Sidebar';
+import Sidebar from '../components/Admin/Sidebar';
 
 const AdminLayout: React.FC = () => {
     return (
