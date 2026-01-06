@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo, memo } from 'react';
 import { Card, Spin, Empty, Tooltip } from 'antd';
 import { ShoppingOutlined, UserOutlined, DollarOutlined } from '@ant-design/icons';
 import CountUp from 'react-countup';
@@ -36,13 +36,21 @@ interface MonthlyUser {
     count: number;
 }
 
+interface MonthlyRevenue {
+    year: number;
+    month: number;
+    revenue: number;
+}
+
 const DashboardPage = () => {
     const [productCount, setProductCount] = useState<number | null>(null);
     const [activeUsers, setActiveUsers] = useState<number | null>(null);
     const [revenueGrowth, setRevenueGrowth] = useState<RevenueGrowth | null>(null);
     const [userRegistrations, setUserRegistrations] = useState<MonthlyUser[]>([]);
+    const [monthlyRevenue, setMonthlyRevenue] = useState<MonthlyRevenue[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    // const [isFirstLoad, setIsFirstLoad] = useState(true);
 
     useEffect(() => {
         const fetchStats = async () => {
@@ -62,21 +70,23 @@ const DashboardPage = () => {
                 console.log('Fetching stats with token:', token.substring(0, 20) + '...');
 
                 // Fetch all stats in parallel
-                const [productsRes, usersRes, revenueRes, userRegRes] = await Promise.all([
+                const [productsRes, usersRes, revenueRes, userRegRes, monthlyRevRes] = await Promise.all([
                     fetch('http://localhost:8080/api/admin/stats/products/count', { headers }),
                     fetch('http://localhost:8080/api/admin/stats/users/active-count', { headers }),
                     fetch('http://localhost:8080/api/admin/stats/revenue/recent-month-growth', { headers }),
                     fetch('http://localhost:8080/api/admin/stats/monthly-user-registrations', { headers }),
+                    fetch('http://localhost:8080/api/admin/stats/revenue/monthly-recent', { headers }),
                 ]);
 
-                console.log('Response status:', productsRes.status, usersRes.status, revenueRes.status, userRegRes.status);
+                console.log('Response status:', productsRes.status, usersRes.status, revenueRes.status, userRegRes.status, monthlyRevRes.status);
 
-                if (!productsRes.ok || !usersRes.ok || !revenueRes.ok || !userRegRes.ok) {
+                if (!productsRes.ok || !usersRes.ok || !revenueRes.ok || !userRegRes.ok || !monthlyRevRes.ok) {
                     const errorMessages = [];
                     if (!productsRes.ok) errorMessages.push(`Products: ${productsRes.status}`);
                     if (!usersRes.ok) errorMessages.push(`Users: ${usersRes.status}`);
                     if (!revenueRes.ok) errorMessages.push(`Revenue: ${revenueRes.status}`);
                     if (!userRegRes.ok) errorMessages.push(`UserReg: ${userRegRes.status}`);
+                    if (!monthlyRevRes.ok) errorMessages.push(`MonthlyRev: ${monthlyRevRes.status}`);
                     throw new Error(`Failed to fetch statistics: ${errorMessages.join(', ')}`);
                 }
 
@@ -84,22 +94,42 @@ const DashboardPage = () => {
                 const usersData = (await usersRes.json()) as StatsResponse<UserCount>;
                 const revenueData = (await revenueRes.json()) as StatsResponse<RevenueGrowth>;
                 const userRegData = (await userRegRes.json()) as StatsResponse<MonthlyUser[]>;
+                const monthlyRevData = (await monthlyRevRes.json()) as StatsResponse<MonthlyRevenue[]>;
 
                 setProductCount(productsData.data.totalProducts);
                 setActiveUsers(usersData.data.activeUsers);
                 setRevenueGrowth(revenueData.data);
                 setUserRegistrations(userRegData.data);
+                setMonthlyRevenue(monthlyRevData.data);
                 setError(null);
             } catch (err) {
                 setError(err instanceof Error ? err.message : 'An error occurred');
                 console.error('Error fetching stats:', err);
             } finally {
                 setLoading(false);
+                // setIsFirstLoad(false);
             }
         };
 
         fetchStats();
     }, []);
+
+    // Memoize chart data transformations (must be before early returns)
+    const userChartData = useMemo(() => 
+        userRegistrations.map(item => ({
+            name: `T${item.month}/${item.year}`,
+            'Người dùng': item.count
+        })),
+        [userRegistrations]
+    );
+
+    const revenueChartData = useMemo(() => 
+        monthlyRevenue.map(item => ({
+            name: `T${item.month}/${item.year}`,
+            'Doanh thu': item.revenue
+        })),
+        [monthlyRevenue]
+    );
 
     if (loading) {
         return (
@@ -236,10 +266,7 @@ const DashboardPage = () => {
                         <div className="h-96">
                             <ResponsiveContainer width="100%" height="100%">
                                 <AreaChart
-                                    data={userRegistrations.map(item => ({
-                                        name: `T${item.month}/${item.year}`,
-                                        'Người dùng': item.count
-                                    }))}
+                                    data={userChartData}
                                     margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
                                 >
                                     <defs>
@@ -280,16 +307,59 @@ const DashboardPage = () => {
                         </div>
                     </Card>
 
-                    {/* Placeholder for Revenue Chart */}
+                    {/* Revenue Chart */}
                     <Card title="Biểu Đồ Doanh Thu" className="shadow-lg">
-                        <div className="h-96 flex items-center justify-center text-gray-400">
-                            {/* Revenue chart will be added here */}
-                            Chart placeholder
+                        <div className="h-96">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <AreaChart
+                                    data={revenueChartData}
+                                    margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+                                >
+                                    <defs>
+                                        <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="5%" stopColor="#10b981" stopOpacity={0.8} />
+                                            <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                                        </linearGradient>
+                                    </defs>
+                                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                                    <XAxis 
+                                        dataKey="name" 
+                                        stroke="#6b7280"
+                                        style={{ fontSize: '12px' }}
+                                    />
+                                    <YAxis 
+                                        stroke="#6b7280"
+                                        style={{ fontSize: '12px' }}
+                                        tickFormatter={(value) => `${(value / 1000).toFixed(0)}K`}
+                                    />
+                                    <RechartsTooltip 
+                                        contentStyle={{ 
+                                            backgroundColor: 'white',
+                                            border: '1px solid #e5e7eb',
+                                            borderRadius: '8px',
+                                            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                                        }}
+                                        formatter={(value: number) => [
+                                            new Intl.NumberFormat('vi-VN').format(value) + ' VND',
+                                            'Doanh thu'
+                                        ]}
+                                    />
+                                    <Area 
+                                        type="monotone" 
+                                        dataKey="Doanh thu" 
+                                        stroke="#10b981" 
+                                        strokeWidth={2}
+                                        fillOpacity={1} 
+                                        fill="url(#colorRevenue)"
+                                        animationDuration={1500}
+                                    />
+                                </AreaChart>
+                            </ResponsiveContainer>
                         </div>
                     </Card>
                 </div>
             </div>
         );
-    };
+};
 
-    export default DashboardPage;
+export default memo(DashboardPage);
