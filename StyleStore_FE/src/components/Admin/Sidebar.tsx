@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
-import { DashboardOutlined, UserOutlined, ShoppingOutlined, LogoutOutlined } from '@ant-design/icons';
+import { DashboardOutlined, UserOutlined, ShoppingOutlined, ShoppingCartOutlined, LogoutOutlined } from '@ant-design/icons';
 
 interface SidebarItem {
     label: string;
@@ -17,6 +17,7 @@ const Sidebar: React.FC = () => {
         { label: 'Dashboard', path: '/admin/dashboard', icon: <DashboardOutlined /> },
         { label: 'User Manager', path: '/admin/user-manager', icon: <UserOutlined /> },
         { label: 'Product Manager', path: '/admin/product-manager', icon: <ShoppingOutlined /> },
+        { label: 'Order Manager', path: '/admin/order-manager', icon: <ShoppingCartOutlined /> },
     ];
 
     const isActive = (path: string) => location.pathname === path;

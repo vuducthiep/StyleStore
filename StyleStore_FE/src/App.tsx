@@ -7,6 +7,7 @@ import Home from './pages/Customer/Home';
 import UserManager from './pages/Admin/UserManage/UserManager.page';
 import ProductManager from './pages/Admin/ProductManage/ProductManage.page';
 import DashboardPage from './pages/Admin/Dashboard/Dashboard.page';
+import OrderManage from './pages/Admin/OrderManage/OrderManage.page';
 
 const App: React.FC = () => {
   return (
@@ -21,6 +22,7 @@ const App: React.FC = () => {
           <Route path="/admin/dashboard" element={<DashboardPage />} />
           <Route path="/admin/user-manager" element={<UserManager />} />
           <Route path="/admin/product-manager" element={<ProductManager />} />
+          <Route path="/admin/order-manager" element={<OrderManage />} />
         </Route>
 
         {/* Customer Home */}
