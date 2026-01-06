@@ -1,10 +1,18 @@
 package com.example.StyleStore.service;
 
 import com.example.StyleStore.dto.MonthlyRevenueDto;
+import com.example.StyleStore.dto.OrderDto;
+import com.example.StyleStore.dto.OrderItemDto;
 import com.example.StyleStore.dto.RevenueGrowthDto;
+import com.example.StyleStore.model.Order;
+import com.example.StyleStore.model.OrderItem;
 import com.example.StyleStore.model.enums.OrderStatus;
+import com.example.StyleStore.repository.OrderItemRepository;
 import com.example.StyleStore.repository.OrderRepository;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -19,9 +27,11 @@ import java.util.stream.Collectors;
 public class OrderService {
 
     private final OrderRepository orderRepository;
+    private final OrderItemRepository orderItemRepository;
 
-    public OrderService(OrderRepository orderRepository) {
+    public OrderService(OrderRepository orderRepository, OrderItemRepository orderItemRepository) {
         this.orderRepository = orderRepository;
+        this.orderItemRepository = orderItemRepository;
     }
 
     @Cacheable(cacheNames = "stats:revenue:monthly", key = "'fixed'")
@@ -81,6 +91,73 @@ public class OrderService {
                 twoMonthsAgoRevenue,
                 growth,
                 growthPercentage);
+    }
+
+    public Page<OrderDto> getAllOrders(int page, int size, String sortBy, String sortDir) {
+        Sort.Direction direction = "asc".equalsIgnoreCase(sortDir) ? Sort.Direction.ASC : Sort.Direction.DESC;
+        PageRequest pageRequest = PageRequest.of(page, size, Sort.by(direction, sortBy));
+
+        Page<Order> orders = orderRepository.findAll(pageRequest);
+        return orders.map(this::convertToDto);
+    }
+
+    public OrderDto getOrderById(Long id) {
+        return orderRepository.findById(id)
+                .map(this::convertToDto)
+                .orElse(null);
+    }
+
+    public OrderDto getOrderDetailById(Long id) {
+        return orderRepository.findById(id)
+                .map(this::convertToDetailDto)
+                .orElse(null);
+    }
+
+    private OrderDto convertToDto(Order order) {
+        return OrderDto.builder()
+                .id(order.getId())
+                .userId(order.getUser().getId())
+                .userName(order.getUser().getFullName())
+                .userEmail(order.getUser().getEmail())
+                .totalAmount(order.getTotalAmount())
+                .shippingAddress(order.getShippingAddress())
+                .paymentMethod(order.getPaymentMethod())
+                .status(order.getStatus())
+                .createdAt(order.getCreatedAt())
+                .updatedAt(order.getUpdatedAt())
+                .build();
+    }
+
+    private OrderDto convertToDetailDto(Order order) {
+        List<OrderItem> orderItems = orderItemRepository.findByOrderId(order.getId());
+
+        List<OrderItemDto> orderItemDtos = orderItems.stream()
+                .map(item -> OrderItemDto.builder()
+                        .id(item.getId())
+                        .productId(item.getProduct().getId())
+                        .productName(item.getProduct().getName())
+                        .productImage(item.getProduct().getThumbnail())
+                        .sizeId(item.getProductSize().getId())
+                        .sizeName(item.getProductSize().getSize().getName())
+                        .quantity(item.getQuantity())
+                        .price(item.getPrice())
+                        .subtotal(item.getPrice() * item.getQuantity())
+                        .build())
+                .collect(Collectors.toList());
+
+        return OrderDto.builder()
+                .id(order.getId())
+                .userId(order.getUser().getId())
+                .userName(order.getUser().getFullName())
+                .userEmail(order.getUser().getEmail())
+                .totalAmount(order.getTotalAmount())
+                .shippingAddress(order.getShippingAddress())
+                .paymentMethod(order.getPaymentMethod())
+                .status(order.getStatus())
+                .createdAt(order.getCreatedAt())
+                .updatedAt(order.getUpdatedAt())
+                .orderItems(orderItemDtos)
+                .build();
     }
 
 }

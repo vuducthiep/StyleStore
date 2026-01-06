@@ -43,4 +43,8 @@ public class Order {
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    // One-to-many relationship with OrderItem
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private java.util.List<OrderItem> orderItems;
 }
