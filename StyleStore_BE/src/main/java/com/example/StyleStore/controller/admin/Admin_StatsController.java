@@ -3,6 +3,7 @@ package com.example.StyleStore.controller.admin;
 import com.example.StyleStore.dto.ApiResponse;
 import com.example.StyleStore.dto.MonthlyRevenueDto;
 import com.example.StyleStore.dto.MonthlyUserDto;
+import com.example.StyleStore.dto.RevenueGrowthDto;
 import com.example.StyleStore.service.OrderService;
 import com.example.StyleStore.service.ProductService;
 import com.example.StyleStore.service.UserService;
@@ -60,6 +61,13 @@ public class Admin_StatsController {
         long count = userService.getTotalActiveUserCount();
         Map<String, Object> response = Map.of("activeUsers", count);
         return ResponseEntity.ok(ApiResponse.ok("Lấy tổng số người dùng đang hoạt động thành công", response));
+    }
+
+    @GetMapping("/revenue/recent-month-growth")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<RevenueGrowthDto>> getRecentMonthRevenueGrowth() {
+        RevenueGrowthDto result = orderService.getRevenueGrowth();
+        return ResponseEntity.ok(ApiResponse.ok("Lấy tăng trưởng doanh thu tháng vừa rồi thành công", result));
     }
 
 }

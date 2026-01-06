@@ -1,6 +1,7 @@
 package com.example.StyleStore.service;
 
 import com.example.StyleStore.dto.MonthlyRevenueDto;
+import com.example.StyleStore.dto.RevenueGrowthDto;
 import com.example.StyleStore.model.enums.OrderStatus;
 import com.example.StyleStore.repository.OrderRepository;
 import org.springframework.cache.annotation.Cacheable;
@@ -45,4 +46,41 @@ public class OrderService {
         }
         return result;
     }
+
+    @Cacheable(cacheNames = "stats:revenue:growth", key = "'fixed'")
+    public RevenueGrowthDto getRevenueGrowth() {
+        YearMonth currentMonth = YearMonth.now();
+        YearMonth previousMonth = currentMonth.minusMonths(1);
+        YearMonth twoMonthsAgo = currentMonth.minusMonths(2);
+        BigDecimal previousMonthRevenue = orderRepository.getRevenueByYearMonth(previousMonth.getYear(),
+                previousMonth.getMonthValue(), OrderStatus.DELIVERED.name());
+        BigDecimal twoMonthsAgoRevenue = orderRepository.getRevenueByYearMonth(twoMonthsAgo.getYear(),
+                twoMonthsAgo.getMonthValue(), OrderStatus.DELIVERED.name());
+        BigDecimal growth;
+        BigDecimal growthPercentage;
+        // Calculate growth percentage
+        if (twoMonthsAgoRevenue.compareTo(BigDecimal.ZERO) == 0) {
+            if (previousMonthRevenue.compareTo(BigDecimal.ZERO) > 0) {
+                growth = previousMonthRevenue;
+                growthPercentage = BigDecimal.valueOf(100);
+            } else {
+                growth = BigDecimal.ZERO;
+                growthPercentage = BigDecimal.ZERO; // cả hai đều 0
+            }
+        } else {
+            growth = previousMonthRevenue.subtract(twoMonthsAgoRevenue);
+            growthPercentage = growth
+                    .divide(twoMonthsAgoRevenue, 2, java.math.RoundingMode.HALF_UP)
+                    .multiply(BigDecimal.valueOf(100));
+        }
+
+        return new RevenueGrowthDto(
+                currentMonth.getMonthValue(),
+                currentMonth.getYear(),
+                previousMonthRevenue,
+                twoMonthsAgoRevenue,
+                growth,
+                growthPercentage);
+    }
+
 }

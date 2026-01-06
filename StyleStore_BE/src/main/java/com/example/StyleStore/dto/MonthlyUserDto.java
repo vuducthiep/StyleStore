@@ -1,6 +1,9 @@
 package com.example.StyleStore.dto;
 
-public class MonthlyUserDto {
+import java.io.Serializable;
+
+public class MonthlyUserDto implements Serializable {
+    private static final long serialVersionUID = 1L;
     private final int year;
     private final int month;
     private final long count;

@@ -1,8 +1,10 @@
 package com.example.StyleStore.dto;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 
-public class MonthlyRevenueDto {
+public class MonthlyRevenueDto implements Serializable {
+    private static final long serialVersionUID = 1L;
     private final int year;
     private final int month;
     private final BigDecimal revenue;

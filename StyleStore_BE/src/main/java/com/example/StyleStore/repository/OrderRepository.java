@@ -35,4 +35,15 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
             @Param("from") LocalDateTime from,
             @Param("to") LocalDateTime to,
             @Param("completedStatus") String completedStatus);
+
+    @Query(value = """
+            SELECT COALESCE(SUM(o.total_amount), 0) AS revenue
+            FROM orders o
+            WHERE YEAR(o.created_at) = :year AND MONTH(o.created_at) = :month
+              AND o.status = :completedStatus
+            """, nativeQuery = true)
+    BigDecimal getRevenueByYearMonth(
+            @Param("year") int year,
+            @Param("month") int month,
+            @Param("completedStatus") String completedStatus);
 }
