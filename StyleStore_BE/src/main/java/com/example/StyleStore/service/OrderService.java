@@ -53,9 +53,9 @@ public class OrderService {
         YearMonth previousMonth = currentMonth.minusMonths(1);
         YearMonth twoMonthsAgo = currentMonth.minusMonths(2);
         BigDecimal previousMonthRevenue = orderRepository.getRevenueByYearMonth(previousMonth.getYear(),
-                previousMonth.getMonthValue(), OrderStatus.DELIVERED.name());
+                previousMonth.getMonthValue(), OrderStatus.DELIVERED.name()).orElse(BigDecimal.ZERO);
         BigDecimal twoMonthsAgoRevenue = orderRepository.getRevenueByYearMonth(twoMonthsAgo.getYear(),
-                twoMonthsAgo.getMonthValue(), OrderStatus.DELIVERED.name());
+                twoMonthsAgo.getMonthValue(), OrderStatus.DELIVERED.name()).orElse(BigDecimal.ZERO);
         BigDecimal growth;
         BigDecimal growthPercentage;
         // Calculate growth percentage

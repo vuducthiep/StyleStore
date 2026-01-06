@@ -9,6 +9,7 @@ import org.springframework.stereotype.Repository;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface OrderRepository extends JpaRepository<Order, Long> {
@@ -42,7 +43,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
             WHERE YEAR(o.created_at) = :year AND MONTH(o.created_at) = :month
               AND o.status = :completedStatus
             """, nativeQuery = true)
-    BigDecimal getRevenueByYearMonth(
+    Optional<BigDecimal> getRevenueByYearMonth(
             @Param("year") int year,
             @Param("month") int month,
             @Param("completedStatus") String completedStatus);

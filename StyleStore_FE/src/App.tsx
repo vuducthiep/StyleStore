@@ -6,6 +6,7 @@ import Register from './assets/Auth/Register';
 import Home from './assets/Customer/Home';
 import UserManager from './assets/Admin/UserManage/UserManager.page';
 import ProductManager from './assets/Admin/ProductManage/ProductManage.page';
+import DashboardPage from './assets/Admin/Dashboard/Dashboard.page';
 
 const App: React.FC = () => {
   return (
@@ -17,7 +18,7 @@ const App: React.FC = () => {
 
         {/* Admin Routes */}
         <Route element={<AdminLayout />}>
-          <Route path="/admin/dashboard" element={<div>Dashboard Coming Soon...</div>} />
+          <Route path="/admin/dashboard" element={<DashboardPage />} />
           <Route path="/admin/user-manager" element={<UserManager />} />
           <Route path="/admin/product-manager" element={<ProductManager />} />
         </Route>
