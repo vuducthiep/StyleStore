@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
 import { DashboardOutlined, UserOutlined, ShoppingOutlined, ShoppingCartOutlined, LogoutOutlined } from '@ant-design/icons';
+import logo from '../../assets/Logo.jpg';
 
 interface SidebarItem {
     label: string;
@@ -39,11 +40,15 @@ const Sidebar: React.FC = () => {
             >
                 {/* Logo */}
                 <div className="flex items-center justify-center py-8 border-b border-gray-700">
-                    <div className={`text-center ${isOpen ? '' : 'hidden lg:block'}`}>
-                        <h2 className="text-2xl font-bold">StyleStore</h2>
-                        <p className="text-xs text-gray-400 mt-1">Admin Panel</p>
-                    </div>
-                    {!isOpen && <span className="text-2xl hidden lg:block">SS</span>}
+                    {isOpen ? (
+                        <div className="text-center">
+                            <img src={logo} alt="StyleStore" className="mx-auto mb-2 h-24 w-24 rounded-full shadow-md" />
+
+                            <p className="text-lg text-gray-400 mt-1">Admin Panel</p>
+                        </div>
+                    ) : (
+                        <img src={logo} alt="SS" className="hidden lg:block h-10 w-10 rounded-full shadow-md" />
+                    )}
                 </div>
 
                 {/* Menu Items */}
