@@ -105,6 +105,17 @@ const Banner: React.FC = () => {
                     background-size: 400% 400%;
                     animation: gradientShift 15s ease infinite;
                 }
+
+                @keyframes fadeUp {
+                    0% {
+                        opacity: 0;
+                        transform: translateY(20px);
+                    }
+                    100% {
+                        opacity: 1;
+                        transform: translateY(0);
+                    }
+                }
             `}</style>
 
             <div className="w-full max-h-[400px] relative overflow-hidden">
@@ -123,14 +134,20 @@ const Banner: React.FC = () => {
                     {/* Left Section - Text Introduction */}
                     <div className="flex-1 space-y-6">
                         <div>
-                            <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-3">
+                            <h1
+                                className="h-14 text-4xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-3"
+                                style={{ animation: 'fadeUp 0.8s ease 0s both' }}
+                            >
                                 StyleStore
                             </h1>
-                            <p className="text-lg text-slate-700 leading-relaxed">
+                            <p
+                                className="text-lg text-slate-700 leading-relaxed"
+                                style={{ animation: 'fadeUp 0.8s ease 0.1s both' }}
+                            >
                                 Khám phá bộ sưu tập thời trang hiện đại, phong cách và chất lượng cao. Chúng tôi mang đến những xu hướng mới nhất từ các thương hiệu hàng đầu, giúp bạn tỏa sáng trong mọi dịp.
                             </p>
                         </div>
-                        <div className="flex gap-4">
+                        <div className="flex gap-4" style={{ animation: 'fadeUp 0.8s ease 0.2s both' }}>
                             <button
                                 onClick={handleExplore}
                                 className="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-semibold shadow-md hover:shadow-lg"
@@ -141,7 +158,7 @@ const Banner: React.FC = () => {
                     </div>
 
                     {/* Right Section - Image Carousel */}
-                    <div className="flex-1 relative group">
+                    <div className="flex-1 relative group" style={{ animation: 'fadeUp 0.9s ease 0.25s both' }}>
                         {/* Image Container */}
                         <div className="relative w-full h-80 rounded-2xl overflow-hidden shadow-2xl">
                             {images.map((image, index) => (
