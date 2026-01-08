@@ -2,11 +2,13 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Header } from '../../../components/Header';
 import Footer from '../../../components/Footer';
+import Banner from '../Home/Banner';
 
 const Home: React.FC = () => {
     return (
         <div>
             <Header />
+            <Banner />
             <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-200 p-6">
                 <div className="bg-white shadow-lg rounded-xl p-8 max-w-xl w-full text-center border border-slate-100">
                     <h1 className="text-3xl font-bold text-slate-800 mb-3">Chào mừng đến StyleStore</h1>
