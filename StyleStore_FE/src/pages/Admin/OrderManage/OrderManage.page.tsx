@@ -17,11 +17,10 @@ const OrderManage: React.FC = () => {
         setSelectedOrderId(null);
     };
 
+    //use api confirm order 
     const handleConfirmOrder = async (order: AdminOrder) => {
         console.log('Confirm order:', order);
-        // TODO: Implement confirm order API call
-        // After successful confirmation, refresh the table
-        // setRefreshKey((prev) => prev + 1);
+
     };
 
     return (
