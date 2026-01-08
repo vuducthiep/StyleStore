@@ -29,6 +29,9 @@ public class Product {
     @Column(name = "gender", nullable = false, length = 20)
     private String gender;
 
+    @Column(name = "brand", length = 100)
+    private String brand;
+
     @Column(name = "price", nullable = false)
     private Double price;
 

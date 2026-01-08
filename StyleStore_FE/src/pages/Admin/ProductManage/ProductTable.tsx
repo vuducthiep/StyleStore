@@ -19,6 +19,7 @@ export interface AdminProduct {
     name: string;
     description?: string;
     gender?: string;
+    brand?: string;
     price: number;
     thumbnail?: string;
     status?: string;
@@ -139,6 +140,7 @@ const ProductTable: React.FC<ProductTableProps> = ({ refreshKey = 0, onEdit }) =
                                 <th className="px-4 py-2 text-left">ID</th>
                                 <th className="px-4 py-2 text-left">Hình ảnh</th>
                                 <th className="px-4 py-2 text-left">Tên sản phẩm</th>
+                                <th className="px-4 py-2 text-left">Thương hiệu</th>
                                 <th className="px-4 py-2 text-left">Giới tính</th>
                                 <th className="px-4 py-2 text-left">Giá</th>
                                 <th className="px-4 py-2 text-left">Danh mục</th>
@@ -165,6 +167,7 @@ const ProductTable: React.FC<ProductTableProps> = ({ refreshKey = 0, onEdit }) =
                                         )}
                                     </td>
                                     <td className="px-4 py-2 font-medium">{product.name}</td>
+                                    <td className="px-4 py-2">{product.brand || '-'}</td>
                                     <td className="px-4 py-2">{product.gender || '-'}</td>
                                     <td className="px-4 py-2">
                                         {product.price.toLocaleString('vi-VN')}₫

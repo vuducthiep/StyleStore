@@ -27,6 +27,7 @@ interface ProductForm {
     name: string;
     description?: string;
     gender?: string;
+    brand?: string;
     price: number | '';
     thumbnail?: string;
     status?: string;
@@ -138,7 +139,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, productId, onClose,
         if (!isOpen) return;
         if (!productId) {
             // Reset form for creating new product
-            setForm({ name: '', description: '', gender: '', price: '', thumbnail: '', status: 'ACTIVE' });
+            setForm({ name: '', description: '', gender: '', brand: '', price: '', thumbnail: '', status: 'ACTIVE' });
             setProductDetailSizes(null);
             setImageFile(null);
             setImagePreview('');
@@ -179,6 +180,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, productId, onClose,
                     name: product.name || '',
                     description: product.description || '',
                     gender: product.gender || '',
+                    brand: product.brand || '',
                     price: product.price || '',
                     thumbnail: product.thumbnail || '',
                     status: product.status || 'ACTIVE',
@@ -416,6 +418,18 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, productId, onClose,
                                             <option value="Unisex">Unisex</option>
                                         </select>
                                     </label>
+                                    <label className="text-sm text-slate-700">
+                                        Thương hiệu
+                                        <input
+                                            type="text"
+                                            className="mt-1 w-full rounded border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                                            value={form.brand || ''}
+                                            onChange={(e) => handleChange('brand', e.target.value)}
+                                            placeholder="Nhập tên thương hiệu"
+                                        />
+                                    </label>
+                                </div>
+                                <div className="grid grid-cols-1 gap-4">
                                     <label className="text-sm text-slate-700">
                                         Giá <span className="text-red-500">*</span>
                                         <input

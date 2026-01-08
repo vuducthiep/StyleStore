@@ -82,6 +82,9 @@ public class ProductService {
                     if (newProduct.getGender() != null) {
                         product.setGender(newProduct.getGender());
                     }
+                    if (newProduct.getBrand() != null) {
+                        product.setBrand(newProduct.getBrand());
+                    }
                     if (newProduct.getPrice() != null) {
                         product.setPrice(newProduct.getPrice());
                     }
