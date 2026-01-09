@@ -8,6 +8,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 @RestController
 @RequestMapping("/api/admin/orders")
@@ -49,4 +51,39 @@ public class Admin_OrderController {
                     new ApiResponse<>(false, "Lỗi khi tải đơn hàng: " + e.getMessage(), null));
         }
     }
+
+    @PutMapping("/{id}/confirm")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<OrderDto>> confirmOrder(@PathVariable Long id) {
+        try {
+            OrderDto order = orderService.confirmOrder(id);
+            if (order != null) {
+                return ResponseEntity.ok(
+                        new ApiResponse<>(true, "Đơn hàng đã được xác nhận", order));
+            } else {
+                return ResponseEntity.notFound().build();
+            }
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(
+                    new ApiResponse<>(false, "Lỗi khi xác nhận đơn hàng: " + e.getMessage(), null));
+        }
+    }
+
+    // user and admin can cancel order
+    @PutMapping("/{id}/cancel")
+    public ResponseEntity<ApiResponse<OrderDto>> cancelOrder(@PathVariable Long id) {
+        try {
+            OrderDto order = orderService.cancelOrder(id);
+            if (order != null) {
+                return ResponseEntity.ok(
+                        new ApiResponse<>(true, "Đơn hàng đã được hủy", order));
+            } else {
+                return ResponseEntity.notFound().build();
+            }
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(
+                    new ApiResponse<>(false, "Lỗi khi hủy đơn hàng: " + e.getMessage(), null));
+        }
+    }
+
 }

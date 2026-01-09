@@ -160,4 +160,28 @@ public class OrderService {
                 .build();
     }
 
+    public OrderDto confirmOrder(long Id) {
+        Order order = orderRepository.findById(Id).orElseThrow(() -> new RuntimeException("Order not found"));
+        if (order.getStatus() != OrderStatus.CREATED) {
+            throw new RuntimeException("Only created orders can be confirmed");
+        }
+
+        order.setStatus(OrderStatus.SHIPPING);
+        orderRepository.save(order);
+
+        return convertToDto(order);
+    }
+
+    public OrderDto cancelOrder(long Id) {
+        Order order = orderRepository.findById(Id).orElseThrow(() -> new RuntimeException("Order not found"));
+        if (order.getStatus() != OrderStatus.SHIPPING && order.getStatus() != OrderStatus.CREATED) {
+            throw new RuntimeException("Only shipping or created orders can be delivered");
+        }
+
+        order.setStatus(OrderStatus.CANCELLED);
+        orderRepository.save(order);
+
+        return convertToDto(order);
+    }
+
 }
