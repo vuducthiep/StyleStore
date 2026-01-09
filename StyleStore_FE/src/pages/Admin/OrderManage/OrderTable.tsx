@@ -1,4 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import ConfirmDialog from '../../../components/ConfirmDialog';
+import { useToast } from '../../../components/ToastProvider';
 import { buildAuthHeaders, isAuthTokenMissingError } from '../../../services/auth';
 
 type ApiResponse<T> = {
@@ -30,10 +32,9 @@ export interface AdminOrder {
 interface OrderTableProps {
     refreshKey?: number;
     onViewDetail?: (order: AdminOrder) => void;
-    onConfirm?: (order: AdminOrder) => void;
 }
 
-const OrderTable: React.FC<OrderTableProps> = ({ refreshKey = 0, onViewDetail, onConfirm }) => {
+const OrderTable: React.FC<OrderTableProps> = ({ refreshKey = 0, onViewDetail }) => {
     const [orders, setOrders] = useState<AdminOrder[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
@@ -41,6 +42,14 @@ const OrderTable: React.FC<OrderTableProps> = ({ refreshKey = 0, onViewDetail, o
     const [size] = useState(10);
     const [totalPages, setTotalPages] = useState(0);
     const [totalElements, setTotalElements] = useState(0);
+    const [confirmState, setConfirmState] = useState<{
+        open: boolean;
+        action?: 'confirm' | 'cancel';
+        order?: AdminOrder;
+        isLoading: boolean;
+    }>({ open: false, isLoading: false });
+
+    const { pushToast } = useToast();
 
     const fetchOrders = useCallback(async (pageIndex = 0) => {
         setIsLoading(true);
@@ -109,6 +118,8 @@ const OrderTable: React.FC<OrderTableProps> = ({ refreshKey = 0, onViewDetail, o
                 return 'bg-green-100 text-green-700';
             case 'CANCELLED':
                 return 'bg-red-100 text-red-700';
+            case 'SHIPPING':
+                return 'bg-blue-100 text-blue-700';
             case 'PROCESSING':
                 return 'bg-blue-100 text-blue-700';
             default:
@@ -118,6 +129,48 @@ const OrderTable: React.FC<OrderTableProps> = ({ refreshKey = 0, onViewDetail, o
 
     const formatCurrency = (amount: number) => {
         return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
+    };
+
+    const callOrderAction = async (orderId: number, action: 'confirm' | 'cancel') => {
+        const authHeaders = buildAuthHeaders();
+        const res = await fetch(`http://localhost:8080/api/admin/orders/${orderId}/${action}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                ...authHeaders,
+            },
+        });
+
+        const text = await res.text();
+        const data = text ? JSON.parse(text) : {};
+
+        if (!res.ok || !data.success) {
+            throw new Error(data.message || `Thao tác thất bại (code ${res.status}).`);
+        }
+
+        await fetchOrders(page);
+        return data.message || 'Thành công';
+    };
+
+    const openConfirm = (order: AdminOrder, action: 'confirm' | 'cancel') => {
+        setConfirmState({ open: true, action, order, isLoading: false });
+    };
+
+    const handleConfirmAction = async () => {
+        if (!confirmState.order || !confirmState.action) {
+            setConfirmState({ open: false, isLoading: false });
+            return;
+        }
+
+        setConfirmState((prev) => ({ ...prev, isLoading: true }));
+        try {
+            const message = await callOrderAction(confirmState.order.id, confirmState.action);
+            pushToast(message, 'success');
+        } catch (err: any) {
+            pushToast(err?.message || 'Thao tác thất bại.', 'error');
+        } finally {
+            setConfirmState({ open: false, isLoading: false });
+        }
     };
 
     return (
@@ -192,17 +245,30 @@ const OrderTable: React.FC<OrderTableProps> = ({ refreshKey = 0, onViewDetail, o
                                             </button>
                                             <button
                                                 type="button"
-                                                onClick={() => onConfirm?.(order)}
+                                                onClick={() => openConfirm(order, 'confirm')}
                                                 disabled={order.status !== 'CREATED'}
-                                                className={`p-2 rounded border transition ${
-                                                    order.status === 'CREATED'
-                                                        ? 'border-slate-200 hover:border-green-500 hover:text-green-600 cursor-pointer'
-                                                        : 'border-slate-100 text-slate-300 cursor-not-allowed opacity-50'
-                                                }`}
+                                                className={`p-2 rounded border transition ${order.status === 'CREATED'
+                                                    ? 'border-slate-200 hover:border-green-500 hover:text-green-600 cursor-pointer'
+                                                    : 'border-slate-100 text-slate-300 cursor-not-allowed opacity-50'
+                                                    }`}
                                                 title={order.status === 'CREATED' ? 'Xác nhận đơn hàng' : 'Không thể xác nhận'}
                                             >
                                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
                                                     <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                </svg>
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => openConfirm(order, 'cancel')}
+                                                disabled={!(order.status === 'CREATED' || order.status === 'SHIPPING')}
+                                                className={`p-2 rounded border transition ${order.status === 'CREATED' || order.status === 'SHIPPING'
+                                                    ? 'border-slate-200 hover:border-red-500 hover:text-red-600 cursor-pointer'
+                                                    : 'border-slate-100 text-slate-300 cursor-not-allowed opacity-50'
+                                                    }`}
+                                                title={order.status === 'CREATED' || order.status === 'SHIPPING' ? 'Hủy đơn hàng' : 'Không thể hủy'}
+                                            >
+                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                                                 </svg>
                                             </button>
                                         </div>
@@ -238,6 +304,18 @@ const OrderTable: React.FC<OrderTableProps> = ({ refreshKey = 0, onViewDetail, o
                     </div>
                 </div>
             )}
+            <ConfirmDialog
+                open={confirmState.open}
+                title={confirmState.action === 'confirm' ? 'Xác nhận đơn hàng' : 'Hủy đơn hàng'}
+                message={confirmState.order
+                    ? `Bạn có chắc muốn ${confirmState.action === 'confirm' ? 'xác nhận' : 'hủy'} đơn hàng #${confirmState.order.id}?`
+                    : 'Bạn có chắc muốn thực hiện thao tác này?'}
+                confirmText={confirmState.action === 'confirm' ? 'Xác nhận' : 'Hủy đơn'}
+                cancelText="Đóng"
+                isLoading={confirmState.isLoading}
+                onConfirm={handleConfirmAction}
+                onCancel={() => setConfirmState({ open: false, isLoading: false })}
+            />
         </div>
     );
 };
