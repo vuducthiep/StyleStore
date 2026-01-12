@@ -4,6 +4,7 @@ import AdminLayout from './layouts/AdminLayout';
 import Login from './pages/Auth/Login';
 import Register from './pages/Auth/Register';
 import Home from './pages/Customer/Home/Home.page';
+import ProductDetail from './pages/Customer/ProductDetail/ProductDetail.page';
 import UserManager from './pages/Admin/UserManage/UserManager.page';
 import ProductManager from './pages/Admin/ProductManage/ProductManage.page';
 import DashboardPage from './pages/Admin/Dashboard/Dashboard.page';
@@ -27,6 +28,7 @@ const App: React.FC = () => {
 
         {/* Customer Home */}
         <Route path="/" element={<Home />} />
+        <Route path="/product/:id" element={<ProductDetail />} />
       </Routes>
     </BrowserRouter>
   );

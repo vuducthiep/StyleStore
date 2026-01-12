@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 interface Size {
     id: number;
@@ -49,6 +50,7 @@ interface ApiResponse {
 }
 
 export default function ListProduct() {
+    const navigate = useNavigate();
     const [products, setProducts] = useState<Product[]>([]);
     const [loading, setLoading] = useState(true);
     const [currentPage, setCurrentPage] = useState(0);
@@ -198,7 +200,10 @@ export default function ListProduct() {
                                             <div className="text-2xl font-bold text-blue-600">
                                                 {formatPrice(product.price)}
                                             </div>
-                                            <button className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200 transform hover:scale-105">
+                                            <button
+                                                onClick={() => navigate(`/product/${product.id}`)}
+                                                className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200 transform hover:scale-105"
+                                            >
                                                 Xem Chi Tiết
                                             </button>
                                         </div>
