@@ -6,6 +6,7 @@ import Register from './pages/Auth/Register';
 import Home from './pages/Customer/Home/Home.page';
 import ProductDetail from './pages/Customer/ProductDetail/ProductDetail.page';
 import CartPage from './pages/Customer/Cart/Cart.page';
+import ProfilePage from './pages/Customer/Profile/Profile.page';
 import UserManager from './pages/Admin/UserManage/UserManager.page';
 import ProductManager from './pages/Admin/ProductManage/ProductManage.page';
 import DashboardPage from './pages/Admin/Dashboard/Dashboard.page';
@@ -31,6 +32,7 @@ const App: React.FC = () => {
         <Route path="/" element={<Home />} />
         <Route path="/product/:id" element={<ProductDetail />} />
         <Route path="/cart" element={<CartPage />} />
+        <Route path="/profile" element={<ProfilePage />} />
       </Routes>
     </BrowserRouter>
   );
