@@ -4,9 +4,11 @@ import com.example.StyleStore.dto.LoginRequest;
 import com.example.StyleStore.dto.RegisterRequest;
 import com.example.StyleStore.dto.AuthResponse;
 import com.example.StyleStore.model.User;
+import com.example.StyleStore.model.Cart;
 import com.example.StyleStore.model.enums.Role;
 import com.example.StyleStore.model.enums.UserStatus;
 import com.example.StyleStore.repository.UserRepository;
+import com.example.StyleStore.repository.CartRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -20,15 +22,18 @@ import org.springframework.http.HttpStatus;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.logging.Logger;
 
 @Service
 @RequiredArgsConstructor
 public class AuthService {
 
         private final UserRepository userRepository;
+        private final CartRepository cartRepository;
         private final PasswordEncoder passwordEncoder;
         private final JwtService jwtService;
         private final AuthenticationManager authenticationManager;
+        private static final Logger logger = Logger.getLogger(AuthService.class.getName());
 
         public AuthResponse register(RegisterRequest request) {
                 if (userRepository.existsByEmail(request.email())) {
@@ -55,6 +60,18 @@ public class AuthService {
                                 .build();
 
                 userRepository.save(user);
+
+                // Tạo giỏ hàng rỗng cho user
+                try {
+                        Cart cart = Cart.builder()
+                                        .user(user)
+                                        .build();
+                        cartRepository.save(cart);
+                        logger.info("Giỏ hàng đã được tạo cho user: " + user.getEmail());
+                } catch (Exception e) {
+                        logger.severe("Lỗi khi tạo giỏ hàng cho user: " + user.getEmail() + " - " + e.getMessage());
+                        throw new RuntimeException("Lỗi khi tạo giỏ hàng: " + e.getMessage(), e);
+                }
 
                 UserDetails userDetails = new org.springframework.security.core.userdetails.User(
                                 user.getEmail(),

@@ -28,6 +28,27 @@ public class JwtService {
         return extractClaim(token, Claims::getSubject);
     }
 
+    // Extract userId claim from JWT
+    public Long extractUserId(String token) {
+        return extractClaim(token, claims -> {
+            Object uid = claims.get("userId");
+            if (uid instanceof Integer) {
+                return ((Integer) uid).longValue();
+            }
+            if (uid instanceof Long) {
+                return (Long) uid;
+            }
+            if (uid instanceof String) {
+                try {
+                    return Long.parseLong((String) uid);
+                } catch (NumberFormatException e) {
+                    return null;
+                }
+            }
+            return null;
+        });
+    }
+
     public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
         final Claims claims = extractAllClaims(token);
         return claimsResolver.apply(claims);

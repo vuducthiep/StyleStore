@@ -48,6 +48,9 @@ public class User {
     @Column(name = "address", length = 255)
     private String address;
 
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private Cart cart;
+
     @CreationTimestamp // Hibernate annotation auto
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;

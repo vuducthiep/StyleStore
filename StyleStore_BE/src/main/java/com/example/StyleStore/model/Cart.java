@@ -1,5 +1,6 @@
 package com.example.StyleStore.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -15,13 +16,11 @@ public class Cart {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // Many-to-one relationship with User
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
+    // One-to-one relationship with User
+    @JsonIgnore
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false, unique = true)
     private User user;
-
-    @Column(name = "total_price", nullable = false)
-    private Double totalPrice = 0.0;
 
     @Column(name = "created_at", nullable = false)
     private java.time.LocalDateTime createdAt;
@@ -31,6 +30,17 @@ public class Cart {
 
     @OneToMany(mappedBy = "cart", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private java.util.List<CartItem> cartItems;
+
+    // Tính tổng giá từ cart_items (không lưu vào DB)
+    @Transient
+    public Double getTotalPrice() {
+        if (cartItems == null || cartItems.isEmpty()) {
+            return 0.0;
+        }
+        return cartItems.stream()
+                .mapToDouble(item -> item.getProduct().getPrice() * item.getQuantity())
+                .sum();
+    }
 
     // auto set time
     @PrePersist

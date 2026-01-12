@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ChevronLeft, ShoppingCart, Check } from "lucide-react";
-
+import Header from "../../../components/Header";
 interface Size {
     id: number;
     name: string;
@@ -166,8 +166,11 @@ export default function ProductDetail() {
     const availableSizes = product.productSizes.filter(ps => ps.stock > 0);
 
     return (
+
+
         <div className="min-h-screen bg-gray-50">
             {/* Header */}
+            < Header />
             <div className="bg-white shadow-sm">
                 <div className="max-w-7xl mx-auto px-4 py-4">
                     <button
@@ -179,6 +182,7 @@ export default function ProductDetail() {
                     </button>
                 </div>
             </div>
+
 
             {/* Product Detail */}
             <div className="max-w-7xl mx-auto px-4 py-12">
@@ -239,8 +243,8 @@ export default function ProductDetail() {
                                             key={ps.id}
                                             onClick={() => setSelectedSize(ps.id)}
                                             className={`px-6 py-3 rounded-lg font-semibold transition-all ${selectedSize === ps.id
-                                                    ? "bg-blue-600 text-white scale-105"
-                                                    : "bg-gray-200 text-gray-900 hover:bg-gray-300"
+                                                ? "bg-blue-600 text-white scale-105"
+                                                : "bg-gray-200 text-gray-900 hover:bg-gray-300"
                                                 }`}
                                         >
                                             {ps.size.name} ({ps.stock})
@@ -277,10 +281,10 @@ export default function ProductDetail() {
                             onClick={handleAddToCart}
                             disabled={availableSizes.length === 0 || addedToCart}
                             className={`w-full py-4 rounded-lg font-bold text-lg transition-all flex items-center justify-center gap-2 ${addedToCart
-                                    ? "bg-green-500 text-white"
-                                    : availableSizes.length === 0
-                                        ? "bg-gray-300 text-gray-600 cursor-not-allowed"
-                                        : "bg-blue-600 hover:bg-blue-700 text-white hover:scale-105"
+                                ? "bg-green-500 text-white"
+                                : availableSizes.length === 0
+                                    ? "bg-gray-300 text-gray-600 cursor-not-allowed"
+                                    : "bg-blue-600 hover:bg-blue-700 text-white hover:scale-105"
                                 }`}
                         >
                             {addedToCart ? (
