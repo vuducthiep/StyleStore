@@ -5,6 +5,7 @@ import Login from './pages/Auth/Login';
 import Register from './pages/Auth/Register';
 import Home from './pages/Customer/Home/Home.page';
 import ProductDetail from './pages/Customer/ProductDetail/ProductDetail.page';
+import CartPage from './pages/Customer/Cart/Cart.page';
 import UserManager from './pages/Admin/UserManage/UserManager.page';
 import ProductManager from './pages/Admin/ProductManage/ProductManage.page';
 import DashboardPage from './pages/Admin/Dashboard/Dashboard.page';
@@ -26,9 +27,10 @@ const App: React.FC = () => {
           <Route path="/admin/order-manager" element={<OrderManage />} />
         </Route>
 
-        {/* Customer Home */}
+        {/* Customer Routes */}
         <Route path="/" element={<Home />} />
         <Route path="/product/:id" element={<ProductDetail />} />
+        <Route path="/cart" element={<CartPage />} />
       </Routes>
     </BrowserRouter>
   );

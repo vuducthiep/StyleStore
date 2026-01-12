@@ -131,10 +131,7 @@ export const Header = () => {
                         >
                             <ShoppingCart className="w-6 h-6" />
                             <span className="text-sm font-medium hidden sm:inline">Giỏ hàng</span>
-                            {/* Badge for cart count - optional */}
-                            <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center group-hover:bg-red-600 transition-colors">
-                                0
-                            </span>
+
                         </button>
 
                         {/* Purchase History Button */}

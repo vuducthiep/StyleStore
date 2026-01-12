@@ -43,14 +43,14 @@ interface ApiResponse {
     data: Product;
 }
 
-interface CartItem {
-    productId: number;
-    productName: string;
-    price: number;
-    selectedSize: string;
-    quantity: number;
-    thumbnail: string;
-}
+// interface CartItem {
+//     productId: number;
+//     productName: string;
+//     price: number;
+//     selectedSize: string;
+//     quantity: number;
+//     thumbnail: string;
+// }
 
 export default function ProductDetail() {
     const { id } = useParams<{ id: string }>();
@@ -96,7 +96,7 @@ export default function ProductDetail() {
         }).format(price);
     };
 
-    const handleAddToCart = () => {
+    const handleAddToCart = async () => {
         if (!selectedSize) {
             alert("Vui lòng chọn size");
             return;
@@ -104,39 +104,50 @@ export default function ProductDetail() {
 
         if (!product) return;
 
-        // Lấy giỏ hàng từ localStorage
-        const cart: CartItem[] = JSON.parse(localStorage.getItem("cart") || "[]");
+        try {
+            // Lấy Size.id từ ProductSize (selectedSize là ProductSize.id)
+            const selectedProductSize = product.productSizes.find(ps => ps.id === selectedSize);
+            if (!selectedProductSize) {
+                throw new Error("Size không hợp lệ");
+            }
 
-        // Tìm sản phẩm đã có trong giỏ
-        const existingItem = cart.find(
-            (item) => item.productId === product.id && item.selectedSize === product.productSizes.find(ps => ps.id === selectedSize)?.size.name
-        );
+            const sizeId = selectedProductSize.size.id;
 
-        const selectedSizeObj = product.productSizes.find(ps => ps.id === selectedSize);
-        const sizeName = selectedSizeObj?.size.name || "";
-
-        if (existingItem) {
-            existingItem.quantity += quantity;
-        } else {
-            cart.push({
-                productId: product.id,
-                productName: product.name,
-                price: product.price,
-                selectedSize: sizeName,
-                quantity,
-                thumbnail: product.thumbnail,
+            // Gọi API thêm vào giỏ hàng
+            const params = new URLSearchParams({
+                productId: product.id.toString(),
+                sizeId: sizeId.toString(),
+                quantity: quantity.toString(),
             });
+
+            const response = await fetch(
+                `http://localhost:8080/api/user/cart/add?${params.toString()}`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${localStorage.getItem("token")}`,
+                    },
+                }
+            );
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || "Lỗi khi thêm vào giỏ hàng");
+            }
+
+            setAddedToCart(true);
+
+            // Reset sau 2 giây
+            setTimeout(() => {
+                setAddedToCart(false);
+                setSelectedSize(null);
+                setQuantity(1);
+            }, 2000);
+        } catch (error) {
+            alert(error instanceof Error ? error.message : "Có lỗi xảy ra");
+            console.error("Error adding to cart:", error);
         }
-
-        localStorage.setItem("cart", JSON.stringify(cart));
-        setAddedToCart(true);
-
-        // Reset sau 2 giây
-        setTimeout(() => {
-            setAddedToCart(false);
-            setSelectedSize(null);
-            setQuantity(1);
-        }, 2000);
     };
 
     if (loading) {
