@@ -1,0 +1,249 @@
+import { useState, useEffect } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+
+interface Size {
+    id: number;
+    name: string;
+}
+
+interface ProductSize {
+    id: number;
+    size: Size;
+    stock: number;
+}
+
+interface Category {
+    id: number;
+    name: string;
+    description: string;
+    status: string;
+    createdAt: string;
+    updatedAt: string;
+}
+
+interface Product {
+    id: number;
+    name: string;
+    description: string;
+    gender: string;
+    brand: string;
+    price: number;
+    thumbnail: string;
+    status: string;
+    createdAt: string;
+    updatedAt: string;
+    category: Category;
+    productSizes: ProductSize[];
+}
+
+interface ApiResponse {
+    success: boolean;
+    message: string;
+    data: {
+        content: Product[];
+        totalPages: number;
+        totalElements: number;
+        currentPage: number;
+        size: number;
+    };
+}
+
+export default function ListProduct() {
+    const [products, setProducts] = useState<Product[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [currentPage, setCurrentPage] = useState(0);
+    const [totalPages, setTotalPages] = useState(0);
+    const [error, setError] = useState<string | null>(null);
+
+    const pageSize = 12;
+
+    useEffect(() => {
+        fetchProducts(currentPage);
+    }, [currentPage]);
+
+    const fetchProducts = async (page: number) => {
+        try {
+            setLoading(true);
+            const response = await fetch(
+                `http://localhost:8080/api/user/products?page=${page}&size=${pageSize}&sortBy=createdAt&sortDir=desc`
+            );
+
+            if (!response.ok) {
+                throw new Error("Không thể lấy dữ liệu sản phẩm");
+            }
+
+            const data: ApiResponse = await response.json();
+            setProducts(data.data.content);
+            setTotalPages(data.data.totalPages);
+            setError(null);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : "Có lỗi xảy ra");
+            console.error("Error fetching products:", err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleNextPage = () => {
+        if (currentPage < totalPages - 1) {
+            setCurrentPage(currentPage + 1);
+            window.scrollTo({ top: 0, behavior: "smooth" });
+        }
+    };
+
+    const handlePrevPage = () => {
+        if (currentPage > 0) {
+            setCurrentPage(currentPage - 1);
+            window.scrollTo({ top: 0, behavior: "smooth" });
+        }
+    };
+
+    const formatPrice = (price: number) => {
+        return new Intl.NumberFormat("vi-VN", {
+            style: "currency",
+            currency: "VND",
+        }).format(price);
+    };
+
+    if (error) {
+        return (
+            <div className="flex items-center justify-center min-h-screen">
+                <div className="text-center">
+                    <p className="text-red-500 text-lg font-semibold">{error}</p>
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="w-full bg-gray-50 py-12 px-4">
+            <div className="max-w-7xl mx-auto">
+                {/* Header */}
+                <div className="text-center mb-12">
+                    <h2 className="text-4xl font-bold text-gray-900 mb-2">Sản Phẩm</h2>
+                    <p className="text-gray-600 text-lg">Khám phá bộ sưu tập thời trang của chúng tôi</p>
+                </div>
+
+                {/* Loading State */}
+                {loading ? (
+                    <div className="flex justify-center items-center min-h-96">
+                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                    </div>
+                ) : (
+                    <>
+                        {/* Products Grid */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
+                            {products.map((product) => (
+                                <div
+                                    key={product.id}
+                                    className="group bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
+                                >
+                                    {/* Product Image */}
+                                    <div className="relative overflow-hidden bg-gray-200 h-64">
+                                        <img
+                                            src={product.thumbnail}
+                                            alt={product.name}
+                                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                                        />
+                                        {product.status === "ACTIVE" && (
+                                            <div className="absolute top-3 right-3 bg-green-500 text-white px-3 py-1 rounded-full text-xs font-semibold">
+                                                Có sẵn
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Product Info */}
+                                    <div className="p-5">
+                                        {/* Category */}
+                                        <p className="text-xs text-blue-600 font-semibold uppercase tracking-wide mb-2">
+                                            {product.category.name}
+                                        </p>
+
+                                        {/* Product Name */}
+                                        <h3 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-2 group-hover:text-blue-600 transition-colors">
+                                            {product.name}
+                                        </h3>
+
+                                        {/* Description */}
+                                        <p className="text-sm text-gray-600 mb-3 line-clamp-1">
+                                            {product.description}
+                                        </p>
+
+                                        {/* Brand & Gender */}
+                                        <div className="flex justify-between items-center mb-3 text-xs text-gray-500">
+                                            <span className="font-medium">{product.brand?.toUpperCase() || "N/A"}</span>
+                                            <span className="px-2 py-1 bg-gray-100 rounded">{product.gender || "Chưa xác định"}</span>
+                                        </div>
+
+                                        {/* Sizes */}
+                                        <div className="mb-4">
+                                            <p className="text-xs font-semibold text-gray-700 mb-2">Size:</p>
+                                            <div className="flex flex-wrap gap-2">
+                                                {product.productSizes.map((ps) => (
+                                                    <span
+                                                        key={ps.id}
+                                                        className={`text-xs px-2 py-1 rounded border transition-colors ${ps.stock > 0
+                                                            ? "border-gray-300 text-gray-700 hover:border-blue-500 hover:text-blue-600"
+                                                            : "border-gray-200 text-gray-400 line-through"
+                                                            }`}
+                                                    >
+                                                        {ps.size.name}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        {/* Price & Button */}
+                                        <div className="flex items-center justify-between pt-4 border-t border-gray-200">
+                                            <div className="text-2xl font-bold text-blue-600">
+                                                {formatPrice(product.price)}
+                                            </div>
+                                            <button className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200 transform hover:scale-105">
+                                                Xem Chi Tiết
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* Pagination */}
+                        {totalPages > 1 && (
+                            <div className="flex items-center justify-center gap-4 mt-12">
+                                <button
+                                    onClick={handlePrevPage}
+                                    disabled={currentPage === 0}
+                                    className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white border border-gray-300 text-gray-700 font-semibold hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                >
+                                    <ChevronLeft size={20} />
+                                    Trang Trước
+                                </button>
+
+                                {/* Page Info */}
+                                <div className="text-gray-700 font-semibold">
+                                    Trang <span className="text-blue-600">{currentPage + 1}</span> / {totalPages}
+                                </div>
+
+                                <button
+                                    onClick={handleNextPage}
+                                    disabled={currentPage >= totalPages - 1}
+                                    className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                >
+                                    Trang Sau
+                                    <ChevronRight size={20} />
+                                </button>
+                            </div>
+                        )}
+
+                        {/* No Products Message */}
+                        {products.length === 0 && !loading && (
+                            <div className="text-center py-12">
+                                <p className="text-gray-500 text-lg">Không có sản phẩm để hiển thị</p>
+                            </div>
+                        )}
+                    </>
+                )}
+            </div>
+        </div>
+    );
+}
