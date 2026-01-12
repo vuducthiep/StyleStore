@@ -1,7 +1,44 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Trash2, Plus, Minus, ShoppingBag } from "lucide-react";
+import { Trash2, Plus, Minus, ShoppingBag, MapPin } from "lucide-react";
 import Header from "../../../components/Header";
+import vietnamAddressData from "../../../vietnamAddress.json";
+
+interface Province {
+    Id: string;
+    Name: string;
+    Districts: District[];
+}
+
+interface District {
+    Id: string;
+    Name: string;
+    Wards: Ward[];
+}
+
+interface Ward {
+    Id: string;
+    Name: string;
+    Level?: string;
+}
+
+interface UserProfile {
+    id: number;
+    fullName: string;
+    email: string;
+    phoneNumber: string;
+    gender: string;
+    address: string;
+    role: string;
+    status: string;
+    createdAt: string;
+}
+
+interface UserProfileResponse {
+    success: boolean;
+    message: string;
+    data: UserProfile;
+}
 
 interface Size {
     id: number;
@@ -37,12 +74,22 @@ interface ApiResponse {
 
 export default function CartPage() {
     const navigate = useNavigate();
+    const vietnamAddress = vietnamAddressData as Province[];
     const [cart, setCart] = useState<Cart | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+
+    // Address selection state
+    const [addressType, setAddressType] = useState<'home' | 'custom'>('home');
+    const [selectedProvince, setSelectedProvince] = useState("");
+    const [selectedDistrict, setSelectedDistrict] = useState("");
+    const [selectedWard, setSelectedWard] = useState("");
+    const [detailedAddress, setDetailedAddress] = useState("");
 
     useEffect(() => {
         fetchCart();
+        fetchUserProfile();
     }, []);
 
     const fetchCart = async () => {
@@ -66,6 +113,95 @@ export default function CartPage() {
             console.error("Error fetching cart:", err);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const fetchUserProfile = async () => {
+        try {
+            const response = await fetch("http://localhost:8080/api/user/profile", {
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem("token")}`,
+                },
+            });
+
+            if (response.ok) {
+                const data: UserProfileResponse = await response.json();
+                setUserProfile(data.data);
+            }
+        } catch (err) {
+            console.error("Error fetching user profile:", err);
+        }
+    };
+
+    const getProvinceName = (provinceId: string) => {
+        const province = vietnamAddress.find(p => p.Id === provinceId);
+        return province?.Name || "";
+    };
+
+    const getDistrictName = (districtId: string) => {
+        if (!selectedProvince) return "";
+        const province = vietnamAddress.find(p => p.Id === selectedProvince);
+        const district = province?.Districts.find(d => d.Id === districtId);
+        return district?.Name || "";
+    };
+
+    const getWardName = (wardId: string) => {
+        if (!selectedProvince || !selectedDistrict) return "";
+        const province = vietnamAddress.find(p => p.Id === selectedProvince);
+        const district = province?.Districts.find(d => d.Id === selectedDistrict);
+        const ward = district?.Wards.find(w => w.Id === wardId);
+        return ward?.Name || "";
+    };
+
+    const handleProvinceChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        setSelectedProvince(e.target.value);
+        setSelectedDistrict("");
+        setSelectedWard("");
+    };
+
+    const handleDistrictChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        setSelectedDistrict(e.target.value);
+        setSelectedWard("");
+    };
+
+    const handleWardChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        setSelectedWard(e.target.value);
+    };
+
+    const getProvincesForSelect = (): Province[] => vietnamAddress as Province[];
+
+    const getDistrictsForSelect = (): District[] => {
+        if (!selectedProvince) return [];
+        const province = vietnamAddress.find(p => p.Id === selectedProvince);
+        return province?.Districts || [];
+    };
+
+    const getWardsForSelect = (): Ward[] => {
+        if (!selectedProvince || !selectedDistrict) return [];
+        const province = vietnamAddress.find(p => p.Id === selectedProvince);
+        const district = province?.Districts.find(d => d.Id === selectedDistrict);
+        return district?.Wards || [];
+    };
+
+    const getSelectedAddress = () => {
+        if (addressType === 'home') {
+            return userProfile?.address || "Chưa có địa chỉ";
+        } else {
+            const parts = [];
+            if (detailedAddress) parts.push(detailedAddress);
+            if (selectedWard) {
+                const wardName = getWardName(selectedWard);
+                if (wardName) parts.push(wardName);
+            }
+            if (selectedDistrict) {
+                const districtName = getDistrictName(selectedDistrict);
+                if (districtName) parts.push(districtName);
+            }
+            if (selectedProvince) {
+                const provinceName = getProvinceName(selectedProvince);
+                if (provinceName) parts.push(provinceName);
+            }
+            return parts.length > 0 ? parts.join(", ") : "Chưa chọn địa chỉ";
         }
     };
 
@@ -320,6 +456,134 @@ export default function CartPage() {
                                     >
                                         Xóa toàn bộ giỏ hàng
                                     </button>
+                                </div>
+                            </div>
+
+                            {/* Address Section */}
+                            <div className="bg-white rounded-lg shadow overflow-hidden mt-6">
+                                <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4 text-white">
+                                    <div className="flex items-center gap-2">
+                                        <MapPin size={24} />
+                                        <h3 className="text-lg font-bold">Địa chỉ giao hàng</h3>
+                                    </div>
+                                </div>
+
+                                <div className="p-6">
+                                    {/* Address Type Selection */}
+                                    <div className="mb-6 space-y-3">
+                                        {/* Option 1: Home Address */}
+                                        <label className="flex items-start gap-3 p-4 border-2 rounded-lg cursor-pointer transition hover:bg-blue-50" style={{ borderColor: addressType === 'home' ? '#2563eb' : '#e5e7eb' }}>
+                                            <input
+                                                type="radio"
+                                                name="addressType"
+                                                value="home"
+                                                checked={addressType === 'home'}
+                                                onChange={(e) => setAddressType(e.target.value as 'home' | 'custom')}
+                                                className="mt-1 w-4 h-4 cursor-pointer"
+                                            />
+                                            <div className="flex-1">
+                                                <p className="font-semibold text-gray-900 mb-1">Địa chỉ nhà riêng</p>
+                                                <p className="text-sm text-gray-600">{userProfile?.address || "Chưa cập nhật"}</p>
+                                            </div>
+                                        </label>
+
+                                        {/* Option 2: Custom Address */}
+                                        <label className="flex items-start gap-3 p-4 border-2 rounded-lg cursor-pointer transition hover:bg-blue-50" style={{ borderColor: addressType === 'custom' ? '#2563eb' : '#e5e7eb' }}>
+                                            <input
+                                                type="radio"
+                                                name="addressType"
+                                                value="custom"
+                                                checked={addressType === 'custom'}
+                                                onChange={(e) => setAddressType(e.target.value as 'home' | 'custom')}
+                                                className="mt-1 w-4 h-4 cursor-pointer"
+                                            />
+                                            <div className="flex-1">
+                                                <p className="font-semibold text-gray-900 mb-3">Địa chỉ tự chọn</p>
+
+                                                {/* Address Selection Dropdowns */}
+                                                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
+                                                    {/* Province */}
+                                                    <div>
+                                                        <label className="block text-xs font-semibold text-gray-600 mb-1">
+                                                            Tỉnh/Thành phố
+                                                        </label>
+                                                        <select
+                                                            value={selectedProvince}
+                                                            onChange={handleProvinceChange}
+                                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                                                        >
+                                                            <option value="">Chọn tỉnh/thành phố</option>
+                                                            {getProvincesForSelect().map((province) => (
+                                                                <option key={province.Id} value={province.Id}>
+                                                                    {province.Name}
+                                                                </option>
+                                                            ))}
+                                                        </select>
+                                                    </div>
+
+                                                    {/* District */}
+                                                    <div>
+                                                        <label className="block text-xs font-semibold text-gray-600 mb-1">
+                                                            Quận/Huyện
+                                                        </label>
+                                                        <select
+                                                            value={selectedDistrict}
+                                                            onChange={handleDistrictChange}
+                                                            disabled={!selectedProvince}
+                                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm disabled:bg-gray-100 disabled:cursor-not-allowed"
+                                                        >
+                                                            <option value="">Chọn quận/huyện</option>
+                                                            {getDistrictsForSelect().map((district) => (
+                                                                <option key={district.Id} value={district.Id}>
+                                                                    {district.Name}
+                                                                </option>
+                                                            ))}
+                                                        </select>
+                                                    </div>
+
+                                                    {/* Ward */}
+                                                    <div>
+                                                        <label className="block text-xs font-semibold text-gray-600 mb-1">
+                                                            Phường/Xã
+                                                        </label>
+                                                        <select
+                                                            value={selectedWard}
+                                                            onChange={handleWardChange}
+                                                            disabled={!selectedDistrict}
+                                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm disabled:bg-gray-100 disabled:cursor-not-allowed"
+                                                        >
+                                                            <option value="">Chọn phường/xã</option>
+                                                            {getWardsForSelect().map((ward) => (
+                                                                <option key={ward.Id} value={ward.Id}>
+                                                                    {ward.Name}
+                                                                </option>
+                                                            ))}
+                                                        </select>
+                                                    </div>
+                                                </div>
+
+                                                {/* Detailed Address */}
+                                                <div>
+                                                    <label className="block text-xs font-semibold text-gray-600 mb-1">
+                                                        Số nhà, đường, v.v.
+                                                    </label>
+                                                    <input
+                                                        type="text"
+                                                        value={detailedAddress}
+                                                        onChange={(e) => setDetailedAddress(e.target.value)}
+                                                        placeholder="Nhập số nhà, tên đường..."
+                                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                                                    />
+                                                </div>
+                                            </div>
+                                        </label>
+                                    </div>
+
+                                    {/* Selected Address Display */}
+                                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-6">
+                                        <p className="text-sm text-gray-600 mb-1">Địa chỉ giao hàng:</p>
+                                        <p className="text-gray-900 font-semibold">{getSelectedAddress()}</p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
