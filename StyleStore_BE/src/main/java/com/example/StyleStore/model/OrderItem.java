@@ -28,7 +28,7 @@ public class OrderItem {
     // Many-to-one relationship with Size
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "size_id", nullable = false)
-    private ProductSize productSize;
+    private Size size;
 
     @Column(name = "quantity", nullable = false)
     private Integer quantity;

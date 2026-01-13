@@ -3,17 +3,20 @@ package com.example.StyleStore.service;
 import com.example.StyleStore.dto.MonthlyRevenueDto;
 import com.example.StyleStore.dto.OrderDto;
 import com.example.StyleStore.dto.OrderItemDto;
+import com.example.StyleStore.dto.OrderRequest;
 import com.example.StyleStore.dto.RevenueGrowthDto;
-import com.example.StyleStore.model.Order;
-import com.example.StyleStore.model.OrderItem;
+import com.example.StyleStore.model.*;
 import com.example.StyleStore.model.enums.OrderStatus;
 import com.example.StyleStore.repository.OrderItemRepository;
 import com.example.StyleStore.repository.OrderRepository;
+import com.example.StyleStore.repository.ProductRepository;
+import com.example.StyleStore.repository.ProductSizeRepository;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -28,10 +31,15 @@ public class OrderService {
 
     private final OrderRepository orderRepository;
     private final OrderItemRepository orderItemRepository;
+    private final ProductRepository productRepository;
+    private final ProductSizeRepository productSizeRepository;
 
-    public OrderService(OrderRepository orderRepository, OrderItemRepository orderItemRepository) {
+    public OrderService(OrderRepository orderRepository, OrderItemRepository orderItemRepository,
+            ProductRepository productRepository, ProductSizeRepository productSizeRepository) {
         this.orderRepository = orderRepository;
         this.orderItemRepository = orderItemRepository;
+        this.productRepository = productRepository;
+        this.productSizeRepository = productSizeRepository;
     }
 
     @Cacheable(cacheNames = "stats:revenue:monthly", key = "'fixed'")
@@ -113,6 +121,13 @@ public class OrderService {
                 .orElse(null);
     }
 
+    public List<OrderDto> getOrdersByUserId(Long userId) {
+        List<Order> orders = orderRepository.findByUser_IdOrderByCreatedAtDesc(userId);
+        return orders.stream()
+                .map(this::convertToDto)
+                .collect(Collectors.toList());
+    }
+
     private OrderDto convertToDto(Order order) {
         return OrderDto.builder()
                 .id(order.getId())
@@ -137,8 +152,8 @@ public class OrderService {
                         .productId(item.getProduct().getId())
                         .productName(item.getProduct().getName())
                         .productImage(item.getProduct().getThumbnail())
-                        .sizeId(item.getProductSize().getId())
-                        .sizeName(item.getProductSize().getSize().getName())
+                        .sizeId(item.getSize().getId())
+                        .sizeName(item.getSize().getName())
                         .quantity(item.getQuantity())
                         .price(item.getPrice())
                         .subtotal(item.getPrice() * item.getQuantity())
@@ -182,6 +197,76 @@ public class OrderService {
         orderRepository.save(order);
 
         return convertToDto(order);
+    }
+
+    @Transactional
+    public OrderDto createOrder(User user, OrderRequest request) {
+        // 1. Validate request
+        if (request.getOrderItems() == null || request.getOrderItems().isEmpty()) {
+            throw new RuntimeException("Danh sách sản phẩm không được để trống");
+        }
+
+        // 2. Tính tổng tiền
+        Double totalAmount = request.getOrderItems().stream()
+                .mapToDouble(item -> item.getPrice() * item.getQuantity())
+                .sum();
+
+        // 3. Tạo Order
+        Order order = Order.builder()
+                .user(user)
+                .totalAmount(totalAmount)
+                .shippingAddress(request.getShippingAddress())
+                .paymentMethod(request.getPaymentMethod())
+                .status(OrderStatus.CREATED)
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
+                .build();
+
+        Order savedOrder = orderRepository.save(order);
+
+        // 4. Tạo OrderItems từ request
+        List<OrderItem> orderItems = request.getOrderItems().stream()
+                .map(itemRequest -> {
+                    // Kiểm tra Product tồn tại
+                    Product product = productRepository.findById(itemRequest.getProductId())
+                            .orElseThrow(() -> new RuntimeException(
+                                    "Sản phẩm với ID " + itemRequest.getProductId() + " không tồn tại"));
+
+                    // Kiểm tra ProductSize tồn tại
+                    ProductSize productSize = productSizeRepository
+                            .findByProduct_IdAndSize_Id(itemRequest.getProductId(), itemRequest.getSizeId())
+                            .orElseThrow(() -> new RuntimeException(
+                                    "Size không có sẵn cho sản phẩm này"));
+
+                    // Kiểm tra stock đủ không
+                    if (productSize.getStock() < itemRequest.getQuantity()) {
+                        throw new RuntimeException(
+                                "Sản phẩm " + product.getName() + ", size " + productSize.getSize().getName()
+                                        + " chỉ còn " + productSize.getStock() + " cái");
+                    }
+
+                    // Giảm stock
+                    productSize.setStock(productSize.getStock() - itemRequest.getQuantity());
+                    productSizeRepository.save(productSize);
+
+                    // Tạo OrderItem
+                    return OrderItem.builder()
+                            .order(savedOrder)
+                            .product(product)
+                            .size(productSize.getSize())
+                            .quantity(itemRequest.getQuantity())
+                            .price(itemRequest.getPrice())
+                            .build();
+                })
+                .collect(Collectors.toList());
+
+        List<OrderItem> savedOrderItems = orderItemRepository.saveAll(orderItems);
+
+        // 5. Set orderItems vào savedOrder để convertToDetailDto có thể sử dụng
+        savedOrder.setOrderItems(savedOrderItems);
+
+        // 6. Return OrderDto
+        return convertToDetailDto(savedOrder);
     }
 
 }

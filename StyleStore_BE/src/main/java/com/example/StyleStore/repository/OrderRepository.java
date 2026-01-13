@@ -48,4 +48,6 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
                         @Param("month") int month,
                         @Param("completedStatus") String completedStatus);
 
+        List<Order> findByUser_IdOrderByCreatedAtDesc(Long userId);
+
 }
