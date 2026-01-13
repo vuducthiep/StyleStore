@@ -89,6 +89,7 @@ export default function CartPage() {
     const [selectedWard, setSelectedWard] = useState("");
     const [detailedAddress, setDetailedAddress] = useState("");
     const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("COD");
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     useEffect(() => {
         fetchCart();
@@ -296,6 +297,64 @@ export default function CartPage() {
             style: "currency",
             currency: "VND",
         }).format(price);
+    };
+
+    const handleCheckout = async () => {
+        if (!cart || cart.cartItems.length === 0) {
+            alert("Giỏ hàng trống");
+            return;
+        }
+
+        const shippingAddress = getSelectedAddress();
+        if (!shippingAddress || shippingAddress.includes("Chưa")) {
+            alert("Vui lòng chọn hoặc nhập địa chỉ giao hàng");
+            return;
+        }
+
+        const token = localStorage.getItem("token");
+        if (!token) {
+            alert("Vui lòng đăng nhập");
+            navigate("/login");
+            return;
+        }
+
+        const payload = {
+            shippingAddress,
+            paymentMethod,
+            orderItems: cart.cartItems.map((item) => ({
+                productId: item.product.id,
+                sizeId: item.size.id,
+                quantity: item.quantity,
+                price: item.price,
+            })),
+        };
+
+        setIsSubmitting(true);
+        try {
+            const response = await fetch("http://localhost:8080/api/user/orders", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify(payload),
+            });
+
+            const result = await response.json();
+
+            if (!response.ok || !result.success) {
+                alert(result.message || "Tạo đơn hàng thất bại");
+                return;
+            }
+
+            alert("Đặt hàng thành công");
+            navigate("/");
+        } catch (err) {
+            console.error("Checkout error", err);
+            alert("Có lỗi xảy ra, vui lòng thử lại");
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     if (loading) {
@@ -680,8 +739,12 @@ export default function CartPage() {
                                     </div>
                                 </div>
 
-                                <button className="w-full bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700 transition mb-2">
-                                    Thanh toán
+                                <button
+                                    onClick={handleCheckout}
+                                    disabled={isSubmitting}
+                                    className="w-full bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700 transition mb-2 disabled:opacity-60 disabled:cursor-not-allowed"
+                                >
+                                    {isSubmitting ? "Đang xử lý..." : "Thanh toán"}
                                 </button>
                                 <button
                                     onClick={() => navigate("/")}
