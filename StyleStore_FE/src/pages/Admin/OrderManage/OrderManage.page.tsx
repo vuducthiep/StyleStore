@@ -18,10 +18,10 @@ const OrderManage: React.FC = () => {
     };
 
     //use api confirm order 
-    const handleConfirmOrder = async (order: AdminOrder) => {
-        console.log('Confirm order:', order);
+    // const handleConfirmOrder = async (order: AdminOrder) => {
+    //     console.log('Confirm order:', order);
 
-    };
+    // };
 
     return (
         <div className="p-6 w-full">
@@ -41,7 +41,7 @@ const OrderManage: React.FC = () => {
             <OrderTable
                 refreshKey={refreshKey}
                 onViewDetail={handleViewDetail}
-                onConfirm={handleConfirmOrder}
+            // onConfirm={handleConfirmOrder}
             />
 
             <OrderModal

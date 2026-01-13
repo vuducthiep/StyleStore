@@ -166,8 +166,9 @@ const OrderTable: React.FC<OrderTableProps> = ({ refreshKey = 0, onViewDetail })
         try {
             const message = await callOrderAction(confirmState.order.id, confirmState.action);
             pushToast(message, 'success');
-        } catch (err: any) {
-            pushToast(err?.message || 'Thao tác thất bại.', 'error');
+        } catch (err) {
+            const errorMessage = err instanceof Error ? err.message : 'Thao tác thất bại.';
+            pushToast(errorMessage, 'error');
         } finally {
             setConfirmState({ open: false, isLoading: false });
         }

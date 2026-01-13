@@ -141,7 +141,7 @@ export const Header = () => {
                             title="Lịch sử mua hàng"
                         >
                             <History className="w-6 h-6" />
-                            <span className="text-sm font-medium hidden sm:inline">Lịch sử</span>
+                            <span className="text-sm font-medium hidden sm:inline">Lịch sử đơn hàng</span>
                         </button>
 
                         {/* Auth Section */}

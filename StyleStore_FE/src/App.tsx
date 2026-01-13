@@ -11,6 +11,7 @@ import UserManager from './pages/Admin/UserManage/UserManager.page';
 import ProductManager from './pages/Admin/ProductManage/ProductManage.page';
 import DashboardPage from './pages/Admin/Dashboard/Dashboard.page';
 import OrderManage from './pages/Admin/OrderManage/OrderManage.page';
+import OrderPage from './pages/Customer/Order/Order.page';
 
 const App: React.FC = () => {
   return (
@@ -33,6 +34,7 @@ const App: React.FC = () => {
         <Route path="/product/:id" element={<ProductDetail />} />
         <Route path="/cart" element={<CartPage />} />
         <Route path="/profile" element={<ProfilePage />} />
+        <Route path='/orders' element={<OrderPage />} />
       </Routes>
     </BrowserRouter>
   );
