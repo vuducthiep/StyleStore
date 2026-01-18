@@ -109,7 +109,7 @@ export default function CartPage() {
             });
 
             if (!response.ok) {
-                throw new Error("Không thể lấy giỏ hàng");
+                throw new Error("Không thể lấy giỏ hàng hoặc phiên đã hết hạn. Vui lòng đăng nhập lại.");
             }
 
             const data: ApiResponse = await response.json();
@@ -175,7 +175,7 @@ export default function CartPage() {
         setSelectedWard(wardId);
     };
 
-    const getProvincesForSelect = (): Province[] => vietnamAddress as Province[];
+    // const getProvincesForSelect = (): Province[] => vietnamAddress as Province[];
 
     const getDistrictsForSelect = (): District[] => {
         if (!selectedProvince) return [];
@@ -295,12 +295,12 @@ export default function CartPage() {
         }
     };
 
-    const formatPrice = (price: number) => {
-        return new Intl.NumberFormat("vi-VN", {
-            style: "currency",
-            currency: "VND",
-        }).format(price);
-    };
+    // const formatPrice = (price: number) => {
+    //     return new Intl.NumberFormat("vi-VN", {
+    //         style: "currency",
+    //         currency: "VND",
+    //     }).format(price);
+    // };
 
     const handleCheckout = async () => {
         if (!cart || cart.cartItems.length === 0) {
