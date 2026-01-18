@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.example.StyleStore.model.enums.ProductStatus;
 import java.util.List;
 import java.time.LocalDateTime;
 
@@ -38,8 +39,9 @@ public class Product {
     @Column(name = "thumbnail", nullable = false, length = 255)
     private String thumbnail;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 20)
-    private String status;
+    private ProductStatus status;
 
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;

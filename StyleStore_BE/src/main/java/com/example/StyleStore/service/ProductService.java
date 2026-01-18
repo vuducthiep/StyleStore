@@ -3,6 +3,7 @@ package com.example.StyleStore.service;
 import com.example.StyleStore.model.Product;
 import com.example.StyleStore.model.ProductSize;
 import com.example.StyleStore.model.Size;
+import com.example.StyleStore.model.enums.ProductStatus;
 import com.example.StyleStore.repository.ProductRepository;
 import com.example.StyleStore.repository.SizeRepository;
 
@@ -25,7 +26,7 @@ public class ProductService {
     private SizeRepository sizeRepository;
 
     public Page<Product> getProducts(Pageable pageable) {
-        return productRepository.findAll(pageable);
+        return productRepository.findByStatus(ProductStatus.ACTIVE, pageable);
     }
 
     public Optional<Product> getProductById(Long id) {
