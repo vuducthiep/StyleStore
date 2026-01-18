@@ -199,6 +199,18 @@ public class OrderService {
         return convertToDto(order);
     }
 
+    public OrderDto deliveredOrder(long Id) {
+        Order order = orderRepository.findById(Id).orElseThrow(() -> new RuntimeException("Order not found"));
+        if (order.getStatus() != OrderStatus.SHIPPING) {
+            throw new RuntimeException("Only shipping orders can be delivered");
+        }
+
+        order.setStatus(OrderStatus.DELIVERED);
+        orderRepository.save(order);
+
+        return convertToDto(order);
+    }
+
     @Transactional
     public OrderDto createOrder(User user, OrderRequest request) {
         // 1. Validate request

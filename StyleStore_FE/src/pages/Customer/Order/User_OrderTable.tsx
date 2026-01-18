@@ -37,6 +37,7 @@ const User_OrderTable: React.FC<UserOrderTableProps> = ({
     const [confirmState, setConfirmState] = useState<{
         open: boolean;
         order?: UserOrder;
+        action?: 'cancel' | 'confirm-delivery';
         isLoading: boolean;
     }>({ open: false, isLoading: false });
 
@@ -152,12 +153,16 @@ const User_OrderTable: React.FC<UserOrderTableProps> = ({
         return status === 'CREATED' || status === 'SHIPPING';
     };
 
-    const openConfirmDialog = (order: UserOrder) => {
-        setConfirmState({ open: true, order, isLoading: false });
+    const canConfirmDelivery = (status: string) => {
+        return status === 'SHIPPING';
     };
 
-    const handleCancelConfirm = async () => {
-        if (!confirmState.order) {
+    const openConfirmDialog = (order: UserOrder, action: 'cancel' | 'confirm-delivery') => {
+        setConfirmState({ open: true, order, action, isLoading: false });
+    };
+
+    const handleConfirm = async () => {
+        if (!confirmState.order || !confirmState.action) {
             setConfirmState({ open: false, isLoading: false });
             return;
         }
@@ -166,8 +171,12 @@ const User_OrderTable: React.FC<UserOrderTableProps> = ({
 
         try {
             const authHeaders = buildAuthHeaders();
+            const endpoint = confirmState.action === 'cancel'
+                ? 'cancel'
+                : 'confirm-delivery';
+
             const res = await fetch(
-                `http://localhost:8080/api/user/orders/${confirmState.order.id}/cancel`,
+                `http://localhost:8080/api/user/orders/${confirmState.order.id}/${endpoint}`,
                 {
                     method: 'PUT',
                     headers: {
@@ -181,22 +190,27 @@ const User_OrderTable: React.FC<UserOrderTableProps> = ({
             const data = text ? JSON.parse(text) : {};
 
             if (!res.ok || !data.success) {
-                throw new Error(data.message || `Hủy đơn hàng thất bại (code ${res.status}).`);
+                throw new Error(data.message || `Thao tác thất bại (code ${res.status}).`);
             }
 
             // Update order status in list
+            const newStatus = confirmState.action === 'cancel' ? 'CANCELLED' : 'DELIVERED';
             setOrders((prev) =>
                 prev.map((order) =>
                     order.id === confirmState.order!.id
-                        ? { ...order, status: 'CANCELLED' }
+                        ? { ...order, status: newStatus }
                         : order
                 )
             );
 
-            pushToast('Hủy đơn hàng thành công', 'success');
+            const successMessage = confirmState.action === 'cancel'
+                ? 'Hủy đơn hàng thành công'
+                : 'Xác nhận đã nhận hàng thành công';
+            pushToast(successMessage, 'success');
+
             onCancel?.(confirmState.order);
         } catch (e) {
-            const errorMessage = e instanceof Error ? e.message : 'Hủy đơn hàng thất bại.';
+            const errorMessage = e instanceof Error ? e.message : 'Thao tác thất bại.';
             pushToast(errorMessage, 'error');
         } finally {
             setConfirmState({ open: false, isLoading: false });
@@ -300,11 +314,40 @@ const User_OrderTable: React.FC<UserOrderTableProps> = ({
                                             </button>
                                             <button
                                                 type="button"
-                                                onClick={() => openConfirmDialog(order)}
+                                                onClick={() => openConfirmDialog(order, 'confirm-delivery')}
+                                                disabled={!canConfirmDelivery(order.status)}
+                                                className={`p-2 rounded border transition ${canConfirmDelivery(order.status)
+                                                        ? 'border-slate-200 hover:border-green-500 hover:text-green-600 hover:bg-green-50 cursor-pointer'
+                                                        : 'border-slate-100 text-slate-300 cursor-not-allowed opacity-50'
+                                                    }`}
+                                                title={
+                                                    canConfirmDelivery(order.status)
+                                                        ? 'Xác nhận đã nhận hàng'
+                                                        : 'Không thể xác nhận'
+                                                }
+                                            >
+                                                <svg
+                                                    xmlns="http://www.w3.org/2000/svg"
+                                                    className="h-4 w-4"
+                                                    fill="none"
+                                                    viewBox="0 0 24 24"
+                                                    stroke="currentColor"
+                                                    strokeWidth="1.5"
+                                                >
+                                                    <path
+                                                        strokeLinecap="round"
+                                                        strokeLinejoin="round"
+                                                        d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                                                    />
+                                                </svg>
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => openConfirmDialog(order, 'cancel')}
                                                 disabled={!canCancelOrder(order.status)}
                                                 className={`p-2 rounded border transition ${canCancelOrder(order.status)
-                                                        ? 'border-slate-200 hover:border-red-500 hover:text-red-600 hover:bg-red-50 cursor-pointer'
-                                                        : 'border-slate-100 text-slate-300 cursor-not-allowed opacity-50'
+                                                    ? 'border-slate-200 hover:border-red-500 hover:text-red-600 hover:bg-red-50 cursor-pointer'
+                                                    : 'border-slate-100 text-slate-300 cursor-not-allowed opacity-50'
                                                     }`}
                                                 title={
                                                     canCancelOrder(order.status)
@@ -336,19 +379,21 @@ const User_OrderTable: React.FC<UserOrderTableProps> = ({
                 </div>
             )}
 
-            {/* Confirm Cancel Dialog */}
+            {/* Confirm Dialog */}
             <ConfirmDialog
                 open={confirmState.open}
-                title="Hủy đơn hàng"
+                title={confirmState.action === 'cancel' ? 'Hủy đơn hàng' : 'Xác nhận đã nhận hàng'}
                 message={
                     confirmState.order
-                        ? `Bạn có chắc muốn hủy đơn hàng #${confirmState.order.id}?`
-                        : 'Bạn có chắc muốn hủy đơn hàng này?'
+                        ? (confirmState.action === 'cancel'
+                            ? `Bạn có chắc muốn hủy đơn hàng #${confirmState.order.id}?`
+                            : `Bạn có chắc muốn xác nhận đã nhận được hàng cho đơn hàng #${confirmState.order.id}?`)
+                        : 'Bạn có chắc muốn thực hiện thao tác này?'
                 }
-                confirmText="Hủy đơn"
+                confirmText={confirmState.action === 'cancel' ? 'Hủy đơn' : 'Xác nhận'}
                 cancelText="Đóng"
                 isLoading={confirmState.isLoading}
-                onConfirm={handleCancelConfirm}
+                onConfirm={handleConfirm}
                 onCancel={() => setConfirmState({ open: false, isLoading: false })}
             />
         </div>

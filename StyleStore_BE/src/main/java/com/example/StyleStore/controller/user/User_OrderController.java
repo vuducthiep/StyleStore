@@ -116,4 +116,24 @@ public class User_OrderController {
             return ResponseEntity.status(500).body(ApiResponse.fail("Lỗi hệ thống: " + e.getMessage()));
         }
     }
+
+    // confirm order deliveried
+    @PutMapping("/{orderId}/confirm-delivery")
+    public ResponseEntity<ApiResponse<OrderDto>> deliveredOrder(@PathVariable Long orderId) {
+        try {
+            User currentUser = getCurrentUser();
+            // Kiểm tra đơn hàng có thuộc về user này không
+            OrderDto order = orderService.getOrderById(orderId);
+            if (order == null) {
+                return ResponseEntity.status(404).body(ApiResponse.fail("Không tìm thấy đơn hàng"));
+            }
+            if (!order.getUserId().equals(currentUser.getId())) {
+                return ResponseEntity.status(403).body(ApiResponse.fail("Bạn không có quyền xác nhận đơn hàng này"));
+            }
+            OrderDto deliveredOrder = orderService.deliveredOrder(orderId);
+            return ResponseEntity.ok(ApiResponse.ok("Xác nhận đơn hàng đã giao thành công", deliveredOrder));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(400).body(ApiResponse.fail("Lỗi: " + e.getMessage()));
+        }
+    }
 }
