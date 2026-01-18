@@ -1,8 +1,11 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Trash2, Plus, Minus, ShoppingBag, MapPin } from "lucide-react";
+import { ShoppingBag } from "lucide-react";
 import Header from "../../../components/Header";
 import vietnamAddressData from "../../../vietnamAddress.json";
+import CartItemList from "./CartItemList";
+import AddressSection from "./AddressSection";
+import OrderSummary from "./OrderSummary";
 
 interface Province {
     Id: string;
@@ -157,19 +160,19 @@ export default function CartPage() {
         return ward?.Name || "";
     };
 
-    const handleProvinceChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-        setSelectedProvince(e.target.value);
+    const handleProvinceChange = (provinceId: string) => {
+        setSelectedProvince(provinceId);
         setSelectedDistrict("");
         setSelectedWard("");
     };
 
-    const handleDistrictChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-        setSelectedDistrict(e.target.value);
+    const handleDistrictChange = (districtId: string) => {
+        setSelectedDistrict(districtId);
         setSelectedWard("");
     };
 
-    const handleWardChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-        setSelectedWard(e.target.value);
+    const handleWardChange = (wardId: string) => {
+        setSelectedWard(wardId);
     };
 
     const getProvincesForSelect = (): Province[] => vietnamAddress as Province[];
@@ -416,343 +419,43 @@ export default function CartPage() {
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                         {/* Cart Items */}
                         <div className="lg:col-span-2">
-                            <div className="bg-white rounded-lg shadow overflow-hidden">
-                                {/* Header */}
-                                <div className="grid grid-cols-12 gap-4 bg-gray-100 p-4 font-semibold text-gray-900 border-b">
-                                    <div className="col-span-5">Sản phẩm</div>
-                                    <div className="col-span-2 text-center">Kích cỡ</div>
-                                    <div className="col-span-2 text-center">Số lượng</div>
-                                    <div className="col-span-2 text-right">Giá</div>
-                                    <div className="col-span-1"></div>
-                                </div>
+                            <CartItemList
+                                items={cart.cartItems}
+                                onQuantityChange={handleUpdateQuantity}
+                                onRemoveItem={handleRemoveItem}
+                                onClearCart={handleClearCart}
+                                onProductClick={(productId) => navigate(`/product/${productId}`)}
+                            />
 
-                                {/* Items */}
-                                <div className="divide-y">
-                                    {cart.cartItems.map((item) => (
-                                        <div
-                                            key={item.id}
-                                            className="grid grid-cols-12 gap-4 p-4 items-center hover:bg-gray-50 transition"
-                                        >
-                                            {/* Product Info */}
-                                            <div className="col-span-5 flex gap-4">
-                                                <img
-                                                    src={item.product.thumbnail}
-                                                    alt={item.product.name}
-                                                    className="w-20 h-20 object-cover rounded-lg"
-                                                />
-                                                <div className="flex flex-col justify-center">
-                                                    <h3
-                                                        onClick={() => navigate(`/product/${item.product.id}`)}
-                                                        className="font-semibold text-gray-900 hover:text-blue-600 cursor-pointer"
-                                                    >
-                                                        {item.product.name}
-                                                    </h3>
-                                                    <p className="text-sm text-gray-600">
-                                                        {formatPrice(item.price)}
-                                                    </p>
-                                                </div>
-                                            </div>
-
-                                            {/* Size */}
-                                            <div className="col-span-2 text-center">
-                                                <span className="bg-gray-200 px-3 py-1 rounded-full font-semibold text-sm">
-                                                    {item.size.name}
-                                                </span>
-                                            </div>
-
-                                            {/* Quantity Control */}
-                                            <div className="col-span-2 flex justify-center items-center gap-2">
-                                                <button
-                                                    onClick={() =>
-                                                        handleUpdateQuantity(
-                                                            item.id,
-                                                            item.quantity - 1
-                                                        )
-                                                    }
-                                                    disabled={item.quantity === 1}
-                                                    className="p-1 hover:bg-gray-200 rounded disabled:opacity-50 disabled:cursor-not-allowed transition"
-                                                >
-                                                    <Minus size={16} />
-                                                </button>
-                                                <span className="w-8 text-center font-semibold">
-                                                    {item.quantity}
-                                                </span>
-                                                <button
-                                                    onClick={() =>
-                                                        handleUpdateQuantity(
-                                                            item.id,
-                                                            item.quantity + 1
-                                                        )
-                                                    }
-                                                    className="p-1 hover:bg-gray-200 rounded transition"
-                                                >
-                                                    <Plus size={16} />
-                                                </button>
-                                            </div>
-
-                                            {/* Total Price */}
-                                            <div className="col-span-2 text-right">
-                                                <p className="font-bold text-blue-600">
-                                                    {formatPrice(item.price * item.quantity)}
-                                                </p>
-                                            </div>
-
-                                            {/* Delete Button */}
-                                            <div className="col-span-1 flex justify-end">
-                                                <button
-                                                    onClick={() => handleRemoveItem(item.id)}
-                                                    className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition"
-                                                >
-                                                    <Trash2 size={18} />
-                                                </button>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-
-                                {/* Clear Cart Button */}
-                                <div className="p-4 bg-gray-50 border-t">
-                                    <button
-                                        onClick={handleClearCart}
-                                        className="text-red-600 font-semibold hover:text-red-700 hover:underline"
-                                    >
-                                        Xóa toàn bộ giỏ hàng
-                                    </button>
-                                </div>
-                            </div>
-
-                            {/* Address Section */}
-                            <div className="bg-white rounded-lg shadow overflow-hidden mt-6">
-                                <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4 text-white">
-                                    <div className="flex items-center gap-2">
-                                        <MapPin size={24} />
-                                        <h3 className="text-lg font-bold">Địa chỉ giao hàng</h3>
-                                    </div>
-                                </div>
-
-                                <div className="p-6">
-                                    {/* Address Type Selection */}
-                                    <div className="mb-6 space-y-3">
-                                        {/* Option 1: Home Address */}
-                                        <label className="flex items-start gap-3 p-4 border-2 rounded-lg cursor-pointer transition hover:bg-blue-50" style={{ borderColor: addressType === 'home' ? '#2563eb' : '#e5e7eb' }}>
-                                            <input
-                                                type="radio"
-                                                name="addressType"
-                                                value="home"
-                                                checked={addressType === 'home'}
-                                                onChange={(e) => setAddressType(e.target.value as 'home' | 'custom')}
-                                                className="mt-1 w-4 h-4 cursor-pointer"
-                                            />
-                                            <div className="flex-1">
-                                                <p className="font-semibold text-gray-900 mb-1">Địa chỉ nhà riêng</p>
-                                                <p className="text-sm text-gray-600">{userProfile?.address || "Chưa cập nhật"}</p>
-                                            </div>
-                                        </label>
-
-                                        {/* Option 2: Custom Address */}
-                                        <label className="flex items-start gap-3 p-4 border-2 rounded-lg cursor-pointer transition hover:bg-blue-50" style={{ borderColor: addressType === 'custom' ? '#2563eb' : '#e5e7eb' }}>
-                                            <input
-                                                type="radio"
-                                                name="addressType"
-                                                value="custom"
-                                                checked={addressType === 'custom'}
-                                                onChange={(e) => setAddressType(e.target.value as 'home' | 'custom')}
-                                                className="mt-1 w-4 h-4 cursor-pointer"
-                                            />
-                                            <div className="flex-1">
-                                                <p className="font-semibold text-gray-900 mb-3">Địa chỉ tự chọn</p>
-
-                                                {/* Address Selection Dropdowns */}
-                                                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
-                                                    {/* Province */}
-                                                    <div>
-                                                        <label className="block text-xs font-semibold text-gray-600 mb-1">
-                                                            Tỉnh/Thành phố
-                                                        </label>
-                                                        <select
-                                                            value={selectedProvince}
-                                                            onChange={handleProvinceChange}
-                                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                                                        >
-                                                            <option value="">Chọn tỉnh/thành phố</option>
-                                                            {getProvincesForSelect().map((province) => (
-                                                                <option key={province.Id} value={province.Id}>
-                                                                    {province.Name}
-                                                                </option>
-                                                            ))}
-                                                        </select>
-                                                    </div>
-
-                                                    {/* District */}
-                                                    <div>
-                                                        <label className="block text-xs font-semibold text-gray-600 mb-1">
-                                                            Quận/Huyện
-                                                        </label>
-                                                        <select
-                                                            value={selectedDistrict}
-                                                            onChange={handleDistrictChange}
-                                                            disabled={!selectedProvince}
-                                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm disabled:bg-gray-100 disabled:cursor-not-allowed"
-                                                        >
-                                                            <option value="">Chọn quận/huyện</option>
-                                                            {getDistrictsForSelect().map((district) => (
-                                                                <option key={district.Id} value={district.Id}>
-                                                                    {district.Name}
-                                                                </option>
-                                                            ))}
-                                                        </select>
-                                                    </div>
-
-                                                    {/* Ward */}
-                                                    <div>
-                                                        <label className="block text-xs font-semibold text-gray-600 mb-1">
-                                                            Phường/Xã
-                                                        </label>
-                                                        <select
-                                                            value={selectedWard}
-                                                            onChange={handleWardChange}
-                                                            disabled={!selectedDistrict}
-                                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm disabled:bg-gray-100 disabled:cursor-not-allowed"
-                                                        >
-                                                            <option value="">Chọn phường/xã</option>
-                                                            {getWardsForSelect().map((ward) => (
-                                                                <option key={ward.Id} value={ward.Id}>
-                                                                    {ward.Name}
-                                                                </option>
-                                                            ))}
-                                                        </select>
-                                                    </div>
-                                                </div>
-
-                                                {/* Detailed Address */}
-                                                <div>
-                                                    <label className="block text-xs font-semibold text-gray-600 mb-1">
-                                                        Số nhà, đường, v.v.
-                                                    </label>
-                                                    <input
-                                                        type="text"
-                                                        value={detailedAddress}
-                                                        onChange={(e) => setDetailedAddress(e.target.value)}
-                                                        placeholder="Nhập số nhà, tên đường..."
-                                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                                                    />
-                                                </div>
-                                            </div>
-                                        </label>
-                                    </div>
-
-                                    {/* Selected Address Display */}
-                                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-6">
-                                        <p className="text-sm text-gray-600 mb-1">Địa chỉ giao hàng:</p>
-                                        <p className="text-gray-900 font-semibold">{getSelectedAddress()}</p>
-                                    </div>
-                                </div>
-                            </div>
+                            <AddressSection
+                                addressType={addressType}
+                                onAddressTypeChange={setAddressType}
+                                userHomeAddress={userProfile?.address}
+                                selectedProvince={selectedProvince}
+                                onProvinceChange={handleProvinceChange}
+                                selectedDistrict={selectedDistrict}
+                                onDistrictChange={handleDistrictChange}
+                                selectedWard={selectedWard}
+                                onWardChange={handleWardChange}
+                                detailedAddress={detailedAddress}
+                                onDetailedAddressChange={setDetailedAddress}
+                                provinces={vietnamAddress}
+                                districts={getDistrictsForSelect()}
+                                wards={getWardsForSelect()}
+                                selectedAddress={getSelectedAddress()}
+                            />
                         </div>
 
                         {/* Order Summary */}
                         <div className="lg:col-span-1">
-                            <div className="bg-white rounded-lg shadow p-6 sticky top-20">
-                                <h2 className="text-xl font-bold text-gray-900 mb-6">
-                                    Tóm tắt đơn hàng
-                                </h2>
-
-                                <div className="space-y-4 mb-6">
-                                    <div className="flex justify-between text-gray-700">
-                                        <span>Tổng sản phẩm:</span>
-                                        <span className="font-semibold">
-                                            {cart.cartItems.reduce((sum, item) => sum + item.quantity, 0)}
-                                        </span>
-                                    </div>
-                                    <div className="flex justify-between text-gray-700">
-                                        <span>Tổng tiền:</span>
-                                        <span className="font-semibold">
-                                            {formatPrice(cart.totalPrice)}
-                                        </span>
-                                    </div>
-                                    <div className="flex justify-between text-gray-700">
-                                        <span>Phí vận chuyển:</span>
-                                        <span className="font-semibold text-green-600">Miễn phí</span>
-                                    </div>
-                                </div>
-
-                                <div className="border-t pt-4 mb-6">
-                                    <div className="flex justify-between">
-                                        <span className="text-lg font-bold text-gray-900">
-                                            Thành tiền:
-                                        </span>
-                                        <span className="text-2xl font-bold text-blue-600">
-                                            {formatPrice(cart.totalPrice)}
-                                        </span>
-                                    </div>
-                                </div>
-
-                                <div className="mb-6">
-                                    <h3 className="text-lg font-bold text-gray-900 mb-3">
-                                        Phương thức thanh toán
-                                    </h3>
-                                    <div className="space-y-3">
-                                        <label className="flex items-start gap-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition" style={{ borderColor: paymentMethod === "COD" ? "#2563eb" : "#e5e7eb" }}>
-                                            <input
-                                                type="radio"
-                                                name="paymentMethod"
-                                                value="COD"
-                                                checked={paymentMethod === "COD"}
-                                                onChange={(e) => setPaymentMethod(e.target.value as PaymentMethod)}
-                                                className="mt-1 w-4 h-4 cursor-pointer"
-                                            />
-                                            <div>
-                                                <p className="font-semibold text-gray-900">COD (Thanh toán khi nhận hàng)</p>
-                                                <p className="text-sm text-gray-600">Thanh toán tiền mặt hoặc chuyển khoản khi đơn được giao.</p>
-                                            </div>
-                                        </label>
-
-                                        <label className="flex items-start gap-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition" style={{ borderColor: paymentMethod === "MOMO" ? "#2563eb" : "#e5e7eb" }}>
-                                            <input
-                                                type="radio"
-                                                name="paymentMethod"
-                                                value="MOMO"
-                                                checked={paymentMethod === "MOMO"}
-                                                onChange={(e) => setPaymentMethod(e.target.value as PaymentMethod)}
-                                                className="mt-1 w-4 h-4 cursor-pointer"
-                                            />
-                                            <div>
-                                                <p className="font-semibold text-gray-900">Thanh toán qua Momo</p>
-                                                <p className="text-sm text-gray-600">Quét mã hoặc mở ứng dụng Momo để hoàn tất thanh toán.</p>
-                                            </div>
-                                        </label>
-
-                                        <label className="flex items-start gap-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition" style={{ borderColor: paymentMethod === "ZALOPAY" ? "#2563eb" : "#e5e7eb" }}>
-                                            <input
-                                                type="radio"
-                                                name="paymentMethod"
-                                                value="ZALOPAY"
-                                                checked={paymentMethod === "ZALOPAY"}
-                                                onChange={(e) => setPaymentMethod(e.target.value as PaymentMethod)}
-                                                className="mt-1 w-4 h-4 cursor-pointer"
-                                            />
-                                            <div>
-                                                <p className="font-semibold text-gray-900">Thanh toán qua ZaloPay</p>
-                                                <p className="text-sm text-gray-600">Sử dụng ZaloPay để thanh toán nhanh chóng và an toàn.</p>
-                                            </div>
-                                        </label>
-                                    </div>
-                                </div>
-
-                                <button
-                                    onClick={handleCheckout}
-                                    disabled={isSubmitting}
-                                    className="w-full bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700 transition mb-2 disabled:opacity-60 disabled:cursor-not-allowed"
-                                >
-                                    {isSubmitting ? "Đang xử lý..." : "Thanh toán"}
-                                </button>
-                                <button
-                                    onClick={() => navigate("/")}
-                                    className="w-full bg-gray-200 text-gray-900 font-semibold py-3 rounded-lg hover:bg-gray-300 transition"
-                                >
-                                    Tiếp tục mua sắm
-                                </button>
-                            </div>
+                            <OrderSummary
+                                cart={cart}
+                                paymentMethod={paymentMethod}
+                                onPaymentMethodChange={setPaymentMethod}
+                                onCheckout={handleCheckout}
+                                onContinueShopping={() => navigate("/")}
+                                isSubmitting={isSubmitting}
+                            />
                         </div>
                     </div>
                 )}
