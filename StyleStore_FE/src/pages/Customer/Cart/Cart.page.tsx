@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ShoppingBag } from "lucide-react";
 import Header from "../../../components/Header";
+import ConfirmDialog from "../../../components/ConfirmDialog";
+import { useToast } from "../../../components/ToastProvider";
 import vietnamAddressData from "../../../vietnamAddress.json";
 import CartItemList from "./CartItemList";
 import AddressSection from "./AddressSection";
@@ -79,6 +81,7 @@ type PaymentMethod = "COD" | "MOMO" | "ZALOPAY";
 
 export default function CartPage() {
     const navigate = useNavigate();
+    const { pushToast } = useToast();
     const vietnamAddress = vietnamAddressData as Province[];
     const [cart, setCart] = useState<Cart | null>(null);
     const [loading, setLoading] = useState(true);
@@ -93,6 +96,7 @@ export default function CartPage() {
     const [detailedAddress, setDetailedAddress] = useState("");
     const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("COD");
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [showConfirmCheckout, setShowConfirmCheckout] = useState(false);
 
     useEffect(() => {
         fetchCart();
@@ -263,9 +267,10 @@ export default function CartPage() {
                 };
                 setCart(updatedCart);
             }
+            pushToast("Xóa sản phẩm thành công", "success");
         } catch (err) {
             console.error("Error removing item:", err);
-            alert(err instanceof Error ? err.message : "Có lỗi xảy ra");
+            pushToast(err instanceof Error ? err.message : "Có lỗi xảy ra", "error");
         }
     };
 
@@ -289,9 +294,10 @@ export default function CartPage() {
                 cartItems: [],
                 totalPrice: 0,
             });
+            pushToast("Xóa giỏ hàng thành công", "success");
         } catch (err) {
             console.error("Error clearing cart:", err);
-            alert(err instanceof Error ? err.message : "Có lỗi xảy ra");
+            pushToast(err instanceof Error ? err.message : "Có lỗi xảy ra", "error");
         }
     };
 
@@ -302,22 +308,39 @@ export default function CartPage() {
     //     }).format(price);
     // };
 
-    const handleCheckout = async () => {
+    const handleCheckoutClick = () => {
         if (!cart || cart.cartItems.length === 0) {
-            alert("Giỏ hàng trống");
+            pushToast("Giỏ hàng trống", "error");
             return;
         }
 
         const shippingAddress = getSelectedAddress();
         if (!shippingAddress || shippingAddress.includes("Chưa")) {
-            alert("Vui lòng chọn hoặc nhập địa chỉ giao hàng");
+            pushToast("Vui lòng chọn hoặc nhập địa chỉ giao hàng", "error");
             return;
         }
 
         const token = localStorage.getItem("token");
         if (!token) {
-            alert("Vui lòng đăng nhập");
+            pushToast("Vui lòng đăng nhập", "error");
             navigate("/login");
+            return;
+        }
+
+        setShowConfirmCheckout(true);
+    };
+
+    const handleConfirmCheckout = async () => {
+        if (!cart || cart.cartItems.length === 0) {
+            setShowConfirmCheckout(false);
+            return;
+        }
+
+        const shippingAddress = getSelectedAddress();
+        const token = localStorage.getItem("token");
+
+        if (!shippingAddress || !token) {
+            setShowConfirmCheckout(false);
             return;
         }
 
@@ -346,15 +369,20 @@ export default function CartPage() {
             const result = await response.json();
 
             if (!response.ok || !result.success) {
-                alert(result.message || "Tạo đơn hàng thất bại");
+                pushToast(result.message || "Tạo đơn hàng thất bại", "error");
+                setShowConfirmCheckout(false);
                 return;
             }
 
-            alert("Đặt hàng thành công");
-            navigate("/");
+            pushToast("Đặt hàng thành công", "success");
+            setShowConfirmCheckout(false);
+            setTimeout(() => {
+                navigate("/orders");
+            }, 1500);
         } catch (err) {
             console.error("Checkout error", err);
-            alert("Có lỗi xảy ra, vui lòng thử lại");
+            pushToast("Có lỗi xảy ra, vui lòng thử lại", "error");
+            setShowConfirmCheckout(false);
         } finally {
             setIsSubmitting(false);
         }
@@ -452,7 +480,7 @@ export default function CartPage() {
                                 cart={cart}
                                 paymentMethod={paymentMethod}
                                 onPaymentMethodChange={setPaymentMethod}
-                                onCheckout={handleCheckout}
+                                onCheckout={handleCheckoutClick}
                                 onContinueShopping={() => navigate("/")}
                                 isSubmitting={isSubmitting}
                             />
@@ -460,6 +488,21 @@ export default function CartPage() {
                     </div>
                 )}
             </div>
+
+            {/* Confirm Checkout Dialog */}
+            <ConfirmDialog
+                open={showConfirmCheckout}
+                title="Xác nhận đặt hàng"
+                message={`Bạn có chắc muốn đặt hàng với phương thức thanh toán: ${paymentMethod === "COD" ? "Thanh toán khi nhận hàng" :
+                        paymentMethod === "MOMO" ? "Ví Momo" :
+                            "ZaloPay"
+                    }?`}
+                confirmText="Đặt hàng"
+                cancelText="Hủy"
+                isLoading={isSubmitting}
+                onConfirm={handleConfirmCheckout}
+                onCancel={() => setShowConfirmCheckout(false)}
+            />
         </div>
     );
 }
