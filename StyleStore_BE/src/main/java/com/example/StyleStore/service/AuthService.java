@@ -94,6 +94,12 @@ public class AuthService {
                 User user = userRepository.findByEmail(request.email())
                                 .orElseThrow(() -> new RuntimeException("User không tồn tại"));
 
+                // Kiểm tra xem tài khoản có hoạt động không
+                if (user.getStatus() != UserStatus.ACTIVE) {
+                        throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                                        "Tài khoản của bạn không active. Vui lòng liên hệ quản trị viên");
+                }
+
                 UserDetails userDetails = new org.springframework.security.core.userdetails.User(
                                 user.getEmail(),
                                 user.getPassword(),
