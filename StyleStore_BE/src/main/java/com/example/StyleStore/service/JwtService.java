@@ -71,6 +71,21 @@ public class JwtService {
                 .compact();
     }
 
+    // Generate token từ OAuth2 user (email + name)
+    public String generateTokenFromOAuth2User(String email, String fullName) {
+        Map<String, Object> extraClaims = new HashMap<>();
+        extraClaims.put("oauth2", true);
+        extraClaims.put("fullName", fullName != null ? fullName : email);
+
+        return Jwts.builder()
+                .claims(extraClaims)
+                .subject(email)
+                .issuedAt(new Date(System.currentTimeMillis()))
+                .expiration(new Date(System.currentTimeMillis() + jwtExpiration))
+                .signWith(getSignInKey(), SignatureAlgorithm.HS512)
+                .compact();
+    }
+
     public boolean isTokenValid(String token, UserDetails userDetails) {
         final String username = extractUsername(token);
         return (username.equals(userDetails.getUsername())) && !isTokenExpired(token);
