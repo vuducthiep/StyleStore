@@ -230,12 +230,12 @@ const User_OrderTable: React.FC<UserOrderTableProps> = ({
                             Thử lại
                         </button>
                     )}
-                    <button
+                    {/* <button
                         onClick={() => fetchOrders()}
                         className="text-sm px-3 py-1 rounded border border-slate-200 hover:bg-slate-50"
                     >
                         Tải lại
-                    </button>
+                    </button> */}
                 </div>
             </div>
 
@@ -317,8 +317,8 @@ const User_OrderTable: React.FC<UserOrderTableProps> = ({
                                                 onClick={() => openConfirmDialog(order, 'confirm-delivery')}
                                                 disabled={!canConfirmDelivery(order.status)}
                                                 className={`p-2 rounded border transition ${canConfirmDelivery(order.status)
-                                                        ? 'border-slate-200 hover:border-green-500 hover:text-green-600 hover:bg-green-50 cursor-pointer'
-                                                        : 'border-slate-100 text-slate-300 cursor-not-allowed opacity-50'
+                                                    ? 'border-slate-200 hover:border-green-500 hover:text-green-600 hover:bg-green-50 cursor-pointer'
+                                                    : 'border-slate-100 text-slate-300 cursor-not-allowed opacity-50'
                                                     }`}
                                                 title={
                                                     canConfirmDelivery(order.status)

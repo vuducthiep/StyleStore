@@ -132,7 +132,7 @@ const Register: React.FC = () => {
                                 </div>
                             </div>
                             <h1 className="text-2xl font-semibold text-slate-900">StyleStore</h1>
-                            <p className="text-slate-600">Tạo tài khoản mới và bắt đầu hành trình mua sắm</p>
+                            <p className="text-slate-200">Tạo tài khoản mới và bắt đầu hành trình mua sắm</p>
                         </div>
 
                         {/* Error Alert */}
