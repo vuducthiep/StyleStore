@@ -10,7 +10,6 @@ const Home: React.FC = () => {
             <Header />
             <Banner />
             <ListProduct />
-
             <Footer />
         </div>
     );
