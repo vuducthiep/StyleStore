@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 
-interface Category {
+export interface Category {
     id: number;
     name: string;
     description: string;
@@ -15,10 +15,14 @@ interface ApiResponse {
     data: Category[];
 }
 
-export default function Categories() {
+type CategoriesProps = {
+    selectedCategoryId: number | null;
+    onSelect: (categoryId: number | null) => void;
+};
+
+export default function Categories({ selectedCategoryId, onSelect }: CategoriesProps) {
     const [categories, setCategories] = useState<Category[]>([]);
     const [loading, setLoading] = useState(true);
-    const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
 
     useEffect(() => {
         fetchCategories();
@@ -51,8 +55,8 @@ export default function Categories() {
     };
 
     const handleCategoryClick = (categoryId: number) => {
-        setSelectedCategory(categoryId === selectedCategory ? null : categoryId);
-        // TODO: Filter products by category
+        const next = categoryId === selectedCategoryId ? null : categoryId;
+        onSelect(next);
     };
 
     if (loading) {
@@ -75,8 +79,8 @@ export default function Categories() {
                 <div className="flex flex-wrap justify-center gap-4">
                     {/* All categories button */}
                     <button
-                        onClick={() => setSelectedCategory(null)}
-                        className={`px-6 py-3 rounded-full font-medium transition-all duration-300 transform hover:scale-105 ${selectedCategory === null
+                        onClick={() => onSelect(null)}
+                        className={`px-6 py-3 rounded-full font-medium transition-all duration-300 transform hover:scale-105 ${selectedCategoryId === null
                             ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg"
                             : "bg-white text-gray-700 hover:bg-gray-100 shadow-md"
                             }`}
@@ -89,7 +93,7 @@ export default function Categories() {
                         <div key={category.id} className="relative group">
                             <button
                                 onClick={() => handleCategoryClick(category.id)}
-                                className={`px-6 py-3 rounded-full font-medium transition-all duration-300 transform hover:scale-105 ${selectedCategory === category.id
+                                className={`px-6 py-3 rounded-full font-medium transition-all duration-300 transform hover:scale-105 ${selectedCategoryId === category.id
                                     ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg"
                                     : "bg-white text-gray-700 hover:bg-gray-100 shadow-md"
                                     }`}

@@ -1,5 +1,6 @@
 package com.example.StyleStore.repository;
 
+import com.example.StyleStore.model.Category;
 import com.example.StyleStore.model.Product;
 import com.example.StyleStore.model.enums.ProductStatus;
 import org.springframework.data.domain.Page;
@@ -12,5 +13,7 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     long count();
 
     Page<Product> findByStatus(ProductStatus status, Pageable pageable);
+
+    Page<Product> findByCategoryAndStatus(Category category, ProductStatus status, Pageable pageable);
 
 }

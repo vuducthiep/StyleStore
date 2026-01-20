@@ -1,19 +1,18 @@
-import { useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
-interface Size {
+export interface Size {
     id: number;
     name: string;
 }
 
-interface ProductSize {
+export interface ProductSize {
     id: number;
     size: Size;
     stock: number;
 }
 
-interface Category {
+export interface Category {
     id: number;
     name: string;
     description: string;
@@ -22,7 +21,7 @@ interface Category {
     updatedAt: string;
 }
 
-interface Product {
+export interface Product {
     id: number;
     name: string;
     description: string;
@@ -36,69 +35,26 @@ interface Product {
     category: Category;
     productSizes: ProductSize[];
 }
+export type ListProductProps = {
+    products: Product[];
+    loading: boolean;
+    error: string | null;
+    currentPage: number;
+    totalPages: number;
+    onNextPage: () => void;
+    onPrevPage: () => void;
+};
 
-interface ApiResponse {
-    success: boolean;
-    message: string;
-    data: {
-        content: Product[];
-        totalPages: number;
-        totalElements: number;
-        currentPage: number;
-        size: number;
-    };
-}
-
-export default function ListProduct() {
+export default function ListProduct({
+    products,
+    loading,
+    error,
+    currentPage,
+    totalPages,
+    onNextPage,
+    onPrevPage,
+}: ListProductProps) {
     const navigate = useNavigate();
-    const [products, setProducts] = useState<Product[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [currentPage, setCurrentPage] = useState(0);
-    const [totalPages, setTotalPages] = useState(0);
-    const [error, setError] = useState<string | null>(null);
-
-    const pageSize = 12;
-
-    useEffect(() => {
-        fetchProducts(currentPage);
-    }, [currentPage]);
-
-    const fetchProducts = async (page: number) => {
-        try {
-            setLoading(true);
-            const response = await fetch(
-                `http://localhost:8080/api/user/products?page=${page}&size=${pageSize}&sortBy=createdAt&sortDir=desc`
-            );
-
-            if (!response.ok) {
-                throw new Error("Không thể lấy dữ liệu sản phẩm");
-            }
-
-            const data: ApiResponse = await response.json();
-            setProducts(data.data.content);
-            setTotalPages(data.data.totalPages);
-            setError(null);
-        } catch (err) {
-            setError(err instanceof Error ? err.message : "Có lỗi xảy ra");
-            console.error("Error fetching products:", err);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleNextPage = () => {
-        if (currentPage < totalPages - 1) {
-            setCurrentPage(currentPage + 1);
-            window.scrollTo({ top: 0, behavior: "smooth" });
-        }
-    };
-
-    const handlePrevPage = () => {
-        if (currentPage > 0) {
-            setCurrentPage(currentPage - 1);
-            window.scrollTo({ top: 0, behavior: "smooth" });
-        }
-    };
 
     const formatPrice = (price: number) => {
         return new Intl.NumberFormat("vi-VN", {
@@ -214,7 +170,7 @@ export default function ListProduct() {
                         {totalPages > 1 && (
                             <div className="flex items-center justify-center gap-4 mt-12">
                                 <button
-                                    onClick={handlePrevPage}
+                                    onClick={onPrevPage}
                                     disabled={currentPage === 0}
                                     className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white border border-gray-300 text-gray-700 font-semibold hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                                 >
@@ -228,7 +184,7 @@ export default function ListProduct() {
                                 </div>
 
                                 <button
-                                    onClick={handleNextPage}
+                                    onClick={onNextPage}
                                     disabled={currentPage >= totalPages - 1}
                                     className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                                 >

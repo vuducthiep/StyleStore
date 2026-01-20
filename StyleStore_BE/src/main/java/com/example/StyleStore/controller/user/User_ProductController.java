@@ -1,7 +1,9 @@
 package com.example.StyleStore.controller.user;
 
 import com.example.StyleStore.dto.ApiResponse;
+import com.example.StyleStore.model.Category;
 import com.example.StyleStore.model.Product;
+import com.example.StyleStore.service.CategoryService;
 import com.example.StyleStore.service.ProductService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -26,6 +28,9 @@ public class User_ProductController {
     @Autowired
     private ProductService productService;
 
+    @Autowired
+    private CategoryService categoryService;
+
     // Lấy danh sách sản phẩm (có phân trang)
     @GetMapping
     public ResponseEntity<ApiResponse<Page<Product>>> getAllProducts(
@@ -48,6 +53,29 @@ public class User_ProductController {
         return product
                 .map(p -> ResponseEntity.ok(ApiResponse.ok("Lấy sản phẩm thành công", p)))
                 .orElseGet(() -> ResponseEntity.status(404).body(ApiResponse.fail("Không tìm thấy sản phẩm")));
+    }
+
+    // Lấy sản phẩm theo danh mục (có phân trang)
+    @GetMapping("/category/{categoryId}")
+    public ResponseEntity<ApiResponse<Page<Product>>> getProductsByCategory(
+            @PathVariable Long categoryId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "12") int size,
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortDir) {
+
+        // Tìm danh mục
+        Optional<Category> category = categoryService.getCategoryById(categoryId);
+        if (category.isEmpty()) {
+            return ResponseEntity.status(404).body(ApiResponse.fail("Không tìm thấy danh mục"));
+        }
+
+        Sort sort = sortDir.equalsIgnoreCase("asc")
+                ? Sort.by(sortBy).ascending()
+                : Sort.by(sortBy).descending();
+        Pageable pageable = PageRequest.of(page, size, sort);
+        Page<Product> result = productService.getProductsByCategory(category.get(), pageable);
+        return ResponseEntity.ok(ApiResponse.ok("Lấy danh sách sản phẩm theo danh mục thành công", result));
     }
 
 }

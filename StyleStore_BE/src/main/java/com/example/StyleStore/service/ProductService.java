@@ -1,5 +1,6 @@
 package com.example.StyleStore.service;
 
+import com.example.StyleStore.model.Category;
 import com.example.StyleStore.model.Product;
 import com.example.StyleStore.model.ProductSize;
 import com.example.StyleStore.model.Size;
@@ -27,6 +28,10 @@ public class ProductService {
 
     public Page<Product> getProducts(Pageable pageable) {
         return productRepository.findByStatus(ProductStatus.ACTIVE, pageable);
+    }
+
+    public Page<Product> getProductsByCategory(Category category, Pageable pageable) {
+        return productRepository.findByCategoryAndStatus(category, ProductStatus.ACTIVE, pageable);
     }
 
     public Optional<Product> getProductById(Long id) {
