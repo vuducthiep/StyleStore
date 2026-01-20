@@ -139,7 +139,7 @@ export default function ListProduct() {
                                 {products.map((product) => (
                                     <div
                                         key={product.id}
-                                        className="group bg-slate-300 rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
+                                        className="group bg-slate-300 rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1 h-full flex flex-col"
                                     >
                                         {/* Product Image */}
                                         <div className="relative overflow-hidden bg-gray-200 h-64">
@@ -152,14 +152,14 @@ export default function ListProduct() {
                                         </div>
 
                                         {/* Product Info */}
-                                        <div className="p-5">
+                                        <div className="p-5 flex flex-col flex-1">
                                             {/* Category */}
                                             <p className="text-xs text-blue-600 font-semibold uppercase tracking-wide mb-2">
                                                 {product.category.name}
                                             </p>
 
                                             {/* Product Name */}
-                                            <h3 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-2 group-hover:text-blue-600 transition-colors">
+                                            <h3 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-2 h-14 group-hover:text-blue-600 transition-colors">
                                                 {product.name}
                                             </h3>
 
@@ -193,7 +193,7 @@ export default function ListProduct() {
                                             </div>
 
                                             {/* Price & Button */}
-                                            <div className="flex items-center justify-between pt-4 border-t border-gray-200">
+                                            <div className="flex items-center justify-between pt-4 border-t border-gray-200 mt-auto">
                                                 <div className="text-2xl font-bold text-blue-600">
                                                     {formatPrice(product.price)}
                                                 </div>
