@@ -87,11 +87,7 @@ export default function ListProduct({
             }}
         >
             <div className="max-w-7xl mx-auto relative z-10">
-                {/* Header */}
-                <div className="text-center mb-12">
-                    <h2 className="text-4xl font-bold text-yellow-300 mb-2 drop-shadow-lg">Sản Phẩm</h2>
-                    <p className="text-yellow-200 font-bold text-lg drop-shadow">Khám phá bộ sưu tập thời trang của chúng tôi</p>
-                </div>
+
 
                 {/* Loading State */}
                 {loading ? (
