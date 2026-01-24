@@ -59,6 +59,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                         userDetails,
                         null,
                         userDetails.getAuthorities());
+                log.info("Authorities = {}", userDetails.getAuthorities());
+
                 // Lưu userId vào details để controller có thể lấy nhanh
                 authToken.setDetails(
                         userId != null ? userId : new WebAuthenticationDetailsSource().buildDetails(request));

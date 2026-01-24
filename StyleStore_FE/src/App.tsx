@@ -14,6 +14,7 @@ import DashboardPage from './pages/Admin/Dashboard/Dashboard.page';
 import OrderManage from './pages/Admin/OrderManage/OrderManage.page';
 import OrderPage from './pages/Customer/Order/Order.page';
 import OAuth2CallbackPage from './pages/Auth/OAuth2Callback';
+import SearchPage from './pages/Customer/Search/Search.page';
 
 const App: React.FC = () => {
   return (
@@ -35,6 +36,7 @@ const App: React.FC = () => {
 
           {/* Customer Routes */}
           <Route path="/" element={<Home />} />
+          <Route path="/search" element={<SearchPage />} />
           <Route path="/product/:id" element={<ProductDetail />} />
           <Route path="/cart" element={<CartPage />} />
           <Route path="/profile" element={<ProfilePage />} />

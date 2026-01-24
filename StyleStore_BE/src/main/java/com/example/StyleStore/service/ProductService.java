@@ -126,4 +126,8 @@ public class ProductService {
     public long getTotalProductCount() {
         return productRepository.count();
     }
+
+    public Page<Product> searchProductsByName(String name, Pageable pageable) {
+        return productRepository.searchByName(name, ProductStatus.ACTIVE, pageable);
+    }
 }

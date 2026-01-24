@@ -1,5 +1,7 @@
+
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import tetBg from '../../../assets/BG_TET.jpg';
 
 export interface Size {
     id: number;
@@ -73,13 +75,22 @@ export default function ListProduct({
         );
     }
 
+
     return (
-        <div className="w-full bg-slate-900 py-12 px-4">
-            <div className="max-w-7xl mx-auto">
+        <div
+            className="w-full py-12 px-4 relative overflow-hidden"
+            style={{
+                backgroundImage: `url(${tetBg})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                minHeight: '100vh',
+            }}
+        >
+            <div className="max-w-7xl mx-auto relative z-10">
                 {/* Header */}
                 <div className="text-center mb-12">
-                    <h2 className="text-4xl font-bold text-pink-800 mb-2">Sản Phẩm</h2>
-                    <p className="text-pink-800 font-bold text-lg">Khám phá bộ sưu tập thời trang của chúng tôi</p>
+                    <h2 className="text-4xl font-bold text-yellow-300 mb-2 drop-shadow-lg">Sản Phẩm</h2>
+                    <p className="text-yellow-200 font-bold text-lg drop-shadow">Khám phá bộ sưu tập thời trang của chúng tôi</p>
                 </div>
 
                 {/* Loading State */}
@@ -90,7 +101,7 @@ export default function ListProduct({
                 ) : (
                     <>
                         {/* Products Grid */}
-                        <div className="bg-slate-800 rounded-xl p-8 mb-12">
+                        <div className="bg-red-50/80 backdrop-blur-sm rounded-xl p-8 mb-12 shadow-2xl border-4 border-yellow-400">
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                                 {products.map((product) => (
                                     <div
@@ -155,7 +166,7 @@ export default function ListProduct({
                                                 </div>
                                                 <button
                                                     onClick={() => navigate(`/product/${product.id}`)}
-                                                    className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200 transform hover:scale-105"
+                                                    className="bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg font-semibold py-2 px-4 rounded-lg transition-colors duration-200 transform hover:scale-105"
                                                 >
                                                     Xem Chi Tiết
                                                 </button>
