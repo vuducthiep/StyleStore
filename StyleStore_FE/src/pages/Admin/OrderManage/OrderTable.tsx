@@ -189,7 +189,7 @@ const OrderTable: React.FC<OrderTableProps> = ({ refreshKey = 0, onViewDetail })
                     )}
                     <button
                         onClick={() => fetchOrders(page)}
-                        className="text-sm px-3 py-1 rounded border border-slate-200 hover:bg-slate-50"
+                        className="px-4 py-2 rounded bg-blue-600 text-white font-medium hover:bg-blue-700 transition"
                     >
                         Tải lại
                     </button>

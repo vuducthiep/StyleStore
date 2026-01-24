@@ -113,7 +113,7 @@ const UserTable: React.FC<UserTableProps> = ({ refreshKey = 0, onEdit }) => {
                     )}
                     <button
                         onClick={() => fetchUsers(page)}
-                        className="text-sm px-3 py-1 rounded border border-slate-200 hover:bg-slate-50"
+                        className="px-4 py-2 rounded bg-blue-600 text-white font-medium hover:bg-blue-700 transition"
                     >
                         Tải lại
                     </button>

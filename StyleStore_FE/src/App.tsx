@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import AdminLayout from './layouts/AdminLayout';
 import Login from './pages/Auth/Login';
@@ -15,6 +15,7 @@ import OrderManage from './pages/Admin/OrderManage/OrderManage.page';
 import OrderPage from './pages/Customer/Order/Order.page';
 import OAuth2CallbackPage from './pages/Auth/OAuth2Callback';
 import SearchPage from './pages/Customer/Search/Search.page';
+import CategoryManager from './pages/Admin/CategoryManage/CategoryManage.page';
 
 const App: React.FC = () => {
   return (
@@ -28,9 +29,11 @@ const App: React.FC = () => {
 
           {/* Admin Routes */}
           <Route element={<AdminLayout />}>
+            <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
             <Route path="/admin/dashboard" element={<DashboardPage />} />
             <Route path="/admin/user-manager" element={<UserManager />} />
             <Route path="/admin/product-manager" element={<ProductManager />} />
+            <Route path='/admin/category-manager' element={<CategoryManager />} />
             <Route path="/admin/order-manager" element={<OrderManage />} />
           </Route>
 

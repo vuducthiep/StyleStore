@@ -34,12 +34,7 @@ const ProductManager: React.FC = () => {
                     <p className="text-slate-500 text-sm">Xem danh sách và thông tin sản phẩm.</p>
                 </div>
                 <div className="flex gap-2">
-                    <button
-                        onClick={() => setRefreshKey((prev) => prev + 1)}
-                        className="px-4 py-2 rounded border border-slate-300 text-slate-700 font-medium hover:bg-slate-50 transition"
-                    >
-                        Tải lại
-                    </button>
+
                     <button
                         onClick={handleAddProduct}
                         className="px-4 py-2 rounded bg-blue-600 text-white font-medium hover:bg-blue-700 transition"
