@@ -59,7 +59,7 @@ const User_OrderTable: React.FC<UserOrderTableProps> = ({
             if (!res.ok) {
                 const text = await res.text();
                 const data = text ? JSON.parse(text) : {};
-                const message = data.message || `Lỗi tải danh sách đơn hàng (code ${res.status}).`;
+                const message = data.message || `Bạn chưa đăng nhập hoặc token đã hết hạn, vui lòng đăng nhập lại.`;
                 setError(message);
                 return;
             }

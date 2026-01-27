@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ChevronLeft, ShoppingCart, Check } from "lucide-react";
 import Header from "../../../components/Header";
+import Comments from "./Comments";
 interface Size {
     id: number;
     name: string;
@@ -325,6 +326,9 @@ export default function ProductDetail() {
                     </div>
                 </div>
             </div>
+
+            {/* cmt */}
+            <Comments productId={product.id} />
         </div>
     );
 }
