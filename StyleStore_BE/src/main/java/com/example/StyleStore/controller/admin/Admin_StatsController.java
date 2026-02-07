@@ -8,13 +8,17 @@ import com.example.StyleStore.service.OrderService;
 import com.example.StyleStore.service.ProductService;
 import com.example.StyleStore.service.UserService;
 
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.RequestParam;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
@@ -68,6 +72,31 @@ public class Admin_StatsController {
     public ResponseEntity<ApiResponse<RevenueGrowthDto>> getRecentMonthRevenueGrowth() {
         RevenueGrowthDto result = orderService.getRevenueGrowth();
         return ResponseEntity.ok(ApiResponse.ok("Lấy tăng trưởng doanh thu tháng vừa rồi thành công", result));
+    }
+
+    @GetMapping("/revenue/by-date")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<BigDecimal>> getRevenueByDate(
+            @RequestParam("date") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+        BigDecimal revenue = orderService.getRevenueByDate(date);
+        return ResponseEntity.ok(ApiResponse.ok("Lấy doanh thu theo ngày thành công", revenue));
+    }
+
+    @GetMapping("/revenue/by-month")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<BigDecimal>> getRevenueByMonth(
+            @RequestParam("year") int year,
+            @RequestParam("month") int month) {
+        BigDecimal revenue = orderService.getRevenueByMonth(year, month);
+        return ResponseEntity.ok(ApiResponse.ok("Lấy doanh thu theo tháng thành công", revenue));
+    }
+
+    @GetMapping("/revenue/by-year")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<BigDecimal>> getRevenueByYear(
+            @RequestParam("year") int year) {
+        BigDecimal revenue = orderService.getRevenueByYear(year);
+        return ResponseEntity.ok(ApiResponse.ok("Lấy doanh thu theo năm thành công", revenue));
     }
 
 }

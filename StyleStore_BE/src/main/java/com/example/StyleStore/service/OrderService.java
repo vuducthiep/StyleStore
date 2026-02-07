@@ -19,6 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.util.ArrayList;
@@ -99,6 +100,26 @@ public class OrderService {
                 twoMonthsAgoRevenue,
                 growth,
                 growthPercentage);
+    }
+
+    public BigDecimal getRevenueByDate(LocalDate date) {
+        LocalDateTime from = date.atStartOfDay();
+        LocalDateTime to = date.plusDays(1).atStartOfDay();
+        return orderRepository
+                .getRevenueByDateRange(from, to, OrderStatus.DELIVERED.name())
+                .orElse(BigDecimal.ZERO);
+    }
+
+    public BigDecimal getRevenueByMonth(int year, int month) {
+        return orderRepository
+                .getRevenueByYearMonth(year, month, OrderStatus.DELIVERED.name())
+                .orElse(BigDecimal.ZERO);
+    }
+
+    public BigDecimal getRevenueByYear(int year) {
+        return orderRepository
+                .getRevenueByYear(year, OrderStatus.DELIVERED.name())
+                .orElse(BigDecimal.ZERO);
     }
 
     public Page<OrderDto> getAllOrders(int page, int size, String sortBy, String sortDir) {
