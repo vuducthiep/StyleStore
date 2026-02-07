@@ -1,6 +1,7 @@
 package com.example.StyleStore.controller.admin;
 
 import com.example.StyleStore.dto.ApiResponse;
+import com.example.StyleStore.dto.CategoryStockDto;
 import com.example.StyleStore.dto.MonthlyRevenueDto;
 import com.example.StyleStore.dto.MonthlyUserDto;
 import com.example.StyleStore.dto.RevenueGrowthDto;
@@ -57,6 +58,17 @@ public class Admin_StatsController {
         long count = productService.getTotalProductCount();
         Map<String, Object> response = Map.of("totalProducts", count);
         return ResponseEntity.ok(ApiResponse.ok("Lấy tổng số sản phẩm thành công", response));
+    }
+
+    @GetMapping("/products/total-stock")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> getTotalStock() {
+        long totalStock = productService.getTotalStock();
+        List<CategoryStockDto> categoryStocks = productService.getStockByCategory();
+        Map<String, Object> response = Map.of(
+                "totalStock", totalStock,
+                "categories", categoryStocks);
+        return ResponseEntity.ok(ApiResponse.ok("Lấy tổng tồn kho thành công", response));
     }
 
     @GetMapping("/users/active-count")

@@ -1,11 +1,14 @@
 package com.example.StyleStore.service;
 
+import com.example.StyleStore.dto.CategoryStockDto;
 import com.example.StyleStore.model.Category;
 import com.example.StyleStore.model.Product;
 import com.example.StyleStore.model.ProductSize;
 import com.example.StyleStore.model.Size;
 import com.example.StyleStore.model.enums.ProductStatus;
+import com.example.StyleStore.repository.CategoryRepository;
 import com.example.StyleStore.repository.ProductRepository;
+import com.example.StyleStore.repository.ProductSizeRepository;
 import com.example.StyleStore.repository.SizeRepository;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,6 +20,7 @@ import org.springframework.data.domain.Pageable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class ProductService {
@@ -25,6 +29,12 @@ public class ProductService {
 
     @Autowired
     private SizeRepository sizeRepository;
+
+    @Autowired
+    private ProductSizeRepository productSizeRepository;
+
+    @Autowired
+    private CategoryRepository categoryRepository;
 
     public Page<Product> getProducts(Pageable pageable) {
         return productRepository.findByStatus(ProductStatus.ACTIVE, pageable);
@@ -125,6 +135,20 @@ public class ProductService {
     @Cacheable(cacheNames = "stats:products:count", key = "'fixed'")
     public long getTotalProductCount() {
         return productRepository.count();
+    }
+
+    public long getTotalStock() {
+        Long total = productSizeRepository.sumTotalStock();
+        return total != null ? total : 0L;
+    }
+
+    public List<CategoryStockDto> getStockByCategory() {
+        return categoryRepository.sumStockByCategory().stream()
+                .map(item -> new CategoryStockDto(
+                        item.getCategoryId(),
+                        item.getCategoryName(),
+                        item.getTotalStock()))
+                .collect(Collectors.toList());
     }
 
     public Page<Product> searchProductsByName(String name, Pageable pageable) {
