@@ -295,10 +295,7 @@ public class OrderService {
 
         List<OrderItem> savedOrderItems = orderItemRepository.saveAll(orderItems);
 
-        // 5. Set orderItems vào savedOrder để convertToDetailDto có thể sử dụng
         savedOrder.setOrderItems(savedOrderItems);
-
-        // 6. Return OrderDto
         return convertToDetailDto(savedOrder);
     }
 
