@@ -22,6 +22,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
                 BigDecimal getRevenue();
         }
 
+        // get sum Revenue By Month
         @Query(value = """
                         SELECT YEAR(o.created_at)   AS year,
                         			 MONTH(o.created_at)  AS month,
@@ -37,6 +38,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
                         @Param("to") LocalDateTime to,
                         @Param("completedStatus") String completedStatus);
 
+        //get revenue by month
         @Query(value = """
                         SELECT COALESCE(SUM(o.total_amount), 0) AS revenue
                         FROM orders o
@@ -48,6 +50,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
                         @Param("month") int month,
                         @Param("completedStatus") String completedStatus);
 
+        //get revenue by date range
         @Query(value = """
                         SELECT COALESCE(SUM(o.total_amount), 0) AS revenue
                         FROM orders o
@@ -59,6 +62,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
                         @Param("to") LocalDateTime to,
                         @Param("completedStatus") String completedStatus);
 
+        //get revenue by year
         @Query(value = """
                         SELECT COALESCE(SUM(o.total_amount), 0) AS revenue
                         FROM orders o
@@ -70,6 +74,8 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
                         @Param("completedStatus") String completedStatus);
 
         List<Order> findByUser_IdOrderByCreatedAtDesc(Long userId);
+        
+
 
 }
 
