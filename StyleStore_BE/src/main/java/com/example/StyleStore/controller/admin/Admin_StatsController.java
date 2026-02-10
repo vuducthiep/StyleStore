@@ -1,6 +1,7 @@
 package com.example.StyleStore.controller.admin;
 
 import com.example.StyleStore.dto.ApiResponse;
+import com.example.StyleStore.dto.BestSellingProductsInCategoriesDTO;
 import com.example.StyleStore.dto.CategoryStockDto;
 import com.example.StyleStore.dto.MonthlyRevenueDto;
 import com.example.StyleStore.dto.MonthlyUserDto;
@@ -109,6 +110,14 @@ public class Admin_StatsController {
             @RequestParam("year") int year) {
         BigDecimal revenue = orderService.getRevenueByYear(year);
         return ResponseEntity.ok(ApiResponse.ok("Lấy doanh thu theo năm thành công", revenue));
+    }
+
+    // get best-selling products in categories
+    @GetMapping("/best-selling-product-in-categories")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<List<BestSellingProductsInCategoriesDTO>>> getBestSellingProductsInCategories() {
+        List<BestSellingProductsInCategoriesDTO> result = orderService.getBestSellingProductsInCategories();
+        return ResponseEntity.ok(ApiResponse.ok("Lấy sản phẩm bán chạy nhất theo danh mục thành công", result));
     }
 
 }

@@ -2,7 +2,7 @@ import { useEffect, useState, useMemo, memo } from 'react';
 import { Card, Spin, Empty, Tooltip } from 'antd';
 import { ShoppingOutlined, UserOutlined, DollarOutlined } from '@ant-design/icons';
 import CountUp from 'react-countup';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 import './Dashboard.css';
 import { getAuthToken } from '../../../services/auth';
 
@@ -30,6 +30,17 @@ interface RevenueGrowth {
     growthPercentage: number;
 }
 
+interface StockCategory {
+    categoryId: number;
+    categoryName: string;
+    totalStock: number;
+}
+
+interface TotalStockResponse {
+    totalStock: number;
+    categories: StockCategory[];
+}
+
 interface MonthlyUser {
     year: number;
     month: number;
@@ -42,12 +53,15 @@ interface MonthlyRevenue {
     revenue: number;
 }
 
+const STOCK_COLORS = ['#8b5cf6', '#22c55e', '#0ea5e9', '#f59e0b', '#ef4444', '#14b8a6'];
+
 const DashboardPage = () => {
     const [productCount, setProductCount] = useState<number | null>(null);
     const [activeUsers, setActiveUsers] = useState<number | null>(null);
     const [revenueGrowth, setRevenueGrowth] = useState<RevenueGrowth | null>(null);
     const [userRegistrations, setUserRegistrations] = useState<MonthlyUser[]>([]);
     const [monthlyRevenue, setMonthlyRevenue] = useState<MonthlyRevenue[]>([]);
+    const [totalStock, setTotalStock] = useState<TotalStockResponse | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     // const [isFirstLoad, setIsFirstLoad] = useState(true);
@@ -70,23 +84,25 @@ const DashboardPage = () => {
                 console.log('Fetching stats with token:', token.substring(0, 20) + '...');
 
                 // Fetch all stats in parallel
-                const [productsRes, usersRes, revenueRes, userRegRes, monthlyRevRes] = await Promise.all([
+                const [productsRes, usersRes, revenueRes, userRegRes, monthlyRevRes, totalStockRes] = await Promise.all([
                     fetch('http://localhost:8080/api/admin/stats/products/count', { headers }),
                     fetch('http://localhost:8080/api/admin/stats/users/active-count', { headers }),
                     fetch('http://localhost:8080/api/admin/stats/revenue/recent-month-growth', { headers }),
                     fetch('http://localhost:8080/api/admin/stats/monthly-user-registrations', { headers }),
                     fetch('http://localhost:8080/api/admin/stats/revenue/monthly-recent', { headers }),
+                    fetch('http://localhost:8080/api/admin/stats/products/total-stock', { headers }),
                 ]);
 
-                console.log('Response status:', productsRes.status, usersRes.status, revenueRes.status, userRegRes.status, monthlyRevRes.status);
+                console.log('Response status:', productsRes.status, usersRes.status, revenueRes.status, userRegRes.status, monthlyRevRes.status, totalStockRes.status);
 
-                if (!productsRes.ok || !usersRes.ok || !revenueRes.ok || !userRegRes.ok || !monthlyRevRes.ok) {
+                if (!productsRes.ok || !usersRes.ok || !revenueRes.ok || !userRegRes.ok || !monthlyRevRes.ok || !totalStockRes.ok) {
                     const errorMessages = [];
                     if (!productsRes.ok) errorMessages.push(`Products: ${productsRes.status}`);
                     if (!usersRes.ok) errorMessages.push(`Users: ${usersRes.status}`);
                     if (!revenueRes.ok) errorMessages.push(`Revenue: ${revenueRes.status}`);
                     if (!userRegRes.ok) errorMessages.push(`UserReg: ${userRegRes.status}`);
                     if (!monthlyRevRes.ok) errorMessages.push(`MonthlyRev: ${monthlyRevRes.status}`);
+                    if (!totalStockRes.ok) errorMessages.push(`TotalStock: ${totalStockRes.status}`);
                     throw new Error(`Failed to fetch statistics: ${errorMessages.join(', ')}`);
                 }
 
@@ -95,12 +111,14 @@ const DashboardPage = () => {
                 const revenueData = (await revenueRes.json()) as StatsResponse<RevenueGrowth>;
                 const userRegData = (await userRegRes.json()) as StatsResponse<MonthlyUser[]>;
                 const monthlyRevData = (await monthlyRevRes.json()) as StatsResponse<MonthlyRevenue[]>;
+                const totalStockData = (await totalStockRes.json()) as StatsResponse<TotalStockResponse>;
 
                 setProductCount(productsData.data.totalProducts);
                 setActiveUsers(usersData.data.activeUsers);
                 setRevenueGrowth(revenueData.data);
                 setUserRegistrations(userRegData.data);
                 setMonthlyRevenue(monthlyRevData.data);
+                setTotalStock(totalStockData.data);
                 setError(null);
             } catch (err) {
                 setError(err instanceof Error ? err.message : 'An error occurred');
@@ -131,6 +149,14 @@ const DashboardPage = () => {
         [monthlyRevenue]
     );
 
+    const stockCategoryData = useMemo(() =>
+        totalStock?.categories.map(item => ({
+            name: item.categoryName,
+            value: item.totalStock
+        })) ?? [],
+        [totalStock]
+    );
+
     if (loading) {
         return (
             <Spin fullscreen size="large" tip="Đang tải dữ liệu..." />
@@ -151,11 +177,11 @@ const DashboardPage = () => {
     return (
         <div className="p-6 bg-gray-50 min-h-screen">
             {/* Stats Cards Section */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
                 {/* Total Products Card */}
-                <div className="animate-slideup-fade">
+                <div className="animate-slideup-fade h-full">
                     <Card
-                        className="shadow-lg hover:shadow-xl transition-shadow duration-300 border-l-4 border-l-blue-500"
+                        className="stat-card shadow-lg hover:shadow-xl transition-shadow duration-300 border-l-4 border-l-blue-500"
                         hoverable
                     >
                         <div className="flex items-center justify-between">
@@ -179,9 +205,9 @@ const DashboardPage = () => {
                 </div>
 
                 {/* Active Users Card */}
-                <div className="animate-slideup-fade" style={{ animationDelay: '0.1s' }}>
+                <div className="animate-slideup-fade h-full" style={{ animationDelay: '0.1s' }}>
                     <Card
-                        className="shadow-lg hover:shadow-xl transition-shadow duration-300 border-l-4 border-l-green-500"
+                        className="stat-card shadow-lg hover:shadow-xl transition-shadow duration-300 border-l-4 border-l-green-500"
                         hoverable
                     >
                         <div className="flex items-center justify-between">
@@ -205,7 +231,7 @@ const DashboardPage = () => {
                 </div>
 
                 {/* Revenue Growth Card */}
-                <div className="animate-slideup-fade" style={{ animationDelay: '0.2s' }}>
+                <div className="animate-slideup-fade h-full" style={{ animationDelay: '0.2s' }}>
                     <Tooltip
                         title={
                             revenueGrowth ? (
@@ -224,7 +250,7 @@ const DashboardPage = () => {
                         placement="bottom"
                     >
                         <Card
-                            className="shadow-lg hover:shadow-xl transition-shadow duration-300 border-l-4 border-l-orange-500"
+                            className="stat-card shadow-lg hover:shadow-xl transition-shadow duration-300 border-l-4 border-l-orange-500"
                             hoverable
                         >
                             <div className="flex items-center justify-between">
@@ -257,10 +283,81 @@ const DashboardPage = () => {
                         </Card>
                     </Tooltip>
                 </div>
+
+                {/* Total Stock Card */}
+                <div className="animate-slideup-fade h-full" style={{ animationDelay: '0.3s' }}>
+                    <Card
+                        className="stat-card shadow-lg hover:shadow-xl transition-shadow duration-300 border-l-4 border-l-purple-500"
+                        hoverable
+                    >
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <p className="text-gray-600 text-sm font-medium">Tổng Tồn Kho</p>
+                                <p className="text-3xl font-bold text-purple-600 mt-2">
+                                    {totalStock?.totalStock !== undefined && (
+                                        <CountUp
+                                            end={totalStock.totalStock}
+                                            duration={2}
+                                            separator=","
+                                        />
+                                    )}
+                                </p>
+                            </div>
+                            <div className="bg-purple-100 p-4 rounded-full">
+                                <ShoppingOutlined className="text-2xl text-purple-600" />
+                            </div>
+                        </div>
+                    </Card>
+                </div>
             </div>
 
             {/* Main Content Area (for future charts) */}
             <div className="grid grid-cols-1 gap-6">
+                {/* Stock by Category Chart */}
+                <Card title="Tồn Kho Theo Danh Mục" className="shadow-lg">
+                    <div className="h-96">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <PieChart>
+                                <RechartsTooltip
+                                    contentStyle={{
+                                        backgroundColor: 'white',
+                                        border: '1px solid #e5e7eb',
+                                        borderRadius: '8px',
+                                        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                                    }}
+                                    formatter={(value: number | string | undefined, _name, props) => {
+                                        const num = typeof value === 'number'
+                                            ? value
+                                            : (typeof value === 'string' ? Number(value) : 0);
+                                        return [
+                                            new Intl.NumberFormat('vi-VN').format(num),
+                                            props?.payload?.name ?? ''
+                                        ] as [string, string];
+                                    }}
+                                />
+                                <Legend />
+                                <Pie
+                                    data={stockCategoryData}
+                                    dataKey="value"
+                                    nameKey="name"
+                                    cx="50%"
+                                    cy="50%"
+                                    outerRadius="70%"
+                                    paddingAngle={2}
+                                    labelLine={false}
+                                >
+                                    {stockCategoryData.map((_, index) => (
+                                        <Cell key={`cell-${index}`} fill={STOCK_COLORS[index % STOCK_COLORS.length]} />
+                                    ))}
+                                </Pie>
+                            </PieChart>
+                        </ResponsiveContainer>
+                    </div>
+                    <div className="mt-4 text-center text-sm text-gray-500">
+                        Tổng tồn kho: {new Intl.NumberFormat('vi-VN').format(totalStock?.totalStock ?? 0)}
+                    </div>
+                </Card>
+
                 {/* User Registration Chart */}
                 <Card title="Biểu Đồ Đăng Ký Người Dùng" className="shadow-lg">
                     <div className="h-96">

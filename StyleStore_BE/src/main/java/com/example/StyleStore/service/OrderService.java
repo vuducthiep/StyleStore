@@ -1,5 +1,6 @@
 package com.example.StyleStore.service;
 
+import com.example.StyleStore.dto.BestSellingProductsInCategoriesDTO;
 import com.example.StyleStore.dto.MonthlyRevenueDto;
 import com.example.StyleStore.dto.OrderDto;
 import com.example.StyleStore.dto.OrderItemDto;
@@ -11,6 +12,9 @@ import com.example.StyleStore.repository.OrderItemRepository;
 import com.example.StyleStore.repository.OrderRepository;
 import com.example.StyleStore.repository.ProductRepository;
 import com.example.StyleStore.repository.ProductSizeRepository;
+
+import io.jsonwebtoken.lang.Collections;
+
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -297,6 +301,11 @@ public class OrderService {
 
         savedOrder.setOrderItems(savedOrderItems);
         return convertToDetailDto(savedOrder);
+    }
+
+    // get best-selling in categories
+    public List<BestSellingProductsInCategoriesDTO> getBestSellingProductsInCategories() {
+        return orderRepository.getBestSellingProductsInCategories();
     }
 
 }
