@@ -10,5 +10,7 @@ public interface BestSellingProductsInCategoriesDTO {
 
     String getProductName();
 
+    String getProductThumbnail();
+
     long getTotalSold();
 }

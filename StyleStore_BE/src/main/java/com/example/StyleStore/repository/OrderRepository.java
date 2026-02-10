@@ -79,13 +79,14 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
   // get best-selling in categories
 
   @Query(value = """
-              SELECT category_id, category_name, product_id, product_name, total_sold
+              SELECT category_id, category_name, product_id, product_name, product_thumbnail, total_sold
       FROM (
           SELECT
               c.id AS category_id,
               c.name AS category_name,
               p.name AS product_name,
               p.id AS product_id,
+              p.thumbnail AS product_thumbnail,
               SUM(oi.quantity) AS total_sold,
               ROW_NUMBER() OVER (
                   PARTITION BY c.id
@@ -94,7 +95,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
           FROM categories c
           JOIN products p ON c.id = p.category_id
           JOIN order_items oi ON oi.product_id = p.id
-          GROUP BY c.id, c.name, p.id, p.name
+          GROUP BY c.id, c.name, p.id, p.name, p.thumbnail
       ) t
       WHERE rn = 1;
               """, nativeQuery = true)

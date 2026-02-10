@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import ProductTable, { type AdminProduct } from './ProductTable';
 import ProductModal from './ProductModal';
+import BestSellingByCategory from './BestSellingByCategory';
 
 const ProductManager: React.FC = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -42,6 +43,10 @@ const ProductManager: React.FC = () => {
                         + Thêm sản phẩm
                     </button>
                 </div>
+            </div>
+
+            <div className="mb-6">
+                <BestSellingByCategory />
             </div>
 
             <ProductTable
