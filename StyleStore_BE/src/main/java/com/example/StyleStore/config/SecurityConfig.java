@@ -38,6 +38,8 @@ public class SecurityConfig {
                         .requestMatchers("/oauth2/**", "/login/oauth2/**").permitAll()
                         .requestMatchers("/api/user/products/**").permitAll()
                         .requestMatchers("/api/user/categories/**").permitAll()
+                        .requestMatchers("/ws/**").permitAll()
+                        .requestMatchers("/ws-native/**").permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated())
                 .oauth2Login(oauth2 -> oauth2

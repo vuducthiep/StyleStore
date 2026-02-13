@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>StyleStore WebSocket STOMP Test</title>
+    <style>
+        :root {
+            color-scheme: light;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f5f7fb;
+            color: #1b1f24;
+        }
+
+        h1 {
+            font-size: 20px;
+            margin: 0 0 12px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .card {
+            background: #fff;
+            border: 1px solid #e3e6ee;
+            border-radius: 8px;
+            padding: 12px;
+        }
+
+        label {
+            display: block;
+            font-size: 12px;
+            margin-bottom: 6px;
+            color: #4a5568;
+        }
+
+        input,
+        textarea {
+            width: 100%;
+            border: 1px solid #cdd5e0;
+            border-radius: 6px;
+            padding: 8px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+
+        textarea {
+            height: 80px;
+            resize: vertical;
+        }
+
+        .row {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            margin-top: 8px;
+        }
+
+        button {
+            border: 0;
+            background: #1f6feb;
+            color: #fff;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        button.secondary {
+            background: #6b7280;
+        }
+
+        button:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+        }
+
+        pre {
+            background: #0f172a;
+            color: #e2e8f0;
+            padding: 12px;
+            border-radius: 8px;
+            height: 260px;
+            overflow: auto;
+            font-size: 12px;
+        }
+
+        .hint {
+            font-size: 12px;
+            color: #6b7280;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>StyleStore WebSocket STOMP Test</h1>
+
+    <div class="grid">
+        <div class="card">
+            <label>WebSocket URL</label>
+            <input id="wsUrl" value="ws://localhost:8080/ws-native" />
+
+            <label style="margin-top:10px;">JWT (Bearer token only)</label>
+            <textarea id="jwt" placeholder="paste JWT here"></textarea>
+
+            <div class="row">
+                <button id="connectBtn">Connect</button>
+                <button id="disconnectBtn" class="secondary" disabled>Disconnect</button>
+            </div>
+            <div class="hint" style="margin-top:8px;">Auth header: Authorization: Bearer &lt;JWT&gt;</div>
+        </div>
+
+        <div class="card">
+            <label>Subscribe userId (topic)</label>
+            <input id="subUserId" type="number" value="81" />
+
+            <label style="margin-top:10px;">Receiver userId</label>
+            <input id="receiverId" type="number" value="81" />
+
+            <label style="margin-top:10px;">Message</label>
+            <textarea id="message" placeholder="hello"></textarea>
+
+            <div class="row">
+                <button id="subscribeBtn" disabled>Subscribe</button>
+                <button id="sendBtn" disabled>Send</button>
+            </div>
+            <div class="hint" style="margin-top:8px;">Destination: /app/chat.send</div>
+        </div>
+    </div>
+
+    <div class="card" style="margin-top:12px;">
+        <div class="row" style="justify-content: space-between;">
+            <strong>Log</strong>
+            <button id="clearBtn" class="secondary">Clear</button>
+        </div>
+        <pre id="log"></pre>
+    </div>
+
+    <script type="module" src="/src/ws-test.ts"></script>
+</body>
+
+</html>
