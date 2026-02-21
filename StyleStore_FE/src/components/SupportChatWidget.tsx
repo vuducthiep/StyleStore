@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Client, type IMessage, type StompSubscription } from '@stomp/stompjs';
 import { Headset, Send, X } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
@@ -56,7 +56,20 @@ const SupportChatWidget = () => {
     const [messages, setMessages] = useState<MessageDto[]>([]);
     const [draft, setDraft] = useState('');
     const [error, setError] = useState('');
+    const [isIconVisible, setIsIconVisible] = useState(true);
+    const [isIconReady, setIsIconReady] = useState(false);
+    const [iconPosition, setIconPosition] = useState({ x: 0, y: 0 });
     const currentUserId = useMemo(() => parseCurrentUserId(), []);
+    const messageContainerRef = useRef<HTMLDivElement | null>(null);
+    const dragStateRef = useRef({
+        dragging: false,
+        moved: false,
+        startX: 0,
+        startY: 0,
+        originX: 0,
+        originY: 0,
+        pointerId: -1,
+    });
 
     const shouldHide = useMemo(() => {
         const path = location.pathname;
@@ -64,6 +77,37 @@ const SupportChatWidget = () => {
     }, [location.pathname]);
 
     const token = localStorage.getItem('token');
+
+    const clampPosition = useCallback((x: number, y: number) => {
+        const iconSize = 64;
+        const margin = 8;
+        const maxX = Math.max(margin, window.innerWidth - iconSize - margin);
+        const maxY = Math.max(margin, window.innerHeight - iconSize - margin);
+
+        return {
+            x: Math.min(Math.max(x, margin), maxX),
+            y: Math.min(Math.max(y, margin), maxY),
+        };
+    }, []);
+
+    useEffect(() => {
+        const initial = clampPosition(window.innerWidth - 96, window.innerHeight - 112);
+        setIconPosition(initial);
+        setIsIconReady(true);
+    }, [clampPosition]);
+
+    useEffect(() => {
+        if (!isIconReady) {
+            return;
+        }
+
+        const handleResize = () => {
+            setIconPosition((prev) => clampPosition(prev.x, prev.y));
+        };
+
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, [isIconReady, clampPosition]);
 
     const loadConversation = useCallback(async () => {
         if (!token) {
@@ -102,6 +146,20 @@ const SupportChatWidget = () => {
             loadConversation();
         }
     }, [isOpen, loadConversation]);
+
+    useEffect(() => {
+        if (!isOpen || isLoading) {
+            return;
+        }
+
+        const timer = window.setTimeout(() => {
+            if (messageContainerRef.current) {
+                messageContainerRef.current.scrollTop = messageContainerRef.current.scrollHeight;
+            }
+        }, 0);
+
+        return () => window.clearTimeout(timer);
+    }, [isOpen, isLoading, messages]);
 
     useEffect(() => {
         if (!isOpen || !token || !currentUserId) {
@@ -199,20 +257,92 @@ const SupportChatWidget = () => {
         }
     };
 
-    if (shouldHide) {
+    if (shouldHide || !isIconVisible) {
         return null;
     }
 
+    const handleIconPointerDown = (e: React.PointerEvent<HTMLButtonElement>) => {
+        const state = dragStateRef.current;
+        state.dragging = true;
+        state.moved = false;
+        state.startX = e.clientX;
+        state.startY = e.clientY;
+        state.originX = iconPosition.x;
+        state.originY = iconPosition.y;
+        state.pointerId = e.pointerId;
+
+        e.currentTarget.setPointerCapture(e.pointerId);
+    };
+
+    const handleIconPointerMove = (e: React.PointerEvent<HTMLButtonElement>) => {
+        const state = dragStateRef.current;
+        if (!state.dragging || state.pointerId !== e.pointerId) {
+            return;
+        }
+
+        const dx = e.clientX - state.startX;
+        const dy = e.clientY - state.startY;
+        if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
+            state.moved = true;
+        }
+
+        const next = clampPosition(state.originX + dx, state.originY + dy);
+        setIconPosition(next);
+    };
+
+    const handleIconPointerUp = (e: React.PointerEvent<HTMLButtonElement>) => {
+        const state = dragStateRef.current;
+        if (state.pointerId !== e.pointerId) {
+            return;
+        }
+
+        e.currentTarget.releasePointerCapture(e.pointerId);
+        state.dragging = false;
+
+        if (!state.moved) {
+            setIsOpen(true);
+        }
+    };
+
+    const handleIconPointerCancel = (e: React.PointerEvent<HTMLButtonElement>) => {
+        const state = dragStateRef.current;
+        if (state.pointerId !== e.pointerId) {
+            return;
+        }
+
+        state.dragging = false;
+        state.pointerId = -1;
+    };
+
     return (
         <>
-            <button
-                type="button"
-                onClick={() => setIsOpen(true)}
-                className="fixed bottom-6 right-6 z-40 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg p-4"
-                title="Hỗ trợ khách hàng"
-            >
-                <Headset className="w-6 h-6" />
-            </button>
+            {isIconReady && (
+                <div
+                    className="fixed z-40"
+                    style={{ left: `${iconPosition.x}px`, top: `${iconPosition.y}px` }}
+                >
+                    <button
+                        type="button"
+                        onPointerDown={handleIconPointerDown}
+                        onPointerMove={handleIconPointerMove}
+                        onPointerUp={handleIconPointerUp}
+                        onPointerCancel={handleIconPointerCancel}
+                        className="bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg p-4 touch-none select-none"
+                        title="Hỗ trợ khách hàng"
+                    >
+                        <Headset className="w-6 h-6" />
+                    </button>
+
+                    <button
+                        type="button"
+                        onClick={() => setIsIconVisible(false)}
+                        className="absolute -top-2 -right-2 bg-slate-700 hover:bg-slate-800 text-white rounded-full p-1 shadow"
+                        title="Ẩn biểu tượng chat"
+                    >
+                        <X className="w-3 h-3" />
+                    </button>
+                </div>
+            )}
 
             {isOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4" onClick={() => setIsOpen(false)}>
@@ -232,7 +362,7 @@ const SupportChatWidget = () => {
                             </button>
                         </div>
 
-                        <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-50">
+                        <div ref={messageContainerRef} className="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-50">
                             {isLoading && <p className="text-sm text-slate-500">Đang tải lịch sử tin nhắn...</p>}
                             {!isLoading && messages.length === 0 && (
                                 <p className="text-sm text-slate-500">Chưa có tin nhắn nào với hỗ trợ.</p>
@@ -287,7 +417,7 @@ const SupportChatWidget = () => {
                                     Gửi
                                 </button>
                             </div>
-                            <p className="text-xs text-slate-500">Tin nhắn sẽ được gửi tới hỗ trợ (userId = 6).</p>
+
                         </div>
                     </div>
                 </div>

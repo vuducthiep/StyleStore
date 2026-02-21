@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Client, type IMessage, type StompSubscription } from '@stomp/stompjs';
 import { Send } from 'lucide-react';
 
@@ -60,6 +60,7 @@ const SupportChatPage = () => {
     const [isSending, setIsSending] = useState(false);
     const [error, setError] = useState('');
     const [socketConnected, setSocketConnected] = useState(false);
+    const messageContainerRef = useRef<HTMLDivElement | null>(null);
 
     const token = localStorage.getItem('token');
     const currentUserId = useMemo(() => parseCurrentUserId(), []);
@@ -151,6 +152,20 @@ const SupportChatPage = () => {
             loadConversation(selectedUser.id);
         }
     }, [selectedUser, loadConversation]);
+
+    useEffect(() => {
+        if (!selectedUser || isLoadingMessages) {
+            return;
+        }
+
+        const timer = window.setTimeout(() => {
+            if (messageContainerRef.current) {
+                messageContainerRef.current.scrollTop = messageContainerRef.current.scrollHeight;
+            }
+        }, 0);
+
+        return () => window.clearTimeout(timer);
+    }, [selectedUser, isLoadingMessages, messages]);
 
     useEffect(() => {
         if (!token || !currentUserId) {
@@ -300,7 +315,7 @@ const SupportChatPage = () => {
                     </h3>
                 </div>
 
-                <div className="flex-1 overflow-y-auto bg-gray-50 p-4 space-y-3">
+                <div ref={messageContainerRef} className="flex-1 overflow-y-auto bg-gray-50 p-4 space-y-3">
                     {isLoadingMessages && <p className="text-sm text-gray-500">Đang tải đoạn chat...</p>}
                     {!isLoadingMessages && selectedUser && messages.length === 0 && (
                         <p className="text-sm text-gray-500">Chưa có tin nhắn trong đoạn chat này.</p>
