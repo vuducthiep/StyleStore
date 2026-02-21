@@ -1,11 +1,13 @@
 package com.example.StyleStore.controller;
 
 import com.example.StyleStore.dto.ApiResponse;
+import com.example.StyleStore.dto.ChatUserDto;
 import com.example.StyleStore.dto.MessageDto;
 import com.example.StyleStore.dto.SendMessageRequest;
 import com.example.StyleStore.service.MessageService;
 import jakarta.validation.Valid;
 import java.util.List;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -23,15 +25,25 @@ import org.springframework.web.bind.annotation.RestController;
 public class MessageController {
 
     private final MessageService messageService;
+    private final SimpMessagingTemplate messagingTemplate;
 
-    public MessageController(MessageService messageService) {
+    public MessageController(MessageService messageService, SimpMessagingTemplate messagingTemplate) {
         this.messageService = messageService;
+        this.messagingTemplate = messagingTemplate;
     }
 
     @PostMapping
     public ResponseEntity<ApiResponse<MessageDto>> sendMessage(@Valid @RequestBody SendMessageRequest request) {
         try {
             MessageDto message = messageService.sendMessage(request.getReceiverUserId(), request.getContent());
+
+            messagingTemplate.convertAndSend(
+                    "/topic/messages/" + request.getReceiverUserId(),
+                    message);
+            messagingTemplate.convertAndSend(
+                    "/topic/messages/" + message.getSenderId(),
+                    message);
+
             return ResponseEntity.status(HttpStatus.CREATED)
                     .body(ApiResponse.ok("Send message success", message));
         } catch (Exception e) {
@@ -48,6 +60,17 @@ public class MessageController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(ApiResponse.fail("Get conversation failed: " + e.getMessage()));
+        }
+    }
+
+    @GetMapping("/chat-users")
+    public ResponseEntity<ApiResponse<List<ChatUserDto>>> getChatUsers() {
+        try {
+            List<ChatUserDto> users = messageService.getChatUsers();
+            return ResponseEntity.ok(ApiResponse.ok("Get chat users success", users));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(ApiResponse.fail("Get chat users failed: " + e.getMessage()));
         }
     }
 

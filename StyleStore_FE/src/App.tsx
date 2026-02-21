@@ -12,10 +12,12 @@ import UserManager from './pages/Admin/UserManage/UserManager.page';
 import ProductManager from './pages/Admin/ProductManage/ProductManage.page';
 import DashboardPage from './pages/Admin/Dashboard/Dashboard.page';
 import OrderManage from './pages/Admin/OrderManage/OrderManage.page';
+import SupportChatPage from './pages/Admin/SupportChat/SupportChat.page';
 import OrderPage from './pages/Customer/Order/Order.page';
 import OAuth2CallbackPage from './pages/Auth/OAuth2Callback';
 import SearchPage from './pages/Customer/Search/Search.page';
 import CategoryManager from './pages/Admin/CategoryManage/CategoryManage.page';
+import SupportChatWidget from './components/SupportChatWidget';
 
 const App: React.FC = () => {
   return (
@@ -35,6 +37,7 @@ const App: React.FC = () => {
             <Route path="/admin/product-manager" element={<ProductManager />} />
             <Route path='/admin/category-manager' element={<CategoryManager />} />
             <Route path="/admin/order-manager" element={<OrderManage />} />
+            <Route path="/admin/support-chat" element={<SupportChatPage />} />
           </Route>
 
           {/* Customer Routes */}
@@ -45,6 +48,7 @@ const App: React.FC = () => {
           <Route path="/profile" element={<ProfilePage />} />
           <Route path='/orders' element={<OrderPage />} />
         </Routes>
+        <SupportChatWidget />
       </BrowserRouter>
     </GoogleOAuthProvider>
   );
