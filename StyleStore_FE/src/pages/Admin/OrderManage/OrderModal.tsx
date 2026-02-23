@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { buildAuthHeaders } from '../../../services/auth';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 interface OrderItem {
     id: number;
@@ -43,6 +45,7 @@ const OrderModal: React.FC<OrderModalProps> = ({ isOpen, orderId, onClose }) => 
     const [order, setOrder] = useState<OrderDetail | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
+    const [isExporting, setIsExporting] = useState(false);
 
     useEffect(() => {
         if (isOpen && orderId) {
@@ -91,6 +94,109 @@ const OrderModal: React.FC<OrderModalProps> = ({ isOpen, orderId, onClose }) => 
 
     const formatDateTime = (dateString: string) => {
         return new Date(dateString).toLocaleString('vi-VN');
+    };
+
+    const escapeHtml = (value: string) =>
+        value
+            .replaceAll('&', '&amp;')
+            .replaceAll('<', '&lt;')
+            .replaceAll('>', '&gt;')
+            .replaceAll('"', '&quot;')
+            .replaceAll("'", '&#039;');
+
+    const exportInvoicePdf = async () => {
+        if (!order) return;
+        setIsExporting(true);
+
+        const invoiceRoot = document.createElement('div');
+        invoiceRoot.style.position = 'fixed';
+        invoiceRoot.style.left = '-10000px';
+        invoiceRoot.style.top = '0';
+        invoiceRoot.style.width = '1024px';
+        invoiceRoot.style.background = '#ffffff';
+        invoiceRoot.style.padding = '24px';
+        invoiceRoot.style.boxSizing = 'border-box';
+        invoiceRoot.style.fontFamily = 'Arial, Helvetica, sans-serif';
+
+        const rows = order.orderItems
+            .map(
+                (item) => `
+                <tr>
+                    <td style="padding:8px;border:1px solid #e2e8f0;">${escapeHtml(item.productName)}</td>
+                    <td style="padding:8px;border:1px solid #e2e8f0;text-align:center;">${escapeHtml(item.sizeName)}</td>
+                    <td style="padding:8px;border:1px solid #e2e8f0;text-align:center;">${item.quantity}</td>
+                    <td style="padding:8px;border:1px solid #e2e8f0;text-align:right;">${formatCurrency(item.price)}</td>
+                    <td style="padding:8px;border:1px solid #e2e8f0;text-align:right;font-weight:600;">${formatCurrency(item.subtotal)}</td>
+                </tr>
+                `,
+            )
+            .join('');
+
+        invoiceRoot.innerHTML = `
+            <div style="border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;">
+                <div style="padding:16px 20px;border-bottom:1px solid #e2e8f0;background:#f8fafc;display:flex;justify-content:space-between;align-items:center;">
+                    <h1 style="margin:0;font-size:22px;color:#0f172a;">Hóa đơn đơn hàng #${order.id}</h1>
+                    <span style="padding:4px 10px;border-radius:999px;background:#dcfce7;color:#166534;font-weight:600;font-size:12px;">${escapeHtml(order.status)}</span>
+                </div>
+                <div style="padding:16px 20px;">
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;font-size:14px;color:#334155;">
+                        <div><b>Khách hàng:</b> ${escapeHtml(order.userName)}</div>
+                        <div><b>Số điện thoại:</b> ${escapeHtml(order.phoneNumber)}</div>
+                        <div><b>Ngày tạo:</b> ${escapeHtml(formatDateTime(order.createdAt))}</div>
+                        <div><b>Thanh toán:</b> ${escapeHtml(order.paymentMethod)}</div>
+                    </div>
+                    <div style="margin-bottom:16px;font-size:14px;color:#334155;"><b>Địa chỉ giao hàng:</b> ${escapeHtml(order.shippingAddress)}</div>
+                    <table style="width:100%;border-collapse:collapse;font-size:13px;color:#0f172a;">
+                        <thead>
+                            <tr style="background:#eff6ff;">
+                                <th style="padding:8px;border:1px solid #e2e8f0;text-align:left;">Sản phẩm</th>
+                                <th style="padding:8px;border:1px solid #e2e8f0;text-align:center;">Size</th>
+                                <th style="padding:8px;border:1px solid #e2e8f0;text-align:center;">Số lượng</th>
+                                <th style="padding:8px;border:1px solid #e2e8f0;text-align:right;">Đơn giá</th>
+                                <th style="padding:8px;border:1px solid #e2e8f0;text-align:right;">Thành tiền</th>
+                            </tr>
+                        </thead>
+                        <tbody>${rows}</tbody>
+                    </table>
+                    <div style="display:flex;justify-content:flex-end;margin-top:16px;font-size:18px;font-weight:700;color:#2563eb;">Tổng tiền: ${formatCurrency(order.totalAmount)}</div>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(invoiceRoot);
+
+        try {
+            const canvas = await html2canvas(invoiceRoot, {
+                scale: 2,
+                useCORS: true,
+                backgroundColor: '#ffffff',
+            });
+
+            const imgData = canvas.toDataURL('image/png');
+            const pdf = new jsPDF('p', 'mm', 'a4');
+            const pageWidth = 210;
+            const pageHeight = 297;
+            const imgWidth = pageWidth;
+            const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+            let heightLeft = imgHeight;
+            let position = 0;
+
+            pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+            heightLeft -= pageHeight;
+
+            while (heightLeft > 0) {
+                position = heightLeft - imgHeight;
+                pdf.addPage();
+                pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+                heightLeft -= pageHeight;
+            }
+
+            pdf.save(`hoa-don-${order.id}.pdf`);
+        } finally {
+            document.body.removeChild(invoiceRoot);
+            setIsExporting(false);
+        }
     };
 
     const getStatusColor = (status: string) => {
@@ -207,8 +313,8 @@ const OrderModal: React.FC<OrderModalProps> = ({ isOpen, orderId, onClose }) => 
                                                     <td className="px-4 py-3">#{item.productId}</td>
                                                     <td className="px-4 py-3 font-medium">{item.productName}</td>
                                                     <td className="px-4 py-3">
-                                                        <img 
-                                                            src={item.productImage} 
+                                                        <img
+                                                            src={item.productImage}
                                                             alt={item.productName}
                                                             className="w-12 h-12 object-cover rounded"
                                                             onError={(e) => {
@@ -247,7 +353,16 @@ const OrderModal: React.FC<OrderModalProps> = ({ isOpen, orderId, onClose }) => 
                 </div>
 
                 {/* Footer */}
-                <div className="sticky bottom-0 bg-slate-50 border-t border-slate-200 px-6 py-4 flex justify-end">
+                <div className="sticky bottom-0 bg-slate-50 border-t border-slate-200 px-6 py-4 flex justify-end gap-3">
+                    {order?.status === 'DELIVERED' && (
+                        <button
+                            onClick={exportInvoicePdf}
+                            disabled={isExporting}
+                            className="px-6 py-2 rounded bg-emerald-600 text-white font-medium hover:bg-emerald-700 disabled:bg-emerald-300 transition"
+                        >
+                            {isExporting ? 'Đang xuất...' : 'Xuất hóa đơn'}
+                        </button>
+                    )}
                     <button
                         onClick={onClose}
                         className="px-6 py-2 rounded bg-slate-600 text-white font-medium hover:bg-slate-700 transition"

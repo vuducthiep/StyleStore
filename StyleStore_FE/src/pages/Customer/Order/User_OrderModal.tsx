@@ -1,6 +1,8 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { X, AlertCircle } from 'lucide-react';
 import { buildAuthHeaders } from '../../../services/auth';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 type ApiResponse<T> = {
     success: boolean;
@@ -48,6 +50,7 @@ const User_OrderModal: React.FC<UserOrderModalProps> = ({
     const [order, setOrder] = useState<OrderDetail | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
+    const [isExporting, setIsExporting] = useState(false);
 
     const fetchOrderDetail = useCallback(async () => {
         if (!orderId) return;
@@ -154,6 +157,109 @@ const User_OrderModal: React.FC<UserOrderModalProps> = ({
             hour: '2-digit',
             minute: '2-digit',
         });
+    };
+
+    const escapeHtml = (value: string) =>
+        value
+            .replaceAll('&', '&amp;')
+            .replaceAll('<', '&lt;')
+            .replaceAll('>', '&gt;')
+            .replaceAll('"', '&quot;')
+            .replaceAll("'", '&#039;');
+
+    const exportInvoicePdf = async () => {
+        if (!order) return;
+        setIsExporting(true);
+
+        const invoiceRoot = document.createElement('div');
+        invoiceRoot.style.position = 'fixed';
+        invoiceRoot.style.left = '-10000px';
+        invoiceRoot.style.top = '0';
+        invoiceRoot.style.width = '1024px';
+        invoiceRoot.style.background = '#ffffff';
+        invoiceRoot.style.padding = '24px';
+        invoiceRoot.style.boxSizing = 'border-box';
+        invoiceRoot.style.fontFamily = 'Arial, Helvetica, sans-serif';
+
+        const rows = order.orderItems
+            .map(
+                (item) => `
+                <tr>
+                    <td style="padding:8px;border:1px solid #e2e8f0;">${escapeHtml(item.productName)}</td>
+                    <td style="padding:8px;border:1px solid #e2e8f0;text-align:center;">${escapeHtml(item.sizeName)}</td>
+                    <td style="padding:8px;border:1px solid #e2e8f0;text-align:center;">${item.quantity}</td>
+                    <td style="padding:8px;border:1px solid #e2e8f0;text-align:right;">${formatCurrency(item.price)}</td>
+                    <td style="padding:8px;border:1px solid #e2e8f0;text-align:right;font-weight:600;">${formatCurrency(item.subtotal || item.price * item.quantity)}</td>
+                </tr>
+                `,
+            )
+            .join('');
+
+        invoiceRoot.innerHTML = `
+            <div style="border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;">
+                <div style="padding:16px 20px;border-bottom:1px solid #e2e8f0;background:#f8fafc;display:flex;justify-content:space-between;align-items:center;">
+                    <h1 style="margin:0;font-size:22px;color:#0f172a;">Hóa đơn đơn hàng #${order.id}</h1>
+                    <span style="padding:4px 10px;border-radius:999px;background:#dcfce7;color:#166534;font-weight:600;font-size:12px;">${escapeHtml(getStatusLabel(order.status))}</span>
+                </div>
+                <div style="padding:16px 20px;">
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;font-size:14px;color:#334155;">
+                        <div><b>Khách hàng:</b> ${escapeHtml(order.userName || 'Khách hàng')}</div>
+                        <div><b>Số điện thoại:</b> ${escapeHtml(order.phoneNumber || 'N/A')}</div>
+                        <div><b>Ngày đặt:</b> ${escapeHtml(formatDate(order.createdAt))}</div>
+                        <div><b>Thanh toán:</b> ${escapeHtml(getPaymentMethodLabel(order.paymentMethod))}</div>
+                    </div>
+                    <div style="margin-bottom:16px;font-size:14px;color:#334155;"><b>Địa chỉ giao hàng:</b> ${escapeHtml(order.shippingAddress)}</div>
+                    <table style="width:100%;border-collapse:collapse;font-size:13px;color:#0f172a;">
+                        <thead>
+                            <tr style="background:#eff6ff;">
+                                <th style="padding:8px;border:1px solid #e2e8f0;text-align:left;">Sản phẩm</th>
+                                <th style="padding:8px;border:1px solid #e2e8f0;text-align:center;">Size</th>
+                                <th style="padding:8px;border:1px solid #e2e8f0;text-align:center;">Số lượng</th>
+                                <th style="padding:8px;border:1px solid #e2e8f0;text-align:right;">Đơn giá</th>
+                                <th style="padding:8px;border:1px solid #e2e8f0;text-align:right;">Thành tiền</th>
+                            </tr>
+                        </thead>
+                        <tbody>${rows}</tbody>
+                    </table>
+                    <div style="display:flex;justify-content:flex-end;margin-top:16px;font-size:18px;font-weight:700;color:#2563eb;">Tổng tiền: ${formatCurrency(order.totalAmount)}</div>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(invoiceRoot);
+
+        try {
+            const canvas = await html2canvas(invoiceRoot, {
+                scale: 2,
+                useCORS: true,
+                backgroundColor: '#ffffff',
+            });
+
+            const imgData = canvas.toDataURL('image/png');
+            const pdf = new jsPDF('p', 'mm', 'a4');
+            const pageWidth = 210;
+            const pageHeight = 297;
+            const imgWidth = pageWidth;
+            const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+            let heightLeft = imgHeight;
+            let position = 0;
+
+            pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+            heightLeft -= pageHeight;
+
+            while (heightLeft > 0) {
+                position = heightLeft - imgHeight;
+                pdf.addPage();
+                pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+                heightLeft -= pageHeight;
+            }
+
+            pdf.save(`hoa-don-${order.id}.pdf`);
+        } finally {
+            document.body.removeChild(invoiceRoot);
+            setIsExporting(false);
+        }
     };
 
     if (!isOpen) return null;
@@ -280,7 +386,16 @@ const User_OrderModal: React.FC<UserOrderModalProps> = ({
                 </div>
 
                 {/* Footer */}
-                <div className="border-t border-slate-200 px-6 py-4 flex justify-end">
+                <div className="border-t border-slate-200 px-6 py-4 flex justify-end gap-3">
+                    {order?.status === 'DELIVERED' && (
+                        <button
+                            onClick={exportInvoicePdf}
+                            disabled={isExporting}
+                            className="px-6 py-2 bg-emerald-600 text-white font-medium rounded-lg hover:bg-emerald-700 disabled:bg-emerald-300 transition"
+                        >
+                            {isExporting ? 'Đang xuất...' : 'Xuất hóa đơn'}
+                        </button>
+                    )}
                     <button
                         onClick={onClose}
                         className="px-6 py-2 bg-slate-600 text-white font-medium rounded-lg hover:bg-slate-700 transition"
