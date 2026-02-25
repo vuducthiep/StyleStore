@@ -22,6 +22,9 @@ export interface AdminOrder {
     userName: string;
     phoneNumber: string;
     totalAmount: number;
+    discountAmount: number;
+    finalAmount: number;
+    promotionCode?: string | null;
     shippingAddress: string;
     paymentMethod: string;
     status: string;
@@ -210,7 +213,7 @@ const OrderTable: React.FC<OrderTableProps> = ({ refreshKey = 0, onViewDetail })
                                 <th className="px-4 py-2 text-left">ID</th>
                                 <th className="px-4 py-2 text-left">Tên khách hàng</th>
                                 <th className="px-4 py-2 text-left">Số điện thoại</th>
-                                <th className="px-4 py-2 text-right">Tổng tiền</th>
+                                <th className="px-4 py-2 text-right">Thành tiền</th>
                                 <th className="px-4 py-2 text-left">Địa chỉ giao hàng</th>
                                 <th className="px-4 py-2 text-left">Trạng thái</th>
                                 <th className="px-4 py-2 text-right">Thao tác</th>
@@ -222,7 +225,12 @@ const OrderTable: React.FC<OrderTableProps> = ({ refreshKey = 0, onViewDetail })
                                     <td className="px-4 py-2">{order.id}</td>
                                     <td className="px-4 py-2 font-medium">{order.userName}</td>
                                     <td className="px-4 py-2">{order.phoneNumber}</td>
-                                    <td className="px-4 py-2 text-right font-semibold">{formatCurrency(order.totalAmount)}</td>
+                                    <td className="px-4 py-2 text-right">
+                                        <p className="font-semibold">{formatCurrency(order.finalAmount)}</p>
+                                        {order.discountAmount > 0 && (
+                                            <p className="text-xs text-slate-500">Giảm {formatCurrency(order.discountAmount)}</p>
+                                        )}
+                                    </td>
                                     <td className="px-4 py-2 max-w-xs truncate" title={order.shippingAddress}>
                                         {order.shippingAddress}
                                     </td>

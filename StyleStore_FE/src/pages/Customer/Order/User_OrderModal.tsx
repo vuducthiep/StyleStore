@@ -28,6 +28,9 @@ export interface OrderDetail {
     userName?: string;
     phoneNumber?: string;
     totalAmount: number;
+    discountAmount: number;
+    finalAmount: number;
+    promotionCode?: string | null;
     shippingAddress: string;
     paymentMethod: string;
     status: string;
@@ -221,7 +224,11 @@ const User_OrderModal: React.FC<UserOrderModalProps> = ({
                         </thead>
                         <tbody>${rows}</tbody>
                     </table>
-                    <div style="display:flex;justify-content:flex-end;margin-top:16px;font-size:18px;font-weight:700;color:#2563eb;">Tổng tiền: ${formatCurrency(order.totalAmount)}</div>
+                    <div style="display:flex;flex-direction:column;align-items:flex-end;margin-top:16px;font-size:14px;color:#334155;gap:4px;">
+                        <div>Tạm tính: <b>${formatCurrency(order.totalAmount)}</b></div>
+                        <div>Giảm giá: <b>${formatCurrency(order.discountAmount)}</b></div>
+                        <div style="font-size:18px;font-weight:700;color:#2563eb;">Thành tiền: ${formatCurrency(order.finalAmount)}</div>
+                    </div>
                 </div>
             </div>
         `;
@@ -326,6 +333,10 @@ const User_OrderModal: React.FC<UserOrderModalProps> = ({
                                             {getPaymentMethodLabel(order.paymentMethod)}
                                         </p>
                                     </div>
+                                    <div>
+                                        <p className="text-slate-500 font-medium">Mã khuyến mãi</p>
+                                        <p className="text-slate-900">{order.promotionCode || 'Không có'}</p>
+                                    </div>
                                 </div>
                             </div>
 
@@ -374,11 +385,21 @@ const User_OrderModal: React.FC<UserOrderModalProps> = ({
 
                             {/* Total */}
                             <div className="border-t border-slate-200 pt-4">
-                                <div className="flex items-center justify-between">
-                                    <span className="text-lg font-semibold text-slate-900">Tổng tiền</span>
-                                    <span className="text-2xl font-bold text-blue-600">
-                                        {formatCurrency(order.totalAmount)}
-                                    </span>
+                                <div className="space-y-2">
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-base font-medium text-slate-700">Tạm tính</span>
+                                        <span className="text-base font-medium text-slate-900">{formatCurrency(order.totalAmount)}</span>
+                                    </div>
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-base font-medium text-emerald-700">Giảm giá</span>
+                                        <span className="text-base font-medium text-emerald-700">-{formatCurrency(order.discountAmount)}</span>
+                                    </div>
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-lg font-semibold text-slate-900">Thành tiền</span>
+                                        <span className="text-2xl font-bold text-blue-600">
+                                            {formatCurrency(order.finalAmount)}
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
                         </div>

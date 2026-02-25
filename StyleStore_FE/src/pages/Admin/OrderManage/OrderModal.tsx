@@ -21,6 +21,9 @@ interface OrderDetail {
     userName: string;
     phoneNumber: string;
     totalAmount: number;
+    discountAmount: number;
+    finalAmount: number;
+    promotionCode?: string | null;
     shippingAddress: string;
     paymentMethod: string;
     status: string;
@@ -158,7 +161,11 @@ const OrderModal: React.FC<OrderModalProps> = ({ isOpen, orderId, onClose }) => 
                         </thead>
                         <tbody>${rows}</tbody>
                     </table>
-                    <div style="display:flex;justify-content:flex-end;margin-top:16px;font-size:18px;font-weight:700;color:#2563eb;">Tổng tiền: ${formatCurrency(order.totalAmount)}</div>
+                    <div style="display:flex;flex-direction:column;align-items:flex-end;margin-top:16px;font-size:14px;color:#334155;gap:4px;">
+                        <div>Tạm tính: <b>${formatCurrency(order.totalAmount)}</b></div>
+                        <div>Giảm giá: <b>${formatCurrency(order.discountAmount)}</b></div>
+                        <div style="font-size:18px;font-weight:700;color:#2563eb;">Thành tiền: ${formatCurrency(order.finalAmount)}</div>
+                    </div>
                 </div>
             </div>
         `;
@@ -261,8 +268,16 @@ const OrderModal: React.FC<OrderModalProps> = ({ isOpen, orderId, onClose }) => 
                                         <p className="font-medium text-slate-800">{order.phoneNumber}</p>
                                     </div>
                                     <div>
-                                        <p className="text-sm text-slate-500">Tổng tiền</p>
-                                        <p className="font-semibold text-blue-600 text-lg">{formatCurrency(order.totalAmount)}</p>
+                                        <p className="text-sm text-slate-500">Tạm tính</p>
+                                        <p className="font-medium text-slate-800">{formatCurrency(order.totalAmount)}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-sm text-slate-500">Giảm giá</p>
+                                        <p className="font-medium text-emerald-600">-{formatCurrency(order.discountAmount)}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-sm text-slate-500">Thành tiền</p>
+                                        <p className="font-semibold text-blue-600 text-lg">{formatCurrency(order.finalAmount)}</p>
                                     </div>
                                     <div>
                                         <p className="text-sm text-slate-500">Phương thức thanh toán</p>
@@ -277,6 +292,10 @@ const OrderModal: React.FC<OrderModalProps> = ({ isOpen, orderId, onClose }) => 
                                     <div>
                                         <p className="text-sm text-slate-500">Địa chỉ giao hàng</p>
                                         <p className="font-medium text-slate-800">{order.shippingAddress}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-sm text-slate-500">Mã khuyến mãi</p>
+                                        <p className="font-medium text-slate-800">{order.promotionCode || 'Không có'}</p>
                                     </div>
                                     <div>
                                         <p className="text-sm text-slate-500">Ngày tạo</p>
@@ -338,10 +357,26 @@ const OrderModal: React.FC<OrderModalProps> = ({ isOpen, orderId, onClose }) => 
                                         <tfoot className="bg-slate-50">
                                             <tr>
                                                 <td colSpan={7} className="px-4 py-3 text-right font-semibold text-slate-700">
-                                                    Tổng cộng:
+                                                    Tạm tính:
+                                                </td>
+                                                <td className="px-4 py-3 text-right font-semibold text-slate-700">
+                                                    {formatCurrency(order.totalAmount)}
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td colSpan={7} className="px-4 py-3 text-right font-semibold text-emerald-700">
+                                                    Giảm giá:
+                                                </td>
+                                                <td className="px-4 py-3 text-right font-semibold text-emerald-700">
+                                                    -{formatCurrency(order.discountAmount)}
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td colSpan={7} className="px-4 py-3 text-right font-semibold text-slate-700">
+                                                    Thành tiền:
                                                 </td>
                                                 <td className="px-4 py-3 text-right font-bold text-blue-600 text-lg">
-                                                    {formatCurrency(order.totalAmount)}
+                                                    {formatCurrency(order.finalAmount)}
                                                 </td>
                                             </tr>
                                         </tfoot>
