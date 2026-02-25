@@ -8,6 +8,7 @@ import vietnamAddressData from "../../../vietnamAddress.json";
 import CartItemList from "./CartItemList";
 import AddressSection from "./AddressSection";
 import OrderSummary from "./OrderSummary";
+import PromotionSelector, { type Promotion } from "./PromotionSelector";
 
 interface Province {
     Id: string;
@@ -77,6 +78,19 @@ interface ApiResponse {
     data: Cart;
 }
 
+interface OrderItemRequestPayload {
+    productId: number;
+    sizeId: number;
+    quantity: number;
+}
+
+interface CreateOrderRequestPayload {
+    shippingAddress: string;
+    paymentMethod: PaymentMethod;
+    promotionCode: string | null;
+    orderItems: OrderItemRequestPayload[];
+}
+
 type PaymentMethod = "COD" | "MOMO" | "ZALOPAY";
 
 export default function CartPage() {
@@ -95,8 +109,18 @@ export default function CartPage() {
     const [selectedWard, setSelectedWard] = useState("");
     const [detailedAddress, setDetailedAddress] = useState("");
     const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("COD");
+    const [selectedPromotion, setSelectedPromotion] = useState<Promotion | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [showConfirmCheckout, setShowConfirmCheckout] = useState(false);
+
+    const subtotal = cart?.totalPrice || 0;
+    const discountAmount = selectedPromotion
+        ? Math.min(
+            (subtotal * selectedPromotion.discountPercent) / 100,
+            selectedPromotion.maxDiscountAmount
+        )
+        : 0;
+    const finalAmount = Math.max(subtotal - discountAmount, 0);
 
     useEffect(() => {
         fetchCart();
@@ -314,6 +338,12 @@ export default function CartPage() {
             return;
         }
 
+        if (selectedPromotion && subtotal < selectedPromotion.minOrderAmount) {
+            pushToast("Đơn hàng chưa đạt mức tối thiểu để áp dụng khuyến mãi đã chọn", "error");
+            setSelectedPromotion(null);
+            return;
+        }
+
         const shippingAddress = getSelectedAddress();
         if (!shippingAddress || shippingAddress.includes("Chưa")) {
             pushToast("Vui lòng chọn hoặc nhập địa chỉ giao hàng", "error");
@@ -344,14 +374,21 @@ export default function CartPage() {
             return;
         }
 
-        const payload = {
+        if (selectedPromotion && subtotal < selectedPromotion.minOrderAmount) {
+            pushToast("Khuyến mãi đã chọn không còn hợp lệ", "error");
+            setSelectedPromotion(null);
+            setShowConfirmCheckout(false);
+            return;
+        }
+
+        const payload: CreateOrderRequestPayload = {
             shippingAddress,
             paymentMethod,
+            promotionCode: selectedPromotion?.code || null,
             orderItems: cart.cartItems.map((item) => ({
                 productId: item.product.id,
                 sizeId: item.size.id,
                 quantity: item.quantity,
-                price: item.price,
             })),
         };
 
@@ -476,8 +513,17 @@ export default function CartPage() {
 
                         {/* Order Summary */}
                         <div className="lg:col-span-1">
+                            <PromotionSelector
+                                orderTotal={subtotal}
+                                selectedPromotionId={selectedPromotion?.id || null}
+                                onPromotionChange={setSelectedPromotion}
+                            />
+
                             <OrderSummary
                                 cart={cart}
+                                selectedPromotion={selectedPromotion}
+                                discountAmount={discountAmount}
+                                finalAmount={finalAmount}
                                 paymentMethod={paymentMethod}
                                 onPaymentMethodChange={setPaymentMethod}
                                 onCheckout={handleCheckoutClick}
@@ -494,8 +540,8 @@ export default function CartPage() {
                 open={showConfirmCheckout}
                 title="Xác nhận đặt hàng"
                 message={`Bạn có chắc muốn đặt hàng với phương thức thanh toán: ${paymentMethod === "COD" ? "Thanh toán khi nhận hàng" :
-                        paymentMethod === "MOMO" ? "Ví Momo" :
-                            "ZaloPay"
+                    paymentMethod === "MOMO" ? "Ví Momo" :
+                        "ZaloPay"
                     }?`}
                 confirmText="Đặt hàng"
                 cancelText="Hủy"

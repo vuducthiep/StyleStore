@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
-import { DashboardOutlined, UserOutlined, ShoppingOutlined, ShoppingCartOutlined, LogoutOutlined, AppstoreOutlined, MessageOutlined } from '@ant-design/icons';
+import { DashboardOutlined, UserOutlined, ShoppingOutlined, ShoppingCartOutlined, LogoutOutlined, AppstoreOutlined, MessageOutlined, TagsOutlined } from '@ant-design/icons';
 import logo from '../../assets/Logo.jpg';
 
 interface SidebarItem {
@@ -19,6 +19,7 @@ const Sidebar: React.FC = () => {
         { label: 'User Manager', path: '/admin/user-manager', icon: <UserOutlined /> },
         { label: 'Product Manager', path: '/admin/product-manager', icon: <ShoppingOutlined /> },
         { label: 'Category Manager', path: '/admin/category-manager', icon: <AppstoreOutlined /> },
+        { label: 'Promotion Manager', path: '/admin/promotion-manager', icon: <TagsOutlined /> },
         { label: 'Order Manager', path: '/admin/order-manager', icon: <ShoppingCartOutlined /> },
         { label: 'Hỗ trợ khách hàng', path: '/admin/support-chat', icon: <MessageOutlined /> },
     ];
@@ -38,10 +39,10 @@ const Sidebar: React.FC = () => {
             {/* Sidebar */}
             <div
                 className={`fixed left-0 top-0 h-screen bg-gradient-to-b from-gray-900 to-gray-950 text-white transition-all duration-300 ${isOpen ? 'w-64' : 'w-20'
-                    } lg:w-64 overflow-y-auto z-40`}
+                    } lg:w-64 z-40 flex flex-col`}
             >
                 {/* Logo */}
-                <div className="flex items-center justify-center py-8 border-b border-gray-700">
+                <div className="flex items-center justify-center py-6 border-b border-gray-700 shrink-0">
                     {isOpen ? (
                         <div className="text-center">
                             <img src={logo} alt="StyleStore" className="mx-auto mb-2 h-24 w-24 rounded-full shadow-md" />
@@ -54,35 +55,35 @@ const Sidebar: React.FC = () => {
                 </div>
 
                 {/* Menu Items */}
-                <nav className="mt-8 space-y-4 px-4">
+                <nav className="mt-4 px-3 space-y-2 overflow-y-auto flex-1 scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-transparent">
                     {menuItems.map((item) => (
                         <Link
                             key={item.path}
                             to={item.path}
-                            className={`flex items-center gap-4 px-4 py-3 rounded-lg transition-all duration-200 ${isActive(item.path)
+                            className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 ${isActive(item.path)
                                 ? 'bg-blue-600 text-white shadow-lg'
                                 : 'text-gray-300 hover:bg-gray-800'
                                 }`}
                         >
-                            <span className="text-xl">{item.icon}</span>
-                            {isOpen && <span className="font-medium">{item.label}</span>}
+                            <span className="text-base">{item.icon}</span>
+                            {isOpen && <span className="font-medium text-sm">{item.label}</span>}
                         </Link>
                     ))}
                 </nav>
 
                 {/* Logout Button */}
-                <div className="absolute bottom-8 left-4 right-4">
+                <div className="px-3 py-4 border-t border-gray-800 shrink-0">
                     <button
                         onClick={() => {
                             // Logout logic
                             localStorage.removeItem('token');
                             window.location.href = '/login';
                         }}
-                        className={`w-full flex items-center gap-4 px-4 py-3 rounded-lg bg-red-700 hover:bg-red-800 transition-all duration-200 ${!isOpen ? 'justify-center' : ''
+                        className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg bg-red-700 hover:bg-red-800 transition-all duration-200 ${!isOpen ? 'justify-center' : ''
                             }`}
                     >
-                        <LogoutOutlined className="text-xl" />
-                        {isOpen && <span className="font-medium">Logout</span>}
+                        <LogoutOutlined className="text-base" />
+                        {isOpen && <span className="font-medium text-sm">Logout</span>}
                     </button>
                 </div>
             </div>

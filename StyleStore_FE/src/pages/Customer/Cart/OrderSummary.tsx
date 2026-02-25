@@ -1,5 +1,11 @@
 type PaymentMethod = "COD" | "MOMO" | "ZALOPAY";
 
+interface Promotion {
+    id: number;
+    code: string;
+    name: string;
+}
+
 interface Size {
     id: number;
     name: string;
@@ -26,6 +32,9 @@ interface OrderSummaryProps {
         cartItems: CartItem[];
         totalPrice: number;
     };
+    selectedPromotion: Promotion | null;
+    discountAmount: number;
+    finalAmount: number;
     paymentMethod: PaymentMethod;
     onPaymentMethodChange: (method: PaymentMethod) => void;
     onCheckout: () => void;
@@ -42,6 +51,9 @@ const formatPrice = (price: number) => {
 
 export default function OrderSummary({
     cart,
+    selectedPromotion,
+    discountAmount,
+    finalAmount,
     paymentMethod,
     onPaymentMethodChange,
     onCheckout,
@@ -71,6 +83,12 @@ export default function OrderSummary({
                     <span>Phí vận chuyển:</span>
                     <span className="font-semibold text-green-600">Miễn phí</span>
                 </div>
+                <div className="flex justify-between text-gray-700">
+                    <span>Khuyến mãi:</span>
+                    <span className="font-semibold text-red-500">
+                        {selectedPromotion ? `-${formatPrice(discountAmount)} (${selectedPromotion.code})` : "-"}
+                    </span>
+                </div>
             </div>
 
             <div className="border-t pt-4 mb-6">
@@ -79,7 +97,7 @@ export default function OrderSummary({
                         Thành tiền:
                     </span>
                     <span className="text-2xl font-bold text-blue-600">
-                        {formatPrice(cart.totalPrice)}
+                        {formatPrice(finalAmount)}
                     </span>
                 </div>
             </div>
