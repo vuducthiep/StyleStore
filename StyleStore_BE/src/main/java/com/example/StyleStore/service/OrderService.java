@@ -222,10 +222,21 @@ public class OrderService {
         return convertToDto(order);
     }
 
+    @Transactional
     public OrderDto cancelOrder(long Id) {
         Order order = orderRepository.findById(Id).orElseThrow(() -> new RuntimeException("Order not found"));
         if (order.getStatus() != OrderStatus.SHIPPING && order.getStatus() != OrderStatus.CREATED) {
-            throw new RuntimeException("Only shipping or created orders can be delivered");
+            throw new RuntimeException("Only shipping or created orders can be cancelled");
+        }
+
+        List<OrderItem> orderItems = orderItemRepository.findByOrderId(order.getId());
+        for (OrderItem orderItem : orderItems) {
+            ProductSize productSize = productSizeRepository
+                    .findByProduct_IdAndSize_Id(orderItem.getProduct().getId(), orderItem.getSize().getId())
+                    .orElseThrow(() -> new RuntimeException("Product size not found while cancelling order"));
+
+            productSize.setStock(productSize.getStock() + orderItem.getQuantity());
+            productSizeRepository.save(productSize);
         }
 
         order.setStatus(OrderStatus.CANCELLED);

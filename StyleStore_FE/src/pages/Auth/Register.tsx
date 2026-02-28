@@ -12,7 +12,7 @@ interface RegisterFormData {
 }
 
 interface ApiResponse {
-    message: string;
+    message?: string;
     success?: boolean;
 }
 
@@ -90,14 +90,22 @@ const Register: React.FC = () => {
                 }),
             });
 
-            const data: ApiResponse = await response.json();
+            let data: ApiResponse = {};
+            const responseText = await response.text();
+            if (responseText) {
+                try {
+                    data = JSON.parse(responseText) as ApiResponse;
+                } catch {
+                    data = {};
+                }
+            }
 
             if (!response.ok) {
                 setError(data.message || 'Đăng ký thất bại. Vui lòng thử lại.');
                 return;
             }
 
-            setSuccess('Đăng ký thành công! Vui lòng đăng nhập.');
+            setSuccess(data.message || 'Đăng ký thành công! Vui lòng đăng nhập.');
             setTimeout(() => {
                 navigate('/login');
             }, 2000);
