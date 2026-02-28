@@ -70,10 +70,3 @@ target/
 *.h2.db
 *.trace.db
 
-# =========================
-# SQL dumps / local data exports
-# =========================
-*.sql
-
-# Keep sample or migration SQL files if needed (adjust when you have a dedicated folder)
-#!db/migrations/**/*.sql
