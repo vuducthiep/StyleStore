@@ -4,6 +4,25 @@ import banner2 from '../../../assets/banner2.png';
 import banner3 from '../../../assets/banner3.png';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
+interface Promotion {
+    id: number;
+    code: string;
+    name: string;
+    description: string;
+    discountPercent: number;
+    maxDiscountAmount: number;
+    minOrderAmount: number;
+    startAt: string;
+    endAt: string;
+    isActive: boolean;
+}
+
+interface PromotionApiResponse {
+    success: boolean;
+    message: string;
+    data: Promotion[];
+}
+
 // Generate random particles data once
 const generateParticles = () => {
     return Array.from({ length: 6 }, (_, i) => ({
@@ -39,6 +58,16 @@ const Particle: React.FC<{ particle: typeof particlesData[0] }> = ({ particle })
 const Banner: React.FC = () => {
     const images = [banner1, banner2, banner3];
     const [currentIndex, setCurrentIndex] = useState(0);
+    const [promotions, setPromotions] = useState<Promotion[]>([]);
+    const [promotionIndex, setPromotionIndex] = useState(0);
+    const [promotionLoading, setPromotionLoading] = useState(true);
+
+    const formatPrice = (price: number) => {
+        return new Intl.NumberFormat('vi-VN', {
+            style: 'currency',
+            currency: 'VND',
+        }).format(price);
+    };
 
     // Auto slide every 3 seconds
     useEffect(() => {
@@ -48,6 +77,45 @@ const Banner: React.FC = () => {
 
         return () => clearInterval(timer);
     }, [images.length]);
+
+    useEffect(() => {
+        const fetchPromotions = async () => {
+            try {
+                setPromotionLoading(true);
+                const token = localStorage.getItem('token');
+                const response = await fetch('http://localhost:8080/api/user/promotions/available', {
+                    headers: token
+                        ? {
+                            Authorization: `Bearer ${token}`,
+                        }
+                        : undefined,
+                });
+
+                if (!response.ok) {
+                    throw new Error('Không thể tải khuyến mãi');
+                }
+
+                const result: PromotionApiResponse = await response.json();
+                setPromotions(result.data || []);
+            } catch {
+                setPromotions([]);
+            } finally {
+                setPromotionLoading(false);
+            }
+        };
+
+        fetchPromotions();
+    }, []);
+
+    useEffect(() => {
+        if (promotions.length <= 1) return;
+
+        const promotionTimer = setInterval(() => {
+            setPromotionIndex((prev) => (prev + 1) % promotions.length);
+        }, 2800);
+
+        return () => clearInterval(promotionTimer);
+    }, [promotions]);
 
     const goToSlide = (index: number) => {
         setCurrentIndex(index);
@@ -67,6 +135,18 @@ const Banner: React.FC = () => {
             behavior: 'smooth',
         });
     };
+
+    const goToPreviousPromotion = () => {
+        if (promotions.length === 0) return;
+        setPromotionIndex((prev) => (prev - 1 + promotions.length) % promotions.length);
+    };
+
+    const goToNextPromotion = () => {
+        if (promotions.length === 0) return;
+        setPromotionIndex((prev) => (prev + 1) % promotions.length);
+    };
+
+    const activePromotion = promotions[promotionIndex];
 
     return (
         <>
@@ -116,6 +196,38 @@ const Banner: React.FC = () => {
                         transform: translateY(0);
                     }
                 }
+
+                @keyframes flashGlow {
+                    0%,
+                    100% {
+                        box-shadow: 0 0 0 rgba(147, 51, 234, 0.2);
+                        opacity: 0.88;
+                    }
+                    50% {
+                        box-shadow: 0 0 24px rgba(236, 72, 153, 0.5);
+                        opacity: 1;
+                    }
+                }
+
+                .promo-flash {
+                    animation: flashGlow 1.2s infinite ease-in-out;
+                }
+
+                @keyframes hotBlink {
+                    0%,
+                    100% {
+                        opacity: 1;
+                        transform: scale(1);
+                    }
+                    50% {
+                        opacity: 0.45;
+                        transform: scale(1.08);
+                    }
+                }
+
+                .hot-badge-blink {
+                    animation: hotBlink 0.9s infinite ease-in-out;
+                }
             `}</style>
 
             <div className="w-full max-h-[400px] relative overflow-hidden">
@@ -132,22 +244,76 @@ const Banner: React.FC = () => {
                 {/* Content */}
                 <div className="max-w-7xl mx-auto px-4 py-8 flex items-center justify-between gap-12 h-full relative z-10">
                     {/* Left Section - Text Introduction */}
-                    <div className="flex-1 space-y-6">
-                        <div>
+                    <div className="flex-1 space-y-6 flex flex-col items-center">
+                        <div className="w-full flex flex-col items-center">
                             <h1
-                                className="h-14 text-4xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-3"
+                                className="h-14 text-4xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-3 text-center"
                                 style={{ animation: 'fadeUp 0.8s ease 0s both' }}
                             >
                                 StyleStore
                             </h1>
-                            <p
-                                className="text-lg text-slate-700 leading-relaxed"
+                            <div
+                                className="relative w-[460px] h-[150px] rounded-lg border border-purple-200 bg-white/80 backdrop-blur-sm px-3.5 py-3 promo-flash overflow-hidden"
                                 style={{ animation: 'fadeUp 0.8s ease 0.1s both' }}
                             >
-                                Khám phá bộ sưu tập thời trang hiện đại, phong cách và chất lượng cao. Chúng tôi mang đến những xu hướng mới nhất từ các thương hiệu hàng đầu, giúp bạn tỏa sáng trong mọi dịp.
-                            </p>
+                                {promotions.length > 1 && (
+                                    <>
+                                        <button
+                                            onClick={goToPreviousPromotion}
+                                            className="absolute left-2 top-1/2 -translate-y-1/2 z-10 bg-white/90 hover:bg-white text-purple-700 rounded-full p-1 shadow-md transition"
+                                            aria-label="Khuyến mãi trước"
+                                        >
+                                            <ChevronLeft className="w-4 h-4" />
+                                        </button>
+                                        <button
+                                            onClick={goToNextPromotion}
+                                            className="absolute right-2 top-1/2 -translate-y-1/2 z-10 bg-white/90 hover:bg-white text-purple-700 rounded-full p-1 shadow-md transition"
+                                            aria-label="Khuyến mãi tiếp theo"
+                                        >
+                                            <ChevronRight className="w-4 h-4" />
+                                        </button>
+                                    </>
+                                )}
+                                <span className="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-red-500 text-white text-[10px] font-extrabold tracking-wide hot-badge-blink">
+                                    HOT
+                                </span>
+                                <p className="text-[11px] font-semibold uppercase tracking-wide text-purple-700 mb-1.5 px-10">
+                                    Ưu đãi nổi bật hôm nay
+                                </p>
+
+                                {promotionLoading ? (
+                                    <p className="text-xs text-slate-600 px-10">Đang tải khuyến mãi hấp dẫn...</p>
+                                ) : activePromotion ? (
+                                    <div className="px-10">
+                                        <div className="flex items-center justify-between gap-3">
+                                            <p className="font-extrabold text-pink-600 text-base leading-none">{activePromotion.code}</p>
+                                            <span className="px-2 py-0.5 rounded-full bg-pink-100 text-pink-700 text-xs font-bold animate-pulse">
+                                                -{activePromotion.discountPercent}%
+                                            </span>
+                                        </div>
+                                        <p className="text-xs font-semibold text-slate-800 mt-1">{activePromotion.name}</p>
+                                        <p className="text-[11px] text-slate-600 mt-1 line-clamp-1">{activePromotion.description}</p>
+                                        <p className="text-[11px] text-slate-500 mt-1.5">
+                                            Tối thiểu {formatPrice(activePromotion.minOrderAmount)} · Giảm tối đa {formatPrice(activePromotion.maxDiscountAmount)}
+                                        </p>
+                                        {promotions.length > 1 && (
+                                            <div className="mt-2.5 flex gap-1.5">
+                                                {promotions.map((promotion, index) => (
+                                                    <span
+                                                        key={promotion.id}
+                                                        className={`h-1.5 rounded-full transition-all ${index === promotionIndex ? 'w-6 bg-purple-600' : 'w-2 bg-purple-200'
+                                                            }`}
+                                                    />
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                ) : (
+                                    <p className="text-sm text-slate-600 px-10">Hiện chưa có khuyến mãi khả dụng.</p>
+                                )}
+                            </div>
                         </div>
-                        <div className="flex gap-4" style={{ animation: 'fadeUp 0.8s ease 0.2s both' }}>
+                        <div className="flex justify-center gap-4 w-full" style={{ animation: 'fadeUp 0.8s ease 0.2s both' }}>
                             <button
                                 onClick={handleExplore}
                                 className="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-semibold shadow-md hover:shadow-lg"
