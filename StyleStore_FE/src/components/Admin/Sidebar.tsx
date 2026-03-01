@@ -15,12 +15,12 @@ const Sidebar: React.FC = () => {
     const location = useLocation();
 
     const menuItems: SidebarItem[] = [
-        { label: 'Dashboard', path: '/admin/dashboard', icon: <DashboardOutlined /> },
-        { label: 'User Manager', path: '/admin/user-manager', icon: <UserOutlined /> },
-        { label: 'Product Manager', path: '/admin/product-manager', icon: <ShoppingOutlined /> },
-        { label: 'Category Manager', path: '/admin/category-manager', icon: <AppstoreOutlined /> },
-        { label: 'Promotion Manager', path: '/admin/promotion-manager', icon: <TagsOutlined /> },
-        { label: 'Order Manager', path: '/admin/order-manager', icon: <ShoppingCartOutlined /> },
+        { label: 'Bảng điều khiển', path: '/admin/dashboard', icon: <DashboardOutlined /> },
+        { label: 'Quản lý người dùng', path: '/admin/user-manager', icon: <UserOutlined /> },
+        { label: 'Quản lý sản phẩm', path: '/admin/product-manager', icon: <ShoppingOutlined /> },
+        { label: 'Quản lý danh mục', path: '/admin/category-manager', icon: <AppstoreOutlined /> },
+        { label: 'Quản lý khuyến mãi', path: '/admin/promotion-manager', icon: <TagsOutlined /> },
+        { label: 'Quản lý đơn hàng', path: '/admin/order-manager', icon: <ShoppingCartOutlined /> },
         { label: 'Hỗ trợ khách hàng', path: '/admin/support-chat', icon: <MessageOutlined /> },
     ];
 
@@ -47,7 +47,7 @@ const Sidebar: React.FC = () => {
                         <div className="text-center">
                             <img src={logo} alt="StyleStore" className="mx-auto mb-2 h-24 w-24 rounded-full shadow-md" />
 
-                            <p className="text-lg text-gray-400 mt-1">Admin Panel</p>
+                            <p className="text-lg text-gray-400 mt-1">Trang quản trị</p>
                         </div>
                     ) : (
                         <img src={logo} alt="SS" className="hidden lg:block h-10 w-10 rounded-full shadow-md" />
@@ -71,7 +71,7 @@ const Sidebar: React.FC = () => {
                     ))}
                 </nav>
 
-                {/* Logout Button */}
+                {/* Nút đăng xuất */}
                 <div className="px-3 py-4 border-t border-gray-800 shrink-0">
                     <button
                         onClick={() => {
@@ -83,7 +83,7 @@ const Sidebar: React.FC = () => {
                             }`}
                     >
                         <LogoutOutlined className="text-base" />
-                        {isOpen && <span className="font-medium text-sm">Logout</span>}
+                        {isOpen && <span className="font-medium text-sm">Đăng xuất</span>}
                     </button>
                 </div>
             </div>

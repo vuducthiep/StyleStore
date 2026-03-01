@@ -14,6 +14,18 @@ type PageResult<T> = {
     totalElements: number;
 };
 
+type ProductSizeDto = {
+    size?: {
+        id: number;
+        name?: string;
+    };
+    stock?: number;
+};
+
+type AdminProductDetail = AdminProduct & {
+    productSizes?: ProductSizeDto[];
+};
+
 export interface AdminProduct {
     id: number;
     name: string;
@@ -43,6 +55,7 @@ const ProductTable: React.FC<ProductTableProps> = ({ refreshKey = 0, onEdit }) =
     const [size] = useState(10);
     const [totalPages, setTotalPages] = useState(0);
     const [totalElements, setTotalElements] = useState(0);
+    const [exportLoading, setExportLoading] = useState(false);
 
     const fetchProducts = useCallback(async (pageIndex = 0) => {
         setIsLoading(true);
@@ -103,6 +116,132 @@ const ProductTable: React.FC<ProductTableProps> = ({ refreshKey = 0, onEdit }) =
         fetchProducts(nextPage);
     };
 
+    const handleExportInvoice = useCallback(async () => {
+        setExportLoading(true);
+        setError('');
+
+        try {
+            const authHeaders = buildAuthHeaders();
+            const headers = {
+                'Content-Type': 'application/json',
+                ...authHeaders,
+            };
+
+            const fetchPage = async (pageIndex: number) => {
+                const res = await fetch(`http://localhost:8080/api/admin/products?page=${pageIndex}&size=100&sortBy=createdAt&sortDir=desc`, {
+                    headers,
+                });
+
+                if (!res.ok) {
+                    throw new Error(`Không tải được danh sách sản phẩm (code ${res.status}).`);
+                }
+
+                const data: ApiResponse<PageResult<AdminProduct>> = await res.json();
+                if (!data.success || !data.data) {
+                    throw new Error(data.message || 'Dữ liệu danh sách sản phẩm không hợp lệ.');
+                }
+
+                return data.data;
+            };
+
+            const firstPage = await fetchPage(0);
+            let allProducts: AdminProduct[] = [...(firstPage.content || [])];
+
+            for (let pageIndex = 1; pageIndex < (firstPage.totalPages || 0); pageIndex += 1) {
+                const pageData = await fetchPage(pageIndex);
+                allProducts = allProducts.concat(pageData.content || []);
+            }
+
+            if (allProducts.length === 0) {
+                throw new Error('Không có sản phẩm để in hóa đơn.');
+            }
+
+            const productsWithStock = await Promise.all(
+                allProducts.map(async (product) => {
+                    const detailRes = await fetch(`http://localhost:8080/api/admin/products/${product.id}`, {
+                        headers,
+                    });
+
+                    if (!detailRes.ok) {
+                        throw new Error(`Không tải được chi tiết sản phẩm ID ${product.id}.`);
+                    }
+
+                    const detailData: ApiResponse<AdminProductDetail> = await detailRes.json();
+                    if (!detailData.success || !detailData.data) {
+                        throw new Error(detailData.message || `Dữ liệu chi tiết sản phẩm ID ${product.id} không hợp lệ.`);
+                    }
+
+                    const totalStock = (detailData.data.productSizes || []).reduce((sum, item) => {
+                        return sum + (Number(item.stock) || 0);
+                    }, 0);
+
+                    return {
+                        ...product,
+                        totalStock,
+                    };
+                })
+            );
+
+            const ExcelJS = await import('exceljs');
+            const workbook = new ExcelJS.Workbook();
+            const worksheet = workbook.addWorksheet('Hoa don san pham');
+
+            worksheet.columns = [
+                { header: 'ID', key: 'id', width: 10 },
+                { header: 'Ten san pham', key: 'name', width: 40 },
+                { header: 'Thuong hieu', key: 'brand', width: 20 },
+                { header: 'Danh muc', key: 'category', width: 24 },
+                { header: 'Gia', key: 'price', width: 16 },
+                { header: 'Ton kho', key: 'stock', width: 12 },
+                { header: 'Trang thai', key: 'status', width: 14 },
+                { header: 'Ngay tao', key: 'createdAt', width: 16 },
+            ];
+
+            worksheet.getRow(1).font = { bold: true };
+
+            productsWithStock.forEach((product) => {
+                worksheet.addRow({
+                    id: product.id,
+                    name: product.name,
+                    brand: product.brand || '-',
+                    category: product.category?.name || '-',
+                    price: product.price || 0,
+                    stock: product.totalStock,
+                    status: product.status || '-',
+                    createdAt: product.createdAt ? new Date(product.createdAt).toLocaleDateString('vi-VN') : '-',
+                });
+            });
+
+            worksheet.getColumn('price').numFmt = '#,##0';
+            worksheet.getColumn('stock').numFmt = '#,##0';
+
+            const buffer = await workbook.xlsx.writeBuffer();
+            const blob = new Blob(
+                [buffer],
+                { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' },
+            );
+
+            const fileUrl = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = fileUrl;
+            link.download = `hoa-don-san-pham-ton-kho-${new Date().toISOString().slice(0, 10)}.xlsx`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(fileUrl);
+        } catch (e) {
+            if (isAuthTokenMissingError(e)) {
+                setError('Bạn chưa đăng nhập hoặc thiếu token.');
+                return;
+            }
+
+            console.error('Export invoice error:', e);
+            setError(e instanceof Error ? e.message : 'Không thể in hóa đơn.');
+        } finally {
+            setExportLoading(false);
+        }
+    }, []);
+
     return (
         <div className="w-full flex-1 bg-white shadow rounded-lg overflow-hidden border border-slate-200">
             <div className="p-4 flex items-center justify-between">
@@ -121,6 +260,13 @@ const ProductTable: React.FC<ProductTableProps> = ({ refreshKey = 0, onEdit }) =
                         className="px-4 py-2 rounded bg-blue-600 text-white font-medium hover:bg-blue-700 transition"
                     >
                         Tải lại
+                    </button>
+                    <button
+                        onClick={handleExportInvoice}
+                        disabled={exportLoading}
+                        className="px-4 py-2 rounded bg-emerald-600 text-white font-medium hover:bg-emerald-700 transition disabled:opacity-60"
+                    >
+                        {exportLoading ? 'Đang in...' : 'In hóa đơn'}
                     </button>
                 </div>
             </div>
