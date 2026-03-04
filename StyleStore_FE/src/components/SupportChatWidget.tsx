@@ -374,12 +374,12 @@ const SupportChatWidget = () => {
                                     return (
                                         <div
                                             key={message.id}
-                                            className={`max-w-[85%] rounded-lg px-3 py-2 ${isSupport
+                                            className={`max-w-[68%] rounded-lg px-3 py-2 ${isSupport
                                                 ? 'bg-slate-200 text-slate-800 mr-auto'
                                                 : 'bg-blue-600 text-white ml-auto'
                                                 }`}
                                         >
-                                            <p className="text-sm break-words">{message.content}</p>
+                                            <p className="text-sm whitespace-pre-wrap break-words">{message.content}</p>
                                             <p
                                                 className={`mt-1 text-[11px] ${isSupport ? 'text-slate-500' : 'text-blue-100'
                                                     }`}

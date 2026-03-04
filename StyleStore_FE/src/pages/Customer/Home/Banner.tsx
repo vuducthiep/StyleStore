@@ -274,9 +274,16 @@ const Banner: React.FC = () => {
                                         </button>
                                     </>
                                 )}
-                                <span className="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-red-500 text-white text-[10px] font-extrabold tracking-wide hot-badge-blink">
-                                    HOT
-                                </span>
+                                {!promotionLoading && activePromotion && (
+                                    <div className="absolute top-2 right-2 z-20">
+                                        <span className="relative inline-flex items-center justify-center px-3 py-1 rounded-full bg-gradient-to-r from-fuchsia-500 to-rose-500 text-white text-base font-extrabold tracking-wide shadow-lg ring-2 ring-white/80 hot-badge-blink">
+                                            -{activePromotion.discountPercent}%
+                                            <span className="absolute -top-2 -right-1 px-1.5 py-0.5 rounded-full bg-red-500 text-white text-[9px] font-extrabold tracking-wide leading-none">
+                                                HOT
+                                            </span>
+                                        </span>
+                                    </div>
+                                )}
                                 <p className="text-[11px] font-semibold uppercase tracking-wide text-purple-700 mb-1.5 px-10">
                                     Ưu đãi nổi bật hôm nay
                                 </p>
@@ -287,9 +294,6 @@ const Banner: React.FC = () => {
                                     <div className="px-10">
                                         <div className="flex items-center justify-between gap-3">
                                             <p className="font-extrabold text-pink-600 text-base leading-none">{activePromotion.code}</p>
-                                            <span className="px-2 py-0.5 rounded-full bg-pink-100 text-pink-700 text-xs font-bold animate-pulse">
-                                                -{activePromotion.discountPercent}%
-                                            </span>
                                         </div>
                                         <p className="text-xs font-semibold text-slate-800 mt-1">{activePromotion.name}</p>
                                         <p className="text-[11px] text-slate-600 mt-1 line-clamp-1">{activePromotion.description}</p>
