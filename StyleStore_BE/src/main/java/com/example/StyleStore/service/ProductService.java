@@ -1,6 +1,6 @@
 package com.example.StyleStore.service;
 
-import com.example.StyleStore.dto.CategoryStockDto;
+import com.example.StyleStore.dto.response.stats.CategoryStockDto;
 import com.example.StyleStore.model.Category;
 import com.example.StyleStore.model.Product;
 import com.example.StyleStore.model.ProductSize;

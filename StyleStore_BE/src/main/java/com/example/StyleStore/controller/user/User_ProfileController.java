@@ -1,8 +1,8 @@
 package com.example.StyleStore.controller.user;
 
-import com.example.StyleStore.dto.ApiResponse;
-import com.example.StyleStore.dto.UpdateProfileRequest;
-import com.example.StyleStore.dto.UserProfileResponse;
+import com.example.StyleStore.dto.request.UpdateProfileRequest;
+import com.example.StyleStore.dto.response.ApiResponse;
+import com.example.StyleStore.dto.response.UserProfileResponse;
 import com.example.StyleStore.model.User;
 import com.example.StyleStore.repository.UserRepository;
 import lombok.RequiredArgsConstructor;

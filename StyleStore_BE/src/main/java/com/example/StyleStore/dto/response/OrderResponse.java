@@ -1,4 +1,4 @@
-package com.example.StyleStore.dto;
+package com.example.StyleStore.dto.response;
 
 import com.example.StyleStore.model.enums.OrderStatus;
 import com.example.StyleStore.model.enums.PaymentMethod;
@@ -12,7 +12,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class OrderDto {
+public class OrderResponse {
     private Long id;
     private Long userId;
     private String userName;

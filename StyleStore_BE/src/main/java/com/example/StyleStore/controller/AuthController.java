@@ -1,13 +1,14 @@
 package com.example.StyleStore.controller;
 
-import com.example.StyleStore.dto.LoginRequest;
-import com.example.StyleStore.dto.ApiResponse;
-import com.example.StyleStore.dto.AuthResponse;
-import com.example.StyleStore.dto.SendOtpRequest;
+import com.example.StyleStore.dto.request.LoginRequest;
+import com.example.StyleStore.dto.request.RegisterRequest;
+import com.example.StyleStore.dto.request.SendOtpRequest;
+import com.example.StyleStore.dto.response.ApiResponse;
+import com.example.StyleStore.dto.response.AuthResponse;
 import com.example.StyleStore.service.AuthService;
 import com.example.StyleStore.service.OtpService;
 import com.example.StyleStore.service.OAuth2UserService;
-import com.example.StyleStore.dto.RegisterRequest;
+
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;

@@ -1,4 +1,4 @@
-package com.example.StyleStore.dto;
+package com.example.StyleStore.dto.response;
 
 import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class MessageDto {
+public class MessageResponse {
     private Long id;
     private Long senderId;
     private Long receiverId;

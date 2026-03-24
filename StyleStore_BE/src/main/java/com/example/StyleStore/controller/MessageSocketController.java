@@ -1,7 +1,7 @@
 package com.example.StyleStore.controller;
 
-import com.example.StyleStore.dto.MessageDto;
-import com.example.StyleStore.dto.SocketMessageRequest;
+import com.example.StyleStore.dto.request.SocketMessageRequest;
+import com.example.StyleStore.dto.response.MessageResponse;
 import com.example.StyleStore.service.MessageService;
 import jakarta.validation.Valid;
 import java.security.Principal;
@@ -32,7 +32,7 @@ public class MessageSocketController {
             return;
         }
 
-        MessageDto savedMessage = messageService.sendMessageFromEmail(
+        MessageResponse savedMessage = messageService.sendMessageFromEmail(
                 principal.getName(),
                 request.getReceiverUserId(),
                 request.getContent());

@@ -1,7 +1,7 @@
 package com.example.StyleStore.controller.admin;
 
-import com.example.StyleStore.dto.ApiResponse;
-import com.example.StyleStore.dto.PromotionDto;
+import com.example.StyleStore.dto.response.ApiResponse;
+import com.example.StyleStore.dto.response.PromotionResponse;
 import com.example.StyleStore.service.PromotionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -20,7 +20,7 @@ public class Admin_PromotionController {
 
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<Page<PromotionDto>>> getAllPromotions(
+    public ResponseEntity<ApiResponse<Page<PromotionResponse>>> getAllPromotions(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "createdAt") String sortBy,
@@ -31,7 +31,7 @@ public class Admin_PromotionController {
                     : Sort.by(sortBy).descending();
 
             PageRequest pageable = PageRequest.of(page, size, sort);
-            Page<PromotionDto> promotions = promotionService.getAllPromotions(pageable);
+            Page<PromotionResponse> promotions = promotionService.getAllPromotions(pageable);
             return ResponseEntity.ok(ApiResponse.ok("Lấy toàn bộ khuyến mãi thành công", promotions));
         } catch (Exception e) {
             return ResponseEntity.badRequest()
@@ -41,9 +41,9 @@ public class Admin_PromotionController {
 
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<PromotionDto>> createPromotion(@RequestBody PromotionDto request) {
+    public ResponseEntity<ApiResponse<PromotionResponse>> createPromotion(@RequestBody PromotionResponse request) {
         try {
-            PromotionDto createdPromotion = promotionService.createPromotion(request);
+            PromotionResponse createdPromotion = promotionService.createPromotion(request);
             return ResponseEntity.status(201)
                     .body(ApiResponse.ok("Tạo khuyến mãi thành công", createdPromotion));
         } catch (IllegalArgumentException e) {
@@ -56,11 +56,11 @@ public class Admin_PromotionController {
 
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<PromotionDto>> updatePromotion(
+    public ResponseEntity<ApiResponse<PromotionResponse>> updatePromotion(
             @PathVariable Long id,
-            @RequestBody PromotionDto request) {
+            @RequestBody PromotionResponse request) {
         try {
-            PromotionDto updatedPromotion = promotionService.updatePromotion(id, request);
+            PromotionResponse updatedPromotion = promotionService.updatePromotion(id, request);
             return ResponseEntity.ok(ApiResponse.ok("Cập nhật khuyến mãi thành công", updatedPromotion));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(ApiResponse.fail(e.getMessage()));

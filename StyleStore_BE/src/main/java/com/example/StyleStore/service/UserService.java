@@ -1,7 +1,7 @@
 package com.example.StyleStore.service;
 
-import com.example.StyleStore.dto.MonthlyUserDto;
 import com.example.StyleStore.model.User;
+import com.example.StyleStore.dto.response.stats.MonthlyUserDto;
 import com.example.StyleStore.model.Role;
 import com.example.StyleStore.repository.RoleRepository;
 import com.example.StyleStore.repository.UserRepository;

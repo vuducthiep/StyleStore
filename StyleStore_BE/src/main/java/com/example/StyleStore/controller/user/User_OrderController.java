@@ -1,8 +1,8 @@
 package com.example.StyleStore.controller.user;
 
-import com.example.StyleStore.dto.ApiResponse;
-import com.example.StyleStore.dto.OrderDto;
-import com.example.StyleStore.dto.OrderRequest;
+import com.example.StyleStore.dto.request.OrderRequest;
+import com.example.StyleStore.dto.response.ApiResponse;
+import com.example.StyleStore.dto.response.OrderResponse;
 import com.example.StyleStore.model.User;
 import com.example.StyleStore.repository.UserRepository;
 import com.example.StyleStore.service.OrderService;
@@ -40,10 +40,10 @@ public class User_OrderController {
 
     // API lấy tất cả đơn hàng của user
     @GetMapping
-    public ResponseEntity<ApiResponse<java.util.List<OrderDto>>> getAllOrders() {
+    public ResponseEntity<ApiResponse<java.util.List<OrderResponse>>> getAllOrders() {
         try {
             User currentUser = getCurrentUser();
-            java.util.List<OrderDto> orders = orderService.getOrdersByUserId(currentUser.getId());
+            java.util.List<OrderResponse> orders = orderService.getOrdersByUserId(currentUser.getId());
             return ResponseEntity.ok(ApiResponse.ok("Lấy danh sách đơn hàng thành công", orders));
         } catch (Exception e) {
             return ResponseEntity.status(500).body(ApiResponse.fail("Lỗi: " + e.getMessage()));
@@ -52,7 +52,7 @@ public class User_OrderController {
 
     // API tạo đơn hàng
     @PostMapping
-    public ResponseEntity<ApiResponse<OrderDto>> createOrder(@RequestBody OrderRequest request) {
+    public ResponseEntity<ApiResponse<OrderResponse>> createOrder(@RequestBody OrderRequest request) {
         try {
             User currentUser = getCurrentUser();
 
@@ -69,7 +69,7 @@ public class User_OrderController {
                 return ResponseEntity.status(400).body(ApiResponse.fail("Danh sách sản phẩm không được để trống"));
             }
 
-            OrderDto order = orderService.createOrder(currentUser, request);
+            OrderResponse order = orderService.createOrder(currentUser, request);
             return ResponseEntity.status(201).body(ApiResponse.ok("Đặt hàng thành công", order));
         } catch (RuntimeException e) {
             return ResponseEntity.status(400).body(ApiResponse.fail("Lỗi: " + e.getMessage()));
@@ -80,9 +80,9 @@ public class User_OrderController {
 
     // API lấy chi tiết đơn hàng
     @GetMapping("/{orderId}")
-    public ResponseEntity<ApiResponse<OrderDto>> getOrderDetail(@PathVariable Long orderId) {
+    public ResponseEntity<ApiResponse<OrderResponse>> getOrderDetail(@PathVariable Long orderId) {
         try {
-            OrderDto order = orderService.getOrderDetailById(orderId);
+            OrderResponse order = orderService.getOrderDetailById(orderId);
             if (order == null) {
                 return ResponseEntity.status(404).body(ApiResponse.fail("Không tìm thấy đơn hàng"));
             }
@@ -94,12 +94,12 @@ public class User_OrderController {
 
     // API hủy đơn hàng
     @PutMapping("/{orderId}/cancel")
-    public ResponseEntity<ApiResponse<OrderDto>> cancelOrder(@PathVariable Long orderId) {
+    public ResponseEntity<ApiResponse<OrderResponse>> cancelOrder(@PathVariable Long orderId) {
         try {
             User currentUser = getCurrentUser();
 
             // Kiểm tra đơn hàng có thuộc về user này không
-            OrderDto order = orderService.getOrderById(orderId);
+            OrderResponse order = orderService.getOrderById(orderId);
             if (order == null) {
                 return ResponseEntity.status(404).body(ApiResponse.fail("Không tìm thấy đơn hàng"));
             }
@@ -108,7 +108,7 @@ public class User_OrderController {
                 return ResponseEntity.status(403).body(ApiResponse.fail("Bạn không có quyền hủy đơn hàng này"));
             }
 
-            OrderDto canceledOrder = orderService.cancelOrder(orderId);
+            OrderResponse canceledOrder = orderService.cancelOrder(orderId);
             return ResponseEntity.ok(ApiResponse.ok("Hủy đơn hàng thành công", canceledOrder));
         } catch (RuntimeException e) {
             return ResponseEntity.status(400).body(ApiResponse.fail("Lỗi: " + e.getMessage()));
@@ -119,18 +119,18 @@ public class User_OrderController {
 
     // confirm order deliveried
     @PutMapping("/{orderId}/confirm-delivery")
-    public ResponseEntity<ApiResponse<OrderDto>> deliveredOrder(@PathVariable Long orderId) {
+    public ResponseEntity<ApiResponse<OrderResponse>> deliveredOrder(@PathVariable Long orderId) {
         try {
             User currentUser = getCurrentUser();
             // Kiểm tra đơn hàng có thuộc về user này không
-            OrderDto order = orderService.getOrderById(orderId);
+            OrderResponse order = orderService.getOrderById(orderId);
             if (order == null) {
                 return ResponseEntity.status(404).body(ApiResponse.fail("Không tìm thấy đơn hàng"));
             }
             if (!order.getUserId().equals(currentUser.getId())) {
                 return ResponseEntity.status(403).body(ApiResponse.fail("Bạn không có quyền xác nhận đơn hàng này"));
             }
-            OrderDto deliveredOrder = orderService.deliveredOrder(orderId);
+            OrderResponse deliveredOrder = orderService.deliveredOrder(orderId);
             return ResponseEntity.ok(ApiResponse.ok("Xác nhận đơn hàng đã giao thành công", deliveredOrder));
         } catch (RuntimeException e) {
             return ResponseEntity.status(400).body(ApiResponse.fail("Lỗi: " + e.getMessage()));

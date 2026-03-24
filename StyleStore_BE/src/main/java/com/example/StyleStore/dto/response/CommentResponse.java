@@ -1,4 +1,4 @@
-package com.example.StyleStore.dto;
+package com.example.StyleStore.dto.response;
 
 import lombok.*;
 import java.time.LocalDateTime;
@@ -8,7 +8,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class CommentDTO {
+public class CommentResponse {
     private Long id;
     private String content;
     private LocalDateTime createdAt;

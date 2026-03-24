@@ -1,6 +1,6 @@
 package com.example.StyleStore.controller.user;
 
-import com.example.StyleStore.dto.ApiResponse;
+import com.example.StyleStore.dto.response.ApiResponse;
 import com.example.StyleStore.model.Cart;
 import com.example.StyleStore.model.CartItem;
 import com.example.StyleStore.service.CartService;

@@ -1,6 +1,6 @@
 package com.example.StyleStore.repository;
 
-import com.example.StyleStore.dto.BestSellingProductsInCategoriesDTO;
+import com.example.StyleStore.dto.response.stats.BestSellingProductsInCategoriesDTO;
 import com.example.StyleStore.model.Order;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;

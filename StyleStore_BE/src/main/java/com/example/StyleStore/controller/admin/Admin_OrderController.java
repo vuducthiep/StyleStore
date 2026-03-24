@@ -1,7 +1,7 @@
 package com.example.StyleStore.controller.admin;
 
-import com.example.StyleStore.dto.ApiResponse;
-import com.example.StyleStore.dto.OrderDto;
+import com.example.StyleStore.dto.response.ApiResponse;
+import com.example.StyleStore.dto.response.OrderResponse;
 import com.example.StyleStore.service.OrderService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -20,13 +20,13 @@ public class Admin_OrderController {
 
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<Page<OrderDto>>> getAllOrders(
+    public ResponseEntity<ApiResponse<Page<OrderResponse>>> getAllOrders(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "createdAt") String sortBy,
             @RequestParam(defaultValue = "desc") String sortDir) {
         try {
-            Page<OrderDto> orders = orderService.getAllOrders(page, size, sortBy, sortDir);
+            Page<OrderResponse> orders = orderService.getAllOrders(page, size, sortBy, sortDir);
             return ResponseEntity.ok(
                     new ApiResponse<>(true, "Danh sách đơn hàng được tải thành công", orders));
         } catch (Exception e) {
@@ -37,9 +37,9 @@ public class Admin_OrderController {
 
     @GetMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<OrderDto>> getOrderById(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<OrderResponse>> getOrderById(@PathVariable Long id) {
         try {
-            OrderDto order = orderService.getOrderDetailById(id);
+            OrderResponse order = orderService.getOrderDetailById(id);
             if (order != null) {
                 return ResponseEntity.ok(
                         new ApiResponse<>(true, "Đơn hàng được tải thành công", order));
@@ -54,9 +54,9 @@ public class Admin_OrderController {
 
     @PutMapping("/{id}/confirm")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<OrderDto>> confirmOrder(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<OrderResponse>> confirmOrder(@PathVariable Long id) {
         try {
-            OrderDto order = orderService.confirmOrder(id);
+            OrderResponse order = orderService.confirmOrder(id);
             if (order != null) {
                 return ResponseEntity.ok(
                         new ApiResponse<>(true, "Đơn hàng đã được xác nhận", order));
@@ -71,9 +71,9 @@ public class Admin_OrderController {
 
     // user and admin can cancel order
     @PutMapping("/{id}/cancel")
-    public ResponseEntity<ApiResponse<OrderDto>> cancelOrder(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<OrderResponse>> cancelOrder(@PathVariable Long id) {
         try {
-            OrderDto order = orderService.cancelOrder(id);
+            OrderResponse order = orderService.cancelOrder(id);
             if (order != null) {
                 return ResponseEntity.ok(
                         new ApiResponse<>(true, "Đơn hàng đã được hủy", order));

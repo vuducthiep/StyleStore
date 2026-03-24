@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.CrossOrigin;
 
-import com.example.StyleStore.dto.ApiResponse;
+import com.example.StyleStore.dto.response.ApiResponse;
 import com.example.StyleStore.model.Category;
 import com.example.StyleStore.service.CategoryService;
 import org.springframework.web.bind.annotation.GetMapping;

@@ -1,8 +1,8 @@
 package com.example.StyleStore.service;
 
-import com.example.StyleStore.dto.LoginRequest;
-import com.example.StyleStore.dto.RegisterRequest;
-import com.example.StyleStore.dto.AuthResponse;
+import com.example.StyleStore.dto.request.LoginRequest;
+import com.example.StyleStore.dto.request.RegisterRequest;
+import com.example.StyleStore.dto.response.AuthResponse;
 import com.example.StyleStore.model.Role;
 import com.example.StyleStore.model.User;
 import com.example.StyleStore.model.Cart;

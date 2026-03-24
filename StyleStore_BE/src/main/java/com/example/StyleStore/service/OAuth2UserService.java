@@ -1,9 +1,9 @@
 package com.example.StyleStore.service;
 
-import com.example.StyleStore.dto.AuthResponse;
 import com.example.StyleStore.model.Role;
 import com.example.StyleStore.model.User;
 import com.example.StyleStore.model.enums.UserStatus;
+import com.example.StyleStore.dto.response.AuthResponse;
 import com.example.StyleStore.model.Cart;
 import com.example.StyleStore.repository.UserRepository;
 import com.example.StyleStore.repository.CartRepository;

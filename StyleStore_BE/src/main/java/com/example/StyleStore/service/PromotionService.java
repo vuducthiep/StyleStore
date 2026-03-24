@@ -1,6 +1,6 @@
 package com.example.StyleStore.service;
 
-import com.example.StyleStore.dto.PromotionDto;
+import com.example.StyleStore.dto.response.PromotionResponse;
 import com.example.StyleStore.model.Promotion;
 import com.example.StyleStore.repository.PromotionRepository;
 import org.springframework.data.domain.Page;
@@ -20,7 +20,7 @@ public class PromotionService {
         this.promotionRepository = promotionRepository;
     }
 
-    public List<PromotionDto> getAvailablePromotions() {
+    public List<PromotionResponse> getAvailablePromotions() {
         LocalDateTime now = LocalDateTime.now();
         return promotionRepository
                 .findByIsActiveTrueAndStartAtLessThanEqualAndEndAtGreaterThanEqual(now, now)
@@ -29,12 +29,12 @@ public class PromotionService {
                 .toList();
     }
 
-    public Page<PromotionDto> getAllPromotions(Pageable pageable) {
+    public Page<PromotionResponse> getAllPromotions(Pageable pageable) {
         return promotionRepository.findAll(pageable)
                 .map(this::toDto);
     }
 
-    public PromotionDto createPromotion(PromotionDto request) {
+    public PromotionResponse createPromotion(PromotionResponse request) {
         validatePromotionRequest(request);
 
         String normalizedCode = request.getCode().trim().toUpperCase();
@@ -57,7 +57,7 @@ public class PromotionService {
         return toDto(promotionRepository.save(promotion));
     }
 
-    public PromotionDto updatePromotion(Long id, PromotionDto request) {
+    public PromotionResponse updatePromotion(Long id, PromotionResponse request) {
         validatePromotionRequest(request);
 
         Promotion promotion = promotionRepository.findById(id)
@@ -83,7 +83,7 @@ public class PromotionService {
         return toDto(promotionRepository.save(promotion));
     }
 
-    private void validatePromotionRequest(PromotionDto request) {
+    private void validatePromotionRequest(PromotionResponse request) {
         if (request == null) {
             throw new IllegalArgumentException("Dữ liệu khuyến mãi không hợp lệ");
         }
@@ -112,8 +112,8 @@ public class PromotionService {
         }
     }
 
-    private PromotionDto toDto(Promotion promotion) {
-        return PromotionDto.builder()
+    private PromotionResponse toDto(Promotion promotion) {
+        return PromotionResponse.builder()
                 .id(promotion.getId())
                 .code(promotion.getCode())
                 .name(promotion.getName())

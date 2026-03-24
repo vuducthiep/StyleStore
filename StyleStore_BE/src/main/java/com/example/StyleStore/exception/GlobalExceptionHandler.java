@@ -1,11 +1,12 @@
 package com.example.StyleStore.exception;
 
-import com.example.StyleStore.dto.ApiResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.server.ResponseStatusException;
+
+import com.example.StyleStore.dto.response.ApiResponse;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {

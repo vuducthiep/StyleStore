@@ -1,12 +1,12 @@
 package com.example.StyleStore.controller.admin;
 
-import com.example.StyleStore.dto.ApiResponse;
-import com.example.StyleStore.dto.BestSellingProductsInCategoriesDTO;
-import com.example.StyleStore.dto.CategoryStockDto;
-import com.example.StyleStore.dto.MonthlyRevenueDto;
-import com.example.StyleStore.dto.MonthlyUserDto;
-import com.example.StyleStore.dto.RevenueGrowthDto;
-import com.example.StyleStore.dto.RevenueWithProductsDto;
+import com.example.StyleStore.dto.response.ApiResponse;
+import com.example.StyleStore.dto.response.stats.BestSellingProductsInCategoriesDTO;
+import com.example.StyleStore.dto.response.stats.CategoryStockDto;
+import com.example.StyleStore.dto.response.stats.MonthlyRevenueDto;
+import com.example.StyleStore.dto.response.stats.MonthlyUserDto;
+import com.example.StyleStore.dto.response.stats.RevenueGrowthDto;
+import com.example.StyleStore.dto.response.stats.RevenueWithProductsDto;
 import com.example.StyleStore.service.OrderService;
 import com.example.StyleStore.service.ProductService;
 import com.example.StyleStore.service.UserService;

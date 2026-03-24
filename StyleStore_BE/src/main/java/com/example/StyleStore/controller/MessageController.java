@@ -1,9 +1,9 @@
 package com.example.StyleStore.controller;
 
-import com.example.StyleStore.dto.ApiResponse;
-import com.example.StyleStore.dto.ChatUserDto;
-import com.example.StyleStore.dto.MessageDto;
-import com.example.StyleStore.dto.SendMessageRequest;
+import com.example.StyleStore.dto.request.SendMessageRequest;
+import com.example.StyleStore.dto.response.ApiResponse;
+import com.example.StyleStore.dto.response.ChatUserResponse;
+import com.example.StyleStore.dto.response.MessageResponse;
 import com.example.StyleStore.service.MessageService;
 import jakarta.validation.Valid;
 import java.util.List;
@@ -33,9 +33,9 @@ public class MessageController {
     }
 
     @PostMapping
-    public ResponseEntity<ApiResponse<MessageDto>> sendMessage(@Valid @RequestBody SendMessageRequest request) {
+    public ResponseEntity<ApiResponse<MessageResponse>> sendMessage(@Valid @RequestBody SendMessageRequest request) {
         try {
-            MessageDto message = messageService.sendMessage(request.getReceiverUserId(), request.getContent());
+            MessageResponse message = messageService.sendMessage(request.getReceiverUserId(), request.getContent());
 
             messagingTemplate.convertAndSend(
                     "/topic/messages/" + request.getReceiverUserId(),
@@ -53,9 +53,9 @@ public class MessageController {
     }
 
     @GetMapping("/conversation/{otherUserId}")
-    public ResponseEntity<ApiResponse<List<MessageDto>>> getConversation(@PathVariable Long otherUserId) {
+    public ResponseEntity<ApiResponse<List<MessageResponse>>> getConversation(@PathVariable Long otherUserId) {
         try {
-            List<MessageDto> messages = messageService.getConversation(otherUserId);
+            List<MessageResponse> messages = messageService.getConversation(otherUserId);
             return ResponseEntity.ok(ApiResponse.ok("Get conversation success", messages));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
@@ -64,9 +64,9 @@ public class MessageController {
     }
 
     @GetMapping("/chat-users")
-    public ResponseEntity<ApiResponse<List<ChatUserDto>>> getChatUsers() {
+    public ResponseEntity<ApiResponse<List<ChatUserResponse>>> getChatUsers() {
         try {
-            List<ChatUserDto> users = messageService.getChatUsers();
+            List<ChatUserResponse> users = messageService.getChatUsers();
             return ResponseEntity.ok(ApiResponse.ok("Get chat users success", users));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)

@@ -1,9 +1,9 @@
 package com.example.StyleStore.controller.user;
 
-import com.example.StyleStore.dto.ApiResponse;
-import com.example.StyleStore.dto.CommentDTO;
-import com.example.StyleStore.dto.CreateCommentRequest;
-import com.example.StyleStore.dto.UpdateCommentRequest;
+import com.example.StyleStore.dto.request.CreateCommentRequest;
+import com.example.StyleStore.dto.request.UpdateCommentRequest;
+import com.example.StyleStore.dto.response.ApiResponse;
+import com.example.StyleStore.dto.response.CommentResponse;
 import com.example.StyleStore.service.CommentService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,10 +26,10 @@ public class User_CommentController {
 
     @PostMapping
     @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<ApiResponse<CommentDTO>> createComment(
+    public ResponseEntity<ApiResponse<CommentResponse>> createComment(
             @Valid @RequestBody CreateCommentRequest request) {
         try {
-            CommentDTO comment = commentService.createComment(request);
+            CommentResponse comment = commentService.createComment(request);
             return ResponseEntity.status(HttpStatus.CREATED)
                     .body(ApiResponse.ok("Tạo comment thành công", comment));
         } catch (Exception e) {
@@ -40,11 +40,11 @@ public class User_CommentController {
 
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<ApiResponse<CommentDTO>> updateComment(
+    public ResponseEntity<ApiResponse<CommentResponse>> updateComment(
             @PathVariable Long id,
             @Valid @RequestBody UpdateCommentRequest request) {
         try {
-            CommentDTO comment = commentService.updateComment(id, request);
+            CommentResponse comment = commentService.updateComment(id, request);
             return ResponseEntity.ok(ApiResponse.ok("Cập nhật comment thành công", comment));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
@@ -65,13 +65,13 @@ public class User_CommentController {
     }
 
     @GetMapping("/product/{productId}")
-    public ResponseEntity<ApiResponse<Page<CommentDTO>>> getCommentsByProduct(
+    public ResponseEntity<ApiResponse<Page<CommentResponse>>> getCommentsByProduct(
             @PathVariable Long productId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
         try {
             Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
-            Page<CommentDTO> comments = commentService.getCommentsByProductId(productId, pageable);
+            Page<CommentResponse> comments = commentService.getCommentsByProductId(productId, pageable);
             return ResponseEntity.ok(ApiResponse.ok("Lấy danh sách comment thành công", comments));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)

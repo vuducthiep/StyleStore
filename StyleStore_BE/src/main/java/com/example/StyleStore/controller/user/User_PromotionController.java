@@ -1,7 +1,7 @@
 package com.example.StyleStore.controller.user;
 
-import com.example.StyleStore.dto.ApiResponse;
-import com.example.StyleStore.dto.PromotionDto;
+import com.example.StyleStore.dto.response.ApiResponse;
+import com.example.StyleStore.dto.response.PromotionResponse;
 import com.example.StyleStore.service.PromotionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -21,9 +21,9 @@ public class User_PromotionController {
     private final PromotionService promotionService;
 
     @GetMapping("/available")
-    public ResponseEntity<ApiResponse<List<PromotionDto>>> getAvailablePromotions() {
+    public ResponseEntity<ApiResponse<List<PromotionResponse>>> getAvailablePromotions() {
         try {
-            List<PromotionDto> promotions = promotionService.getAvailablePromotions();
+            List<PromotionResponse> promotions = promotionService.getAvailablePromotions();
             return ResponseEntity.ok(ApiResponse.ok("Lấy danh sách khuyến mãi khả dụng thành công", promotions));
         } catch (Exception e) {
             return ResponseEntity.badRequest()

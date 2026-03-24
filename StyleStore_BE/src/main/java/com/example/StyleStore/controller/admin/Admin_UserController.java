@@ -1,6 +1,6 @@
 package com.example.StyleStore.controller.admin;
 
-import com.example.StyleStore.dto.ApiResponse;
+import com.example.StyleStore.dto.response.ApiResponse;
 import com.example.StyleStore.model.User;
 import com.example.StyleStore.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;

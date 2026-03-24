@@ -1,4 +1,4 @@
-package com.example.StyleStore.dto;
+package com.example.StyleStore.dto.request;
 
 import jakarta.validation.constraints.*;
 import lombok.*;

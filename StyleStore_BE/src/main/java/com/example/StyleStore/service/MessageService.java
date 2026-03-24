@@ -1,7 +1,7 @@
 package com.example.StyleStore.service;
 
-import com.example.StyleStore.dto.MessageDto;
-import com.example.StyleStore.dto.ChatUserDto;
+import com.example.StyleStore.dto.response.ChatUserResponse;
+import com.example.StyleStore.dto.response.MessageResponse;
 import com.example.StyleStore.model.Message;
 import com.example.StyleStore.model.User;
 import com.example.StyleStore.repository.MessageRepository;
@@ -36,7 +36,7 @@ public class MessageService {
         }
 
         @Transactional
-        public MessageDto sendMessage(Long receiverUserId, String content) {
+        public MessageResponse sendMessage(Long receiverUserId, String content) {
                 User sender = getCurrentUser();
                 User receiver = userRepository.findById(receiverUserId)
                                 .orElseThrow(() -> new RuntimeException("Receiver not found"));
@@ -52,7 +52,7 @@ public class MessageService {
         }
 
         @Transactional
-        public MessageDto sendMessageFrom(Long senderUserId, Long receiverUserId, String content) {
+        public MessageResponse sendMessageFrom(Long senderUserId, Long receiverUserId, String content) {
                 User sender = userRepository.findById(senderUserId)
                                 .orElseThrow(() -> new RuntimeException("Sender not found"));
                 User receiver = userRepository.findById(receiverUserId)
@@ -69,7 +69,7 @@ public class MessageService {
         }
 
         @Transactional
-        public MessageDto sendMessageFromEmail(String senderEmail, Long receiverUserId, String content) {
+        public MessageResponse sendMessageFromEmail(String senderEmail, Long receiverUserId, String content) {
                 User sender = userRepository.findByEmail(senderEmail)
                                 .orElseThrow(() -> new RuntimeException("Sender not found"));
                 User receiver = userRepository.findById(receiverUserId)
@@ -86,7 +86,7 @@ public class MessageService {
         }
 
         @Transactional(readOnly = true)
-        public List<MessageDto> getConversation(Long otherUserId) {
+        public List<MessageResponse> getConversation(Long otherUserId) {
                 User currentUser = getCurrentUser();
                 List<Message> messages = messageRepository.findConversation(currentUser.getId(), otherUserId);
                 return messages.stream()
@@ -101,12 +101,12 @@ public class MessageService {
         }
 
         @Transactional(readOnly = true)
-        public List<ChatUserDto> getChatUsers() {
+        public List<ChatUserResponse> getChatUsers() {
                 User currentUser = getCurrentUser();
                 List<MessageRepository.ChatUserProjection> users = messageRepository
                                 .findDistinctChatUsers(currentUser.getId());
                 return users.stream()
-                                .map(user -> ChatUserDto.builder()
+                                .map(user -> ChatUserResponse.builder()
                                                 .id(user.getId())
                                                 .fullName(user.getFullName())
                                                 .email(user.getEmail())
@@ -114,8 +114,8 @@ public class MessageService {
                                 .collect(Collectors.toList());
         }
 
-        private MessageDto toDto(Message message) {
-                return MessageDto.builder()
+        private MessageResponse toDto(Message message) {
+                return MessageResponse.builder()
                                 .id(message.getId())
                                 .senderId(message.getSender() != null ? message.getSender().getId() : null)
                                 .receiverId(message.getReceiver() != null ? message.getReceiver().getId() : null)

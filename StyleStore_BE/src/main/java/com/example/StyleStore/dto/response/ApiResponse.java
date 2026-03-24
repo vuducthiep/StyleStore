@@ -1,4 +1,4 @@
-package com.example.StyleStore.dto;
+package com.example.StyleStore.dto.response;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

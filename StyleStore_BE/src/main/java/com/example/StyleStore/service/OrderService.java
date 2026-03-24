@@ -1,13 +1,13 @@
 package com.example.StyleStore.service;
 
-import com.example.StyleStore.dto.BestSellingProductsInCategoriesDTO;
-import com.example.StyleStore.dto.MonthlyRevenueDto;
-import com.example.StyleStore.dto.OrderDto;
-import com.example.StyleStore.dto.OrderItemDto;
-import com.example.StyleStore.dto.OrderRequest;
-import com.example.StyleStore.dto.ProductSalesDto;
-import com.example.StyleStore.dto.RevenueGrowthDto;
-import com.example.StyleStore.dto.RevenueWithProductsDto;
+import com.example.StyleStore.dto.request.OrderRequest;
+import com.example.StyleStore.dto.response.OrderResponse;
+import com.example.StyleStore.dto.response.stats.BestSellingProductsInCategoriesDTO;
+import com.example.StyleStore.dto.response.stats.MonthlyRevenueDto;
+import com.example.StyleStore.dto.response.stats.ProductSalesDto;
+import com.example.StyleStore.dto.response.stats.RevenueGrowthDto;
+import com.example.StyleStore.dto.response.stats.RevenueWithProductsDto;
+import com.example.StyleStore.dto.response.OrderItemDto;
 import com.example.StyleStore.model.*;
 import com.example.StyleStore.model.enums.OrderStatus;
 import com.example.StyleStore.repository.OrderItemRepository;
@@ -148,7 +148,7 @@ public class OrderService {
         return new RevenueWithProductsDto(revenue, soldProducts);
     }
 
-    public Page<OrderDto> getAllOrders(int page, int size, String sortBy, String sortDir) {
+    public Page<OrderResponse> getAllOrders(int page, int size, String sortBy, String sortDir) {
         Sort.Direction direction = "asc".equalsIgnoreCase(sortDir) ? Sort.Direction.ASC : Sort.Direction.DESC;
         PageRequest pageRequest = PageRequest.of(page, size, Sort.by(direction, sortBy));
 
@@ -156,27 +156,27 @@ public class OrderService {
         return orders.map(this::convertToDto);
     }
 
-    public OrderDto getOrderById(Long id) {
+    public OrderResponse getOrderById(Long id) {
         return orderRepository.findById(id)
                 .map(this::convertToDto)
                 .orElse(null);
     }
 
-    public OrderDto getOrderDetailById(Long id) {
+    public OrderResponse getOrderDetailById(Long id) {
         return orderRepository.findById(id)
                 .map(this::convertToDetailDto)
                 .orElse(null);
     }
 
-    public List<OrderDto> getOrdersByUserId(Long userId) {
+    public List<OrderResponse> getOrdersByUserId(Long userId) {
         List<Order> orders = orderRepository.findByUser_IdOrderByCreatedAtDesc(userId);
         return orders.stream()
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
     }
 
-    private OrderDto convertToDto(Order order) {
-        return OrderDto.builder()
+    private OrderResponse convertToDto(Order order) {
+        return OrderResponse.builder()
                 .id(order.getId())
                 .userId(order.getUser().getId())
                 .userName(order.getUser().getFullName())
@@ -193,7 +193,7 @@ public class OrderService {
                 .build();
     }
 
-    private OrderDto convertToDetailDto(Order order) {
+    private OrderResponse convertToDetailDto(Order order) {
         List<OrderItem> orderItems = orderItemRepository.findByOrderId(order.getId());
 
         List<OrderItemDto> orderItemDtos = orderItems.stream()
@@ -210,7 +210,7 @@ public class OrderService {
                         .build())
                 .collect(Collectors.toList());
 
-        return OrderDto.builder()
+        return OrderResponse.builder()
                 .id(order.getId())
                 .userId(order.getUser().getId())
                 .userName(order.getUser().getFullName())
@@ -228,7 +228,7 @@ public class OrderService {
                 .build();
     }
 
-    public OrderDto confirmOrder(long Id) {
+    public OrderResponse confirmOrder(long Id) {
         Order order = orderRepository.findById(Id).orElseThrow(() -> new RuntimeException("Order not found"));
         if (order.getStatus() != OrderStatus.CREATED) {
             throw new RuntimeException("Only created orders can be confirmed");
@@ -241,7 +241,7 @@ public class OrderService {
     }
 
     @Transactional
-    public OrderDto cancelOrder(long Id) {
+    public OrderResponse cancelOrder(long Id) {
         Order order = orderRepository.findById(Id).orElseThrow(() -> new RuntimeException("Order not found"));
         if (order.getStatus() != OrderStatus.SHIPPING && order.getStatus() != OrderStatus.CREATED) {
             throw new RuntimeException("Only shipping or created orders can be cancelled");
@@ -263,7 +263,7 @@ public class OrderService {
         return convertToDto(order);
     }
 
-    public OrderDto deliveredOrder(long Id) {
+    public OrderResponse deliveredOrder(long Id) {
         Order order = orderRepository.findById(Id).orElseThrow(() -> new RuntimeException("Order not found"));
         if (order.getStatus() != OrderStatus.SHIPPING) {
             throw new RuntimeException("Only shipping orders can be delivered");
@@ -276,7 +276,7 @@ public class OrderService {
     }
 
     @Transactional
-    public OrderDto createOrder(User user, OrderRequest request) {
+    public OrderResponse createOrder(User user, OrderRequest request) {
         // 1. Validate request
         if (request.getOrderItems() == null || request.getOrderItems().isEmpty()) {
             throw new RuntimeException("Danh sách sản phẩm không được để trống");

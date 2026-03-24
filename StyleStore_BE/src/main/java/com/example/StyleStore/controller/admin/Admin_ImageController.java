@@ -1,6 +1,6 @@
 package com.example.StyleStore.controller.admin;
 
-import com.example.StyleStore.dto.ApiResponse;
+import com.example.StyleStore.dto.response.ApiResponse;
 import com.example.StyleStore.service.ImageUploadService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
