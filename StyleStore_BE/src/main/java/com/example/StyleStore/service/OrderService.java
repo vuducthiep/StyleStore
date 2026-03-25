@@ -19,6 +19,8 @@ public interface OrderService {
     RevenueWithProductsDto getRevenueByMonth(int year, int month);
     RevenueWithProductsDto getRevenueByYear(int year);
     Page<OrderResponse> getAllOrders(int page, int size, String sortBy, String sortDir);
+    Page<OrderResponse> searchOrders(String keyword, String status, int page, int size, String sortBy, String sortDir);
+    Page<OrderResponse> filterOrdersByStatus(String status, int page, int size, String sortBy, String sortDir);
     OrderResponse getOrderById(Long id);
     OrderResponse getOrderDetailById(Long id);
     List<OrderResponse> getOrdersByUserId(Long userId);

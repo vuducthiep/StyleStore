@@ -139,7 +139,7 @@ const OrderModal: React.FC<OrderModalProps> = ({ isOpen, orderId, onClose }) => 
             <div style="border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;">
                 <div style="padding:16px 20px;border-bottom:1px solid #e2e8f0;background:#f8fafc;display:flex;justify-content:space-between;align-items:center;">
                     <h1 style="margin:0;font-size:22px;color:#0f172a;">Hóa đơn đơn hàng #${order.id}</h1>
-                    <span style="padding:4px 10px;border-radius:999px;background:#dcfce7;color:#166534;font-weight:600;font-size:12px;">${escapeHtml(order.status)}</span>
+                    <span style="padding:4px 10px;border-radius:999px;background:#dcfce7;color:#166534;font-weight:600;font-size:12px;">${escapeHtml(getStatusLabel(order.status))}</span>
                 </div>
                 <div style="padding:16px 20px;">
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;font-size:14px;color:#334155;">
@@ -221,6 +221,23 @@ const OrderModal: React.FC<OrderModalProps> = ({ isOpen, orderId, onClose }) => 
         }
     };
 
+    const getStatusLabel = (status: string) => {
+        switch (status) {
+            case 'CREATED':
+                return 'Mới tạo';
+            case 'PROCESSING':
+                return 'Đang xử lý';
+            case 'SHIPPING':
+                return 'Đang giao';
+            case 'DELIVERED':
+                return 'Đã giao';
+            case 'CANCELLED':
+                return 'Đã hủy';
+            default:
+                return status;
+        }
+    };
+
     if (!isOpen) return null;
 
     return (
@@ -286,7 +303,7 @@ const OrderModal: React.FC<OrderModalProps> = ({ isOpen, orderId, onClose }) => 
                                     <div>
                                         <p className="text-sm text-slate-500">Trạng thái</p>
                                         <span className={`inline-block px-3 py-1 rounded text-sm ${getStatusColor(order.status)}`}>
-                                            {order.status}
+                                            {getStatusLabel(order.status)}
                                         </span>
                                     </div>
                                     <div>

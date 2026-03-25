@@ -35,6 +35,43 @@ public class Admin_OrderController {
         }
     }
 
+    @GetMapping("/search")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<Page<OrderResponse>>> searchOrders(
+            @RequestParam(defaultValue = "") String keyword,
+            @RequestParam(required = false) String status,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortDir) {
+        try {
+            Page<OrderResponse> orders = orderService.searchOrders(keyword, status, page, size, sortBy, sortDir);
+            return ResponseEntity.ok(
+                    new ApiResponse<>(true, "Tìm kiếm đơn hàng thành công", orders));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(
+                    new ApiResponse<>(false, "Lỗi khi tìm kiếm đơn hàng: " + e.getMessage(), null));
+        }
+    }
+
+    @GetMapping("/filter/status")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<Page<OrderResponse>>> filterOrdersByStatus(
+            @RequestParam String status,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortDir) {
+        try {
+            Page<OrderResponse> orders = orderService.filterOrdersByStatus(status, page, size, sortBy, sortDir);
+            return ResponseEntity.ok(
+                    new ApiResponse<>(true, "Lọc đơn hàng theo trạng thái thành công", orders));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(
+                    new ApiResponse<>(false, "Lỗi khi lọc đơn hàng: " + e.getMessage(), null));
+        }
+    }
+
     @GetMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<OrderResponse>> getOrderById(@PathVariable Long id) {

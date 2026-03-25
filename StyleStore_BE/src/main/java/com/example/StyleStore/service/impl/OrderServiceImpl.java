@@ -32,6 +32,7 @@ import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -159,6 +160,54 @@ public class OrderServiceImpl implements OrderService {
         PageRequest pageRequest = PageRequest.of(page, size, Sort.by(direction, sortBy));
         Page<Order> orders = orderRepository.findAll(pageRequest);
         return orders.map(this::convertToDto);
+    }
+
+    @Override
+    public Page<OrderResponse> searchOrders(String keyword, String status, int page, int size, String sortBy, String sortDir) {
+        Sort.Direction direction = "asc".equalsIgnoreCase(sortDir) ? Sort.Direction.ASC : Sort.Direction.DESC;
+        PageRequest pageRequest = PageRequest.of(page, size, Sort.by(direction, sortBy));
+
+        String trimmedKeyword = keyword == null ? "" : keyword.trim();
+        if (trimmedKeyword.isEmpty()) {
+            if (status == null || status.trim().isEmpty()) {
+                return getAllOrders(page, size, sortBy, sortDir);
+            }
+            return filterOrdersByStatus(status, page, size, sortBy, sortDir);
+        }
+
+        Long orderId = null;
+        try {
+            orderId = Long.parseLong(trimmedKeyword);
+        } catch (NumberFormatException ignored) {
+        }
+
+        OrderStatus parsedStatus = parseOrderStatusOrThrow(status);
+        Page<Order> orders = orderRepository.searchByUserNameOrOrderIdAndStatus(trimmedKeyword, orderId, parsedStatus, pageRequest);
+        return orders.map(this::convertToDto);
+    }
+
+    @Override
+    public Page<OrderResponse> filterOrdersByStatus(String status, int page, int size, String sortBy, String sortDir) {
+        Sort.Direction direction = "asc".equalsIgnoreCase(sortDir) ? Sort.Direction.ASC : Sort.Direction.DESC;
+        PageRequest pageRequest = PageRequest.of(page, size, Sort.by(direction, sortBy));
+
+        OrderStatus parsedStatus = parseOrderStatusOrThrow(status);
+        if (parsedStatus == null) {
+            return orderRepository.findAll(pageRequest).map(this::convertToDto);
+        }
+        return orderRepository.findByStatus(parsedStatus, pageRequest).map(this::convertToDto);
+    }
+
+    private OrderStatus parseOrderStatusOrThrow(String status) {
+        if (status == null || status.trim().isEmpty()) {
+            return null;
+        }
+
+        try {
+            return OrderStatus.valueOf(status.trim().toUpperCase(Locale.ROOT));
+        } catch (IllegalArgumentException ex) {
+            throw new RuntimeException("Trạng thái đơn hàng không hợp lệ: " + status);
+        }
     }
 
     @Override

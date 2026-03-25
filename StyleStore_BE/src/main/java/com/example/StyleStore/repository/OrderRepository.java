@@ -2,6 +2,9 @@ package com.example.StyleStore.repository;
 
 import com.example.StyleStore.dto.response.stats.BestSellingProductsInCategoriesDTO;
 import com.example.StyleStore.model.Order;
+import com.example.StyleStore.model.enums.OrderStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -99,6 +102,24 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
             @Param("from") LocalDateTime from,
             @Param("to") LocalDateTime to,
             @Param("completedStatus") String completedStatus);
+
+    @Query("""
+            SELECT o
+            FROM Order o
+            JOIN o.user u
+            WHERE (
+                    LOWER(u.fullName) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                    OR (:orderId IS NOT NULL AND o.id = :orderId)
+                  )
+              AND (:status IS NULL OR o.status = :status)
+            """)
+    Page<Order> searchByUserNameOrOrderIdAndStatus(
+            @Param("keyword") String keyword,
+            @Param("orderId") Long orderId,
+            @Param("status") OrderStatus status,
+            Pageable pageable);
+
+    Page<Order> findByStatus(OrderStatus status, Pageable pageable);
 
     List<Order> findByUser_IdOrderByCreatedAtDesc(Long userId);
 

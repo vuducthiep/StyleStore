@@ -45,6 +45,10 @@ const OrderTable: React.FC<OrderTableProps> = ({ refreshKey = 0, onViewDetail })
     const [size] = useState(10);
     const [totalPages, setTotalPages] = useState(0);
     const [totalElements, setTotalElements] = useState(0);
+    const [keywordInput, setKeywordInput] = useState('');
+    const [statusInput, setStatusInput] = useState('');
+    const [appliedKeyword, setAppliedKeyword] = useState('');
+    const [appliedStatus, setAppliedStatus] = useState('');
     const lastEffectFetchKeyRef = useRef<string | null>(null);
     const [confirmState, setConfirmState] = useState<{
         open: boolean;
@@ -55,13 +59,27 @@ const OrderTable: React.FC<OrderTableProps> = ({ refreshKey = 0, onViewDetail })
 
     const { pushToast } = useToast();
 
-    const fetchOrders = useCallback(async (pageIndex = 0) => {
+    const fetchOrders = useCallback(async (pageIndex = 0, keyword = appliedKeyword, status = appliedStatus) => {
         setIsLoading(true);
         setError('');
 
         try {
+            const trimmedKeyword = keyword.trim();
+            const trimmedStatus = status.trim().toUpperCase();
+            const baseQuery = `page=${pageIndex}&size=${size}&sortBy=createdAt&sortDir=desc`;
+
+            let endpoint = `http://localhost:8080/api/admin/orders?${baseQuery}`;
+            if (trimmedKeyword) {
+                endpoint = `http://localhost:8080/api/admin/orders/search?keyword=${encodeURIComponent(trimmedKeyword)}&${baseQuery}`;
+                if (trimmedStatus) {
+                    endpoint += `&status=${encodeURIComponent(trimmedStatus)}`;
+                }
+            } else if (trimmedStatus) {
+                endpoint = `http://localhost:8080/api/admin/orders/filter/status?status=${encodeURIComponent(trimmedStatus)}&${baseQuery}`;
+            }
+
             const authHeaders = buildAuthHeaders();
-            const res = await fetch(`http://localhost:8080/api/admin/orders?page=${pageIndex}&size=${size}&sortBy=createdAt&sortDir=desc`, {
+            const res = await fetch(endpoint, {
                 headers: {
                     'Content-Type': 'application/json',
                     ...authHeaders,
@@ -101,20 +119,34 @@ const OrderTable: React.FC<OrderTableProps> = ({ refreshKey = 0, onViewDetail })
         } finally {
             setIsLoading(false);
         }
-    }, [size]);
+    }, [appliedKeyword, appliedStatus, size]);
 
     useEffect(() => {
-        const fetchKey = `${page}-${refreshKey}`;
+        const fetchKey = `${page}-${refreshKey}-${appliedKeyword}-${appliedStatus}`;
         if (lastEffectFetchKeyRef.current === fetchKey) {
             return;
         }
 
         lastEffectFetchKeyRef.current = fetchKey;
-        fetchOrders(page);
-    }, [fetchOrders, page, refreshKey]);
+        fetchOrders(page, appliedKeyword, appliedStatus);
+    }, [appliedKeyword, appliedStatus, fetchOrders, page, refreshKey]);
 
     const handlePageChange = (nextPage: number) => {
         setPage(nextPage);
+    };
+
+    const handleApplyFilters = () => {
+        setAppliedKeyword(keywordInput.trim());
+        setAppliedStatus(statusInput);
+        setPage(0);
+    };
+
+    const handleResetFilters = () => {
+        setKeywordInput('');
+        setStatusInput('');
+        setAppliedKeyword('');
+        setAppliedStatus('');
+        setPage(0);
     };
 
     const getStatusColor = (status: string) => {
@@ -131,6 +163,21 @@ const OrderTable: React.FC<OrderTableProps> = ({ refreshKey = 0, onViewDetail })
                 return 'bg-blue-100 text-blue-700';
             default:
                 return 'bg-slate-100 text-slate-700';
+        }
+    };
+
+    const getStatusLabel = (status: string) => {
+        switch (status) {
+            case 'CREATED':
+                return 'Mới tạo';
+            case 'SHIPPING':
+                return 'Đang giao';
+            case 'DELIVERED':
+                return 'Đã giao';
+            case 'CANCELLED':
+                return 'Đã hủy';
+            default:
+                return status;
         }
     };
 
@@ -183,23 +230,49 @@ const OrderTable: React.FC<OrderTableProps> = ({ refreshKey = 0, onViewDetail })
 
     return (
         <div className="w-full flex-1 bg-white shadow rounded-lg overflow-hidden border border-slate-200">
-            <div className="p-4 flex items-center justify-between">
-                <h2 className="text-lg font-semibold text-slate-800">Danh sách đơn hàng</h2>
-                <div className="flex items-center gap-2">
-                    {error && (
-                        <button
-                            onClick={() => fetchOrders(page)}
-                            className="text-sm px-3 py-1 rounded bg-red-100 text-red-700 hover:bg-red-200"
+            <div className="p-4 space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                    <h2 className="text-lg font-semibold text-slate-800">Danh sách đơn hàng</h2>
+                    <div className="flex flex-wrap items-center gap-2 justify-end">
+                        <input
+                            type="text"
+                            value={keywordInput}
+                            onChange={(e) => setKeywordInput(e.target.value)}
+                            placeholder="Tìm theo tên khách hàng hoặc order ID"
+                            className="w-full md:w-64 px-3 py-2 rounded border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200"
+                        />
+                        <select
+                            value={statusInput}
+                            onChange={(e) => setStatusInput(e.target.value)}
+                            className="px-3 py-2 rounded border border-slate-300 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-200"
                         >
-                            Thử lại
+                            <option value="">Tất cả trạng thái</option>
+                            <option value="CREATED">Mới tạo</option>
+                            <option value="SHIPPING">Đang giao</option>
+                            <option value="DELIVERED">Đã giao</option>
+                            <option value="CANCELLED">Đã hủy</option>
+                        </select>
+                        <button
+                            onClick={handleApplyFilters}
+                            className="px-4 py-2 rounded bg-slate-800 text-white text-sm font-medium hover:bg-slate-900 transition"
+                        >
+                            Áp dụng
                         </button>
-                    )}
-                    <button
-                        onClick={() => fetchOrders(page)}
-                        className="px-4 py-2 rounded bg-blue-600 text-white font-medium hover:bg-blue-700 transition"
-                    >
-                        Tải lại
-                    </button>
+                        <button
+                            onClick={handleResetFilters}
+                            className="px-4 py-2 rounded border border-slate-300 text-sm hover:bg-slate-50 transition"
+                        >
+                            Xóa lọc
+                        </button>
+                        {error && (
+                            <button
+                                onClick={() => fetchOrders(page)}
+                                className="text-sm px-3 py-1 rounded bg-red-100 text-red-700 hover:bg-red-200"
+                            >
+                                Thử lại
+                            </button>
+                        )}
+                    </div>
                 </div>
             </div>
 
@@ -214,36 +287,34 @@ const OrderTable: React.FC<OrderTableProps> = ({ refreshKey = 0, onViewDetail })
                     <table className="min-w-full w-full text-sm">
                         <thead className="bg-slate-50 text-slate-600">
                             <tr>
-                                <th className="px-4 py-2 text-left">ID</th>
-                                <th className="px-4 py-2 text-left">Tên khách hàng</th>
-                                <th className="px-4 py-2 text-left">Số điện thoại</th>
-                                <th className="px-4 py-2 text-right">Thành tiền</th>
-                                <th className="px-4 py-2 text-left w-52">Địa chỉ giao hàng</th>
-                                <th className="px-4 py-2 text-left">Trạng thái</th>
-                                <th className="px-4 py-2 text-right">Thao tác</th>
+                                <th className="px-4 py-2 text-center">ID</th>
+                                <th className="px-4 py-2 text-center">Tên khách hàng</th>
+                                <th className="px-4 py-2 text-center">Thành tiền</th>
+                                <th className="px-4 py-2 text-center w-52">Địa chỉ giao hàng</th>
+                                <th className="px-4 py-2 text-center">Trạng thái</th>
+                                <th className="px-4 py-2 text-center">Thao tác</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 text-slate-700">
                             {orders.map((order) => (
                                 <tr key={order.id} className="hover:bg-slate-50">
-                                    <td className="px-4 py-2">{order.id}</td>
-                                    <td className="px-4 py-2 font-medium">{order.userName}</td>
-                                    <td className="px-4 py-2">{order.phoneNumber}</td>
-                                    <td className="px-4 py-2 text-right">
+                                    <td className="px-4 py-2 text-center">{order.id}</td>
+                                    <td className="px-4 py-2 text-center font-medium">{order.userName}</td>
+                                    <td className="px-4 py-2 text-center">
                                         <p className="font-semibold">{formatCurrency(order.finalAmount)}</p>
                                         {order.discountAmount > 0 && (
                                             <p className="text-xs text-slate-500">Giảm {formatCurrency(order.discountAmount)}</p>
                                         )}
                                     </td>
-                                    <td className="px-4 py-2 w-52 max-w-[13rem] whitespace-normal break-words leading-5" title={order.shippingAddress}>
+                                    <td className="px-4 py-2 text-center w-52 max-w-[13rem] whitespace-normal break-words leading-5" title={order.shippingAddress}>
                                         {order.shippingAddress}
                                     </td>
-                                    <td className="px-4 py-2">
+                                    <td className="px-4 py-2 text-center">
                                         <span className={`px-2 py-1 rounded text-xs ${getStatusColor(order.status)}`}>
-                                            {order.status}
+                                            {getStatusLabel(order.status)}
                                         </span>
                                     </td>
-                                    <td className="px-4 py-2 text-right">
+                                    <td className="px-4 py-2 text-center">
                                         <div className="inline-flex items-center gap-2">
                                             <button
                                                 type="button"
