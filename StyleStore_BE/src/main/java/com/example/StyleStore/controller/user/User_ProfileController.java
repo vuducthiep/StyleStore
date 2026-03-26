@@ -1,10 +1,12 @@
 package com.example.StyleStore.controller.user;
 
+import com.example.StyleStore.dto.request.UserChangePasswordRequest;
 import com.example.StyleStore.dto.request.UserUpdateProfileRequest;
 import com.example.StyleStore.dto.response.ApiResponse;
 import com.example.StyleStore.dto.response.UserProfileResponse;
 import com.example.StyleStore.model.User;
-import com.example.StyleStore.repository.UserRepository;
+import com.example.StyleStore.service.UserService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -18,7 +20,7 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class User_ProfileController {
 
-    private final UserRepository userRepository;
+    private final UserService userService;
 
     // Lấy user ID từ token JWT
     private Long getCurrentUserId() {
@@ -39,7 +41,7 @@ public class User_ProfileController {
             email = ((UserDetails) authentication.getPrincipal()).getUsername();
         }
 
-        return userRepository.findByEmail(email)
+        return userService.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User không tìm thấy"))
                 .getId();
     }
@@ -49,7 +51,7 @@ public class User_ProfileController {
     public ResponseEntity<ApiResponse<UserProfileResponse>> getProfile() {
         try {
             Long userId = getCurrentUserId();
-            User user = userRepository.findById(userId)
+                User user = userService.getUserById(userId)
                     .orElseThrow(() -> new RuntimeException("User không tồn tại"));
 
             UserProfileResponse profile = UserProfileResponse.builder()
@@ -76,7 +78,7 @@ public class User_ProfileController {
             @RequestBody UserUpdateProfileRequest request) {
         try {
             Long userId = getCurrentUserId();
-            User user = userRepository.findById(userId)
+                User user = userService.getUserById(userId)
                     .orElseThrow(() -> new RuntimeException("User không tồn tại"));
 
             // Cập nhật các thông tin được phép thay đổi
@@ -93,7 +95,7 @@ public class User_ProfileController {
                 user.setAddress(request.getAddress());
             }
 
-            user = userRepository.save(user);
+            user = userService.saveUser(user);
 
             UserProfileResponse profile = UserProfileResponse.builder()
                     .id(user.getId())
@@ -111,5 +113,12 @@ public class User_ProfileController {
         } catch (Exception e) {
             return ResponseEntity.status(400).body(ApiResponse.fail("Lỗi: " + e.getMessage()));
         }
+    }
+
+    @PutMapping("/change-password")
+    public ResponseEntity<ApiResponse<Object>> changePassword(@Valid @RequestBody UserChangePasswordRequest request) {
+        Long userId = getCurrentUserId();
+        userService.changePassword(userId, request);
+        return ResponseEntity.ok(ApiResponse.ok("Đổi mật khẩu thành công", null));
     }
 }

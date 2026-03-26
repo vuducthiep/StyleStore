@@ -1,5 +1,6 @@
 package com.example.StyleStore.service;
 
+import com.example.StyleStore.dto.request.UserChangePasswordRequest;
 import com.example.StyleStore.dto.response.stats.MonthlyUserDto;
 import com.example.StyleStore.model.User;
 import org.springframework.data.domain.Page;
@@ -18,6 +19,7 @@ public interface UserService {
     User createUser(User user);
     boolean deleteUser(Long id);
     User updateUser(Long id, User newUser);
+    void changePassword(Long userId, UserChangePasswordRequest request);
     List<MonthlyUserDto> getRecent12MonthsUserRegistrations();
     long getTotalActiveUserCount();
 }
