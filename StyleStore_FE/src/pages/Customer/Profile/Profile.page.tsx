@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { User, Mail, Phone, MapPin, Save, X } from "lucide-react";
 import Header from "../../../components/Header";
 import vietnamAddressData from "../../../vietnamAddress.json";
+import ChangePasswordModal from "./ChangePasswordModal";
+import { useToast } from "../../../components/ToastProvider";
 
 interface Province {
     Id: string;
@@ -47,12 +49,14 @@ interface ApiResponse {
 
 export default function ProfilePage() {
     const navigate = useNavigate();
+    const { pushToast } = useToast();
     const vietnamAddress = vietnamAddressData as Province[];
     const [profile, setProfile] = useState<UserProfile | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [editMode, setEditMode] = useState<'info' | 'address' | null>(null);
     const [saving, setSaving] = useState(false);
+    const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
 
     // Form state for editing
     const [formData, setFormData] = useState({
@@ -188,10 +192,10 @@ export default function ProfilePage() {
             setSelectedWard("");
             setDetailedAddress("");
             setEditMode(null);
-            alert("Cập nhật thành công!");
+            pushToast("Cập nhật thành công!", "success");
         } catch (err) {
             console.error("Error updating profile:", err);
-            alert(err instanceof Error ? err.message : "Có lỗi xảy ra");
+            pushToast(err instanceof Error ? err.message : "Có lỗi xảy ra", "error");
         } finally {
             setSaving(false);
         }
@@ -299,6 +303,7 @@ export default function ProfilePage() {
     if (!profile) return null;
 
     return (
+        <>
         <div className="min-h-screen bg-gray-50">
             <Header />
 
@@ -356,6 +361,12 @@ export default function ProfilePage() {
                                         className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
                                     >
                                         Chỉnh sửa Địa chỉ
+                                    </button>
+                                    <button
+                                        onClick={() => setIsPasswordModalOpen(true)}
+                                        className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+                                    >
+                                        Đổi mật khẩu
                                     </button>
                                 </div>
 
@@ -612,5 +623,11 @@ export default function ProfilePage() {
                 </div>
             </div>
         </div>
+
+            <ChangePasswordModal
+                open={isPasswordModalOpen}
+                onClose={() => setIsPasswordModalOpen(false)}
+            />
+        </>
     );
 }
