@@ -26,6 +26,9 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.example.StyleStore.service.RedisService;
+import java.time.Duration;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -45,14 +48,17 @@ public class OrderServiceImpl implements OrderService {
     private final ProductSizeRepository productSizeRepository;
     private final PromotionRepository promotionRepository;
 
+    private final RedisService redisService;
+
     public OrderServiceImpl(OrderRepository orderRepository, OrderItemRepository orderItemRepository,
             ProductRepository productRepository, ProductSizeRepository productSizeRepository,
-            PromotionRepository promotionRepository) {
+            PromotionRepository promotionRepository, RedisService redisService) {
         this.orderRepository = orderRepository;
         this.orderItemRepository = orderItemRepository;
         this.productRepository = productRepository;
         this.productSizeRepository = productSizeRepository;
         this.promotionRepository = promotionRepository;
+        this.redisService = redisService;
     }
 
     @Override
@@ -105,14 +111,17 @@ public class OrderServiceImpl implements OrderService {
                     .divide(twoMonthsAgoRevenue, 2, java.math.RoundingMode.HALF_UP)
                     .multiply(BigDecimal.valueOf(100));
         }
-
-        return new RevenueGrowthDto(
+        RevenueGrowthDto dto = new RevenueGrowthDto(
                 currentMonth.getMonthValue(),
                 currentMonth.getYear(),
                 previousMonthRevenue,
                 twoMonthsAgoRevenue,
                 growth,
                 growthPercentage);
+        // Example: Store to Redis as JSON using RedisService
+        // redisService.set("stats:revenue:growth", dto, Duration.ofMinutes(10));
+        // RevenueGrowthDto cached = redisService.get("stats:revenue:growth", RevenueGrowthDto.class);
+        return dto;
     }
 
     @Override

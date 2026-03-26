@@ -5,12 +5,16 @@ import java.math.BigDecimal;
 
 public class RevenueGrowthDto implements Serializable {
     private static final long serialVersionUID = 1L;
-    private final int currentMonth;
-    private final int currentYear;
-    private final BigDecimal previousMonthRevenue;
-    private final BigDecimal twoMonthsAgoRevenue;
-    private final BigDecimal growthAmount;
-    private final BigDecimal growthPercentage; // %
+    private int currentMonth;
+    private int currentYear;
+    private BigDecimal previousMonthRevenue;
+    private BigDecimal twoMonthsAgoRevenue;
+    private BigDecimal growthAmount;
+    private BigDecimal growthPercentage; // %
+
+    public RevenueGrowthDto() {
+        // No-args constructor for Jackson
+    }
 
     public RevenueGrowthDto(int currentMonth, int currentYear, BigDecimal previousMonthRevenue,
             BigDecimal twoMonthsAgoRevenue, BigDecimal growthAmount, BigDecimal growthPercentage) {

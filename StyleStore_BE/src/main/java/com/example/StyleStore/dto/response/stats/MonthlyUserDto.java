@@ -4,9 +4,13 @@ import java.io.Serializable;
 
 public class MonthlyUserDto implements Serializable {
     private static final long serialVersionUID = 1L;
-    private final int year;
-    private final int month;
-    private final long count;
+    private int year;
+    private int month;
+    private long count;
+
+    public MonthlyUserDto() {
+        // No-args constructor for Jackson
+    }
 
     public MonthlyUserDto(int year, int month, long count) {
         this.year = year;

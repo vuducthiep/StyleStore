@@ -18,6 +18,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import com.example.StyleStore.service.RedisService;
+import java.time.Duration;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -25,6 +28,16 @@ import java.util.stream.Collectors;
 
 @Service
 public class ProductServiceImpl implements ProductService {
+
+    private final RedisService redisService;
+
+    public ProductServiceImpl(ProductRepository productRepository, SizeRepository sizeRepository, ProductSizeRepository productSizeRepository, CategoryRepository categoryRepository, RedisService redisService) {
+        this.productRepository = productRepository;
+        this.sizeRepository = sizeRepository;
+        this.productSizeRepository = productSizeRepository;
+        this.categoryRepository = categoryRepository;
+        this.redisService = redisService;
+    }
 
     @Autowired
     private ProductRepository productRepository;
@@ -117,7 +130,11 @@ public class ProductServiceImpl implements ProductService {
     @Override
     @Cacheable(cacheNames = "stats:products:count", key = "'fixed'")
     public long getTotalProductCount() {
-        return productRepository.count();
+           long count = productRepository.count();
+           // Example: Store to Redis as JSON using RedisService
+           // redisService.set("stats:products:count", count, Duration.ofMinutes(10));
+           // Long cached = redisService.get("stats:products:count", Long.class);
+           return count;
     }
 
     @Override

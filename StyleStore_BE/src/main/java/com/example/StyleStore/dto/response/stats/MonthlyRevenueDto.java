@@ -5,9 +5,13 @@ import java.math.BigDecimal;
 
 public class MonthlyRevenueDto implements Serializable {
     private static final long serialVersionUID = 1L;
-    private final int year;
-    private final int month;
-    private final BigDecimal revenue;
+    private int year;
+    private int month;
+    private BigDecimal revenue;
+
+    public MonthlyRevenueDto() {
+        // No-args constructor for Jackson
+    }
 
     public MonthlyRevenueDto(int year, int month, BigDecimal revenue) {
         this.year = year;
