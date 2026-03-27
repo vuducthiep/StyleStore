@@ -9,6 +9,14 @@ type ApiResponse<T> = {
     data?: T;
 };
 
+type PageResult<T> = {
+    content: T[];
+    totalPages: number;
+    totalElements: number;
+    number: number; // current page (0-based)
+    size: number;
+};
+
 export interface UserOrder {
     id: number;
     userId: number;
@@ -37,6 +45,10 @@ const User_OrderTable: React.FC<UserOrderTableProps> = ({
     const [orders, setOrders] = useState<UserOrder[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
+    const [page, setPage] = useState(0);
+    const [size, setSize] = useState(10);
+    const [totalPages, setTotalPages] = useState(0);
+    const [totalElements, setTotalElements] = useState(0);
     const [confirmState, setConfirmState] = useState<{
         open: boolean;
         order?: UserOrder;
@@ -46,13 +58,13 @@ const User_OrderTable: React.FC<UserOrderTableProps> = ({
 
     const { pushToast } = useToast();
 
-    const fetchOrders = useCallback(async () => {
+    const fetchOrders = useCallback(async (pageParam = page, sizeParam = size) => {
         setIsLoading(true);
         setError('');
 
         try {
             const authHeaders = buildAuthHeaders();
-            const res = await fetch('http://localhost:8080/api/user/orders', {
+            const res = await fetch(`http://localhost:8080/api/user/orders?page=${pageParam}&size=${sizeParam}&sortBy=createdAt&sortDir=desc`, {
                 headers: {
                     'Content-Type': 'application/json',
                     ...authHeaders,
@@ -67,13 +79,17 @@ const User_OrderTable: React.FC<UserOrderTableProps> = ({
                 return;
             }
 
-            const data: ApiResponse<UserOrder[]> = await res.json();
+            const data: ApiResponse<PageResult<UserOrder>> = await res.json();
             if (!data.success) {
                 setError(data.message || 'Lỗi tải danh sách đơn hàng.');
                 return;
             }
 
-            setOrders(data.data || []);
+            setOrders(data.data?.content || []);
+            setTotalPages(data.data?.totalPages || 0);
+            setTotalElements(data.data?.totalElements || 0);
+            setPage(data.data?.number || 0);
+            setSize(data.data?.size || sizeParam);
         } catch (e) {
             if (isAuthTokenMissingError(e)) {
                 setError('Bạn chưa đăng nhập hoặc thiếu token.');
@@ -84,12 +100,23 @@ const User_OrderTable: React.FC<UserOrderTableProps> = ({
         } finally {
             setIsLoading(false);
         }
-    }, []);
+    }, [page, size]);
 
     useEffect(() => {
-        fetchOrders();
+        fetchOrders(page, size);
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [fetchOrders, refreshKey]);
+    }, [fetchOrders, refreshKey, page, size]);
+    // Pagination controls
+    const handlePageChange = (newPage: number) => {
+        if (newPage >= 0 && newPage < totalPages) {
+            setPage(newPage);
+        }
+    };
+
+    const handleSizeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        setSize(Number(e.target.value));
+        setPage(0);
+    };
 
     const getStatusColor = (status: string) => {
         switch (status) {
@@ -385,8 +412,41 @@ const User_OrderTable: React.FC<UserOrderTableProps> = ({
                             ))}
                         </tbody>
                     </table>
+                </div>)}
+                {/* Pagination */}
+                <div className="flex items-center justify-between px-4 py-2 border-t bg-slate-50">
+                    <div className="text-xs text-slate-600">
+                        Hiển thị {orders.length} / {totalElements} đơn hàng
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <button
+                            className="px-2 py-1 rounded border text-xs"
+                            disabled={page === 0}
+                            onClick={() => handlePageChange(page - 1)}
+                        >
+                            Trước
+                        </button>
+                        <span className="text-xs">
+                            Trang {totalPages === 0 ? 0 : page + 1} / {totalPages}
+                        </span>
+                        <button
+                            className="px-2 py-1 rounded border text-xs"
+                            disabled={page + 1 >= totalPages}
+                            onClick={() => handlePageChange(page + 1)}
+                        >
+                            Sau
+                        </button>
+                        <select
+                            className="ml-2 px-1 py-1 border rounded text-xs"
+                            value={size}
+                            onChange={handleSizeChange}
+                        >
+                            {[5, 10, 20, 50].map((s) => (
+                                <option key={s} value={s}>{s} / trang</option>
+                            ))}
+                        </select>
+                    </div>
                 </div>
-            )}
 
             {/* Confirm Dialog */}
             <ConfirmDialog

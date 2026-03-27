@@ -224,9 +224,11 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
-    public List<OrderResponse> getOrdersByUserId(Long userId) {
-        List<Order> orders = orderRepository.findByUser_IdOrderByCreatedAtDesc(userId);
-        return orders.stream().map(this::convertToDto).collect(Collectors.toList());
+    public Page<OrderResponse> getOrdersByUserId(Long userId, int page, int size, String sortBy, String sortDir) {
+        Sort.Direction direction = "asc".equalsIgnoreCase(sortDir) ? Sort.Direction.ASC : Sort.Direction.DESC;
+        PageRequest pageRequest = PageRequest.of(page, size, Sort.by(direction, sortBy));
+        Page<Order> orders = orderRepository.findByUser_Id(userId, pageRequest);
+        return orders.map(this::convertToDto);
     }
 
     private OrderResponse convertToDto(Order order) {

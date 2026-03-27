@@ -23,7 +23,7 @@ public interface OrderService {
     Page<OrderResponse> filterOrdersByStatus(String status, int page, int size, String sortBy, String sortDir);
     OrderResponse getOrderById(Long id);
     OrderResponse getOrderDetailById(Long id);
-    List<OrderResponse> getOrdersByUserId(Long userId);
+    Page<OrderResponse> getOrdersByUserId(Long userId, int page, int size, String sortBy, String sortDir);
     OrderResponse confirmOrder(long id);
     OrderResponse cancelOrder(long id);
     OrderResponse deliveredOrder(long id);

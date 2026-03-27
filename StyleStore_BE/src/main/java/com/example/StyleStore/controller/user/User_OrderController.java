@@ -7,6 +7,8 @@ import com.example.StyleStore.model.User;
 import com.example.StyleStore.repository.UserRepository;
 import com.example.StyleStore.service.OrderService;
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -38,12 +40,16 @@ public class User_OrderController {
                 .orElseThrow(() -> new RuntimeException("User không tìm thấy"));
     }
 
-    // API lấy tất cả đơn hàng của user
+    // API lấy tất cả đơn hàng của user (phân trang)
     @GetMapping
-    public ResponseEntity<ApiResponse<java.util.List<OrderResponse>>> getAllOrders() {
+    public ResponseEntity<ApiResponse<Page<OrderResponse>>> getAllOrders(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortDir) {
         try {
             User currentUser = getCurrentUser();
-            java.util.List<OrderResponse> orders = orderService.getOrdersByUserId(currentUser.getId());
+            Page<OrderResponse> orders = orderService.getOrdersByUserId(currentUser.getId(), page, size, sortBy, sortDir);
             return ResponseEntity.ok(ApiResponse.ok("Lấy danh sách đơn hàng thành công", orders));
         } catch (Exception e) {
             return ResponseEntity.status(500).body(ApiResponse.fail("Lỗi: " + e.getMessage()));

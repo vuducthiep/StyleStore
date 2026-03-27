@@ -121,7 +121,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
     Page<Order> findByStatus(OrderStatus status, Pageable pageable);
 
-    List<Order> findByUser_IdOrderByCreatedAtDesc(Long userId);
+        Page<Order> findByUser_Id(Long userId, Pageable pageable);
 
     // get best-selling in categories
 
