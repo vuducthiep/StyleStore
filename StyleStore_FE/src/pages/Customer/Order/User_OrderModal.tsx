@@ -15,6 +15,7 @@ export interface OrderItems {
     productId: number;
     productName: string;
     productImage?: string;
+    productColor?: string;
     sizeId: number;
     sizeName: string;
     quantity: number;
@@ -188,7 +189,10 @@ const User_OrderModal: React.FC<UserOrderModalProps> = ({
             .map(
                 (item) => `
                 <tr>
-                    <td style="padding:8px;border:1px solid #e2e8f0;">${escapeHtml(item.productName)}</td>
+                    <td style="padding:8px;border:1px solid #e2e8f0;">
+                        ${escapeHtml(item.productName)}
+                        ${item.productColor ? `<br/><span style="font-size:11px;color:#64748b;">Màu: ${escapeHtml(item.productColor)}</span>` : ''}
+                    </td>
                     <td style="padding:8px;border:1px solid #e2e8f0;text-align:center;">${escapeHtml(item.sizeName)}</td>
                     <td style="padding:8px;border:1px solid #e2e8f0;text-align:center;">${item.quantity}</td>
                     <td style="padding:8px;border:1px solid #e2e8f0;text-align:right;">${formatCurrency(item.price)}</td>
@@ -366,6 +370,12 @@ const User_OrderModal: React.FC<UserOrderModalProps> = ({
                                                     <div className="flex items-center gap-4 mt-1 text-sm text-slate-600">
                                                         <img src={item.productImage} alt={item.productName} className="w-16 h-16 object-cover rounded" />
                                                         <span>Size: {item.sizeName}</span>
+                                                        {item.productColor && (
+                                                            <>
+                                                                <span>|</span>
+                                                                <span>Màu: {item.productColor}</span>
+                                                            </>
+                                                        )}
                                                         <span>×</span>
                                                         <span>Số lượng: {item.quantity}</span>
                                                         <span>×</span>

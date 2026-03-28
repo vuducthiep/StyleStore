@@ -36,6 +36,9 @@ public class Product {
     @Column(name = "material", length = 100)
     private String material;
 
+    @Column(name = "color", length = 50)
+    private String color;
+
     @Column(name = "price", nullable = false)
     private Double price;
 

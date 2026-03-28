@@ -25,6 +25,7 @@ export interface Product {
     gender: string;
     brand: string;
     material?: string;
+    color?: string;
     price: number;
     thumbnail: string;
     status: string;

@@ -31,6 +31,7 @@ export interface Product {
     gender: string;
     brand: string;
     material?: string;
+    color?: string;
     price: number;
     thumbnail: string;
     status: string;
@@ -171,10 +172,13 @@ export default function ListProduct({
                                                 {product.description}
                                             </p>
 
-                                            {/* Brand & Gender */}
-                                            <div className="flex justify-between items-center mb-3 text-xs text-gray-500">
+                                            {/* Brand, Gender, Color */}
+                                            <div className="flex justify-between items-center mb-3 text-xs text-gray-500 flex-wrap gap-1">
                                                 <span className="font-medium">{product.brand?.toUpperCase() || "N/A"}</span>
-                                                <span className="px-2 py-1 bg-gray-100 rounded">{product.gender || "Chưa xác định"}</span>
+                                                <div className="flex gap-1 border-l pl-2 ml-1">
+                                                    {product.color && <span className="px-2 py-1 bg-gray-100 rounded">{product.color}</span>}
+                                                    <span className="px-2 py-1 bg-gray-100 rounded">{product.gender || "Chưa xác định"}</span>
+                                                </div>
                                             </div>
 
                                             {/* Sizes */}

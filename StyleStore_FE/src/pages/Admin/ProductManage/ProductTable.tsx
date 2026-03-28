@@ -33,6 +33,7 @@ export interface AdminProduct {
     gender?: string;
     brand?: string;
     material?: string;
+    color?: string;
     price: number;
     thumbnail?: string;
     status?: string;
@@ -342,10 +343,10 @@ const ProductTable: React.FC<ProductTableProps> = ({ refreshKey = 0, onEdit }) =
                                 <th className="px-4 py-2 text-left">Tên sản phẩm</th>
                                 <th className="px-4 py-2 text-left">Thương hiệu</th>
                                 <th className="px-4 py-2 text-left">Giới tính</th>
+                                <th className="px-4 py-2 text-left">Màu sắc</th>
                                 <th className="px-4 py-2 text-left">Giá</th>
                                 <th className="px-4 py-2 text-left">Danh mục</th>
                                 <th className="px-4 py-2 text-left">Trạng thái</th>
-                                <th className="px-4 py-2 text-left">Ngày tạo</th>
                                 <th className="px-4 py-2 text-right">Thao tác</th>
                             </tr>
                         </thead>
@@ -369,6 +370,7 @@ const ProductTable: React.FC<ProductTableProps> = ({ refreshKey = 0, onEdit }) =
                                     <td className="px-4 py-2 font-medium">{product.name}</td>
                                     <td className="px-4 py-2">{product.brand || '-'}</td>
                                     <td className="px-4 py-2">{product.gender || '-'}</td>
+                                    <td className="px-4 py-2">{product.color || '-'}</td>
                                     <td className="px-4 py-2">
                                         {product.price.toLocaleString('vi-VN')}₫
                                     </td>
@@ -376,7 +378,6 @@ const ProductTable: React.FC<ProductTableProps> = ({ refreshKey = 0, onEdit }) =
                                     <td className="px-4 py-2">
                                         <span className="px-2 py-1 rounded text-xs bg-slate-100 text-slate-700">{product.status || '-'}</span>
                                     </td>
-                                    <td className="px-4 py-2">{product.createdAt ? new Date(product.createdAt).toLocaleDateString() : '-'}</td>
                                     <td className="px-4 py-2 text-right">
                                         <button
                                             type="button"

@@ -61,6 +61,10 @@ export default function ProductDetailContent({
                             <p className="text-base font-semibold text-gray-900">{product.material || "N/A"}</p>
                         </div>
                         <div>
+                            <p className="text-xs text-gray-600 uppercase">Màu sắc</p>
+                            <p className="text-base font-semibold text-gray-900">{product.color || "N/A"}</p>
+                        </div>
+                        <div>
                             <p className="text-xs text-gray-600 uppercase">Giới tính</p>
                             <p className="text-base font-semibold text-gray-900">{product.gender}</p>
                         </div>

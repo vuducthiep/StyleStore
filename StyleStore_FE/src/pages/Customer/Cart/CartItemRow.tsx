@@ -11,6 +11,7 @@ interface Product {
     price: number;
     thumbnail: string;
     material?: string;
+    color?: string;
 }
 
 interface CartItem {
@@ -57,9 +58,12 @@ export default function CartItemRow({
                     >
                         {item.product.name}
                     </h3>
-                    <p className="text-sm text-gray-600">
-                        {formatPrice(item.price)}
-                    </p>
+                    <div className="text-sm text-gray-600 flex items-center gap-2 mt-1">
+                        <span className="font-medium text-blue-600">{formatPrice(item.price)}</span>
+                        {(item.product.material || item.product.color) && <span className="text-gray-300">|</span>}
+                        {item.product.material && <span>{item.product.material}</span>}
+                        {item.product.color && <span>{item.product.color}</span>}
+                    </div>
                 </div>
             </div>
 
