@@ -41,9 +41,9 @@ public class Admin_ImportReceiptController {
         try {
             Page<ImportReceiptResponse> receipts = importReceiptService.getImportReceipts(
                     page, size, sortBy, sortDir, supplierId, status);
-            return ResponseEntity.ok(ApiResponse.ok("Lay danh sach phieu nhap thanh cong", receipts));
+            return ResponseEntity.ok(ApiResponse.ok("Lấy danh sách phiếu nhập thành công", receipts));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(ApiResponse.fail("Loi khi lay danh sach phieu nhap: " + e.getMessage()));
+            return ResponseEntity.badRequest().body(ApiResponse.fail("Lỗi khi lấy danh sách phiếu nhập: " + e.getMessage()));
         }
     }
 
@@ -51,10 +51,10 @@ public class Admin_ImportReceiptController {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<ImportReceiptResponse>> getImportReceiptById(@PathVariable Long id) {
         try {
-            ImportReceiptResponse response = importReceiptService.getImportReceiptById(id);
-            return ResponseEntity.ok(ApiResponse.ok("Lay chi tiet phieu nhap thanh cong", response));
+                ImportReceiptResponse response = importReceiptService.getImportReceiptById(id);
+                return ResponseEntity.ok(ApiResponse.ok("Lấy chi tiết phiếu nhập thành công", response));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(ApiResponse.fail("Loi khi lay chi tiet phieu nhap: " + e.getMessage()));
+            return ResponseEntity.badRequest().body(ApiResponse.fail("Lỗi khi lấy chi tiết phiếu nhập: " + e.getMessage()));
         }
     }
 }

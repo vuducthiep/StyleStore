@@ -28,7 +28,7 @@ public class Admin_SupplierController {
             @RequestParam(required = false) String keyword) {
         Page<SupplierResponse> suppliers = importReceiptService
                 .getSuppliers(page, size, sortBy, sortDir, keyword);
-        return ResponseEntity.ok(ApiResponse.ok("Lay danh sach nha cung cap thanh cong", suppliers));
+        return ResponseEntity.ok(ApiResponse.ok("Lấy danh sách nhà cung cấp thành công", suppliers));
     }
 
     @PostMapping
@@ -36,9 +36,9 @@ public class Admin_SupplierController {
     public ResponseEntity<ApiResponse<SupplierResponse>> createSupplier(@RequestBody SupplierCreateRequest request) {
         try {
             SupplierResponse response = importReceiptService.createSupplier(request);
-            return ResponseEntity.status(201).body(ApiResponse.ok("Tao nha cung cap thanh cong", response));
+            return ResponseEntity.status(201).body(ApiResponse.ok("Tạo nhà cung cấp thành công", response));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(ApiResponse.fail("Loi khi tao nha cung cap: " + e.getMessage()));
+            return ResponseEntity.badRequest().body(ApiResponse.fail("Lỗi khi tạo nhà cung cấp: " + e.getMessage()));
         }
     }
 
@@ -48,9 +48,9 @@ public class Admin_SupplierController {
                                                                          @RequestBody SupplierUpdateRequest request) {
         try {
             SupplierResponse response = importReceiptService.updateSupplier(id, request);
-            return ResponseEntity.ok(ApiResponse.ok("Cap nhat nha cung cap thanh cong", response));
+            return ResponseEntity.ok(ApiResponse.ok("Cập nhật nhà cung cấp thành công", response));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(ApiResponse.fail("Loi khi cap nhat nha cung cap: " + e.getMessage()));
+            return ResponseEntity.badRequest().body(ApiResponse.fail("Lỗi khi cập nhật nhà cung cấp: " + e.getMessage()));
         }
     }
 }
