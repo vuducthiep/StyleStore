@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { buildAuthHeaders, isAuthTokenMissingError } from '../../../services/auth';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 interface ImportReceiptItem {
 	id: number;
@@ -41,6 +43,7 @@ const ImportReceiptDetailModal: React.FC<ImportReceiptDetailModalProps> = ({ isO
 	const [receipt, setReceipt] = useState<ImportReceiptDetail | null>(null);
 	const [isLoading, setIsLoading] = useState(false);
 	const [error, setError] = useState('');
+	const [isExporting, setIsExporting] = useState(false);
 
 	useEffect(() => {
 		if (!isOpen || !receiptId) {
@@ -129,6 +132,122 @@ const ImportReceiptDetailModal: React.FC<ImportReceiptDetailModalProps> = ({ isO
 				return 'bg-red-100 text-red-700';
 			default:
 				return 'bg-slate-100 text-slate-700';
+		}
+	};
+
+	const escapeHtml = (value: string) =>
+		value
+			.replaceAll('&', '&amp;')
+			.replaceAll('<', '&lt;')
+			.replaceAll('>', '&gt;')
+			.replaceAll('"', '&quot;')
+			.replaceAll("'", '&#039;');
+
+	const handleExportPdf = async () => {
+		if (!receipt || isExporting) {
+			return;
+		}
+
+		setIsExporting(true);
+
+		const exportRoot = document.createElement('div');
+		exportRoot.style.position = 'fixed';
+		exportRoot.style.left = '-10000px';
+		exportRoot.style.top = '0';
+		exportRoot.style.width = '1024px';
+		exportRoot.style.background = '#ffffff';
+		exportRoot.style.padding = '24px';
+		exportRoot.style.boxSizing = 'border-box';
+		exportRoot.style.fontFamily = 'Arial, Helvetica, sans-serif';
+
+		const rows = (receipt.items ?? [])
+			.map(
+				(item) => `
+				<tr>
+					<td style="padding:8px;border:1px solid #e2e8f0;">
+						${escapeHtml(item.productName || '-')}
+						<br/><span style="font-size:11px;color:#64748b;">ID: ${item.productId}</span>
+					</td>
+					<td style="padding:8px;border:1px solid #e2e8f0;text-align:center;">${escapeHtml(item.sizeName || String(item.sizeId))}</td>
+					<td style="padding:8px;border:1px solid #e2e8f0;text-align:center;">${item.quantity}</td>
+					<td style="padding:8px;border:1px solid #e2e8f0;text-align:right;">${formatCurrency(item.importPrice)}</td>
+					<td style="padding:8px;border:1px solid #e2e8f0;text-align:right;font-weight:600;">${formatCurrency(item.subtotal || item.importPrice * item.quantity)}</td>
+				</tr>
+			`,
+			)
+			.join('');
+
+		exportRoot.innerHTML = `
+			<div style="border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;">
+				<div style="padding:16px 20px;border-bottom:1px solid #e2e8f0;background:#f8fafc;display:flex;justify-content:space-between;align-items:center;">
+					<h1 style="margin:0;font-size:22px;color:#0f172a;">Phiếu nhập #${receipt.id}</h1>
+					<span style="padding:4px 10px;border-radius:999px;background:#dcfce7;color:#166534;font-weight:600;font-size:12px;">${escapeHtml(getStatusLabel(receipt.status))}</span>
+				</div>
+				<div style="padding:16px 20px;">
+					<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;font-size:14px;color:#334155;">
+						<div><b>Mã phiếu:</b> #${receipt.id}</div>
+						<div><b>Nhà cung cấp:</b> ${escapeHtml(receipt.supplierName || '-')} (ID: ${receipt.supplierId})</div>
+						<div><b>ID người tạo:</b> ${receipt.createdBy ?? '-'}</div>
+						<div><b>Ngày tạo:</b> ${escapeHtml(formatDateTime(receipt.createdAt))}</div>
+						<div><b>Cập nhật:</b> ${escapeHtml(formatDateTime(receipt.updatedAt))}</div>
+						<div><b>Trạng thái:</b> ${escapeHtml(getStatusLabel(receipt.status))}</div>
+					</div>
+					<div style="margin-bottom:16px;font-size:14px;color:#334155;"><b>Ghi chú:</b> ${escapeHtml(receipt.note || '-')}</div>
+					<table style="width:100%;border-collapse:collapse;font-size:13px;color:#0f172a;">
+						<thead>
+							<tr style="background:#eff6ff;">
+								<th style="padding:8px;border:1px solid #e2e8f0;text-align:left;">Sản phẩm</th>
+								<th style="padding:8px;border:1px solid #e2e8f0;text-align:center;">Size</th>
+								<th style="padding:8px;border:1px solid #e2e8f0;text-align:center;">Số lượng</th>
+								<th style="padding:8px;border:1px solid #e2e8f0;text-align:right;">Giá nhập</th>
+								<th style="padding:8px;border:1px solid #e2e8f0;text-align:right;">Thành tiền</th>
+							</tr>
+						</thead>
+						<tbody>${rows}</tbody>
+					</table>
+					<div style="display:flex;justify-content:flex-end;margin-top:16px;font-size:18px;font-weight:700;color:#2563eb;">
+						Tổng phiếu nhập: ${formatCurrency(receipt.totalAmount || 0)}
+					</div>
+				</div>
+			</div>
+		`;
+
+		document.body.appendChild(exportRoot);
+
+		try {
+			const canvas = await html2canvas(exportRoot, {
+				scale: 2,
+				useCORS: true,
+				backgroundColor: '#ffffff',
+			});
+
+			const imgData = canvas.toDataURL('image/png');
+			const pdf = new jsPDF('p', 'mm', 'a4');
+			const pageWidth = 210;
+			const pageHeight = 297;
+			const imgWidth = pageWidth;
+			const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+			let heightLeft = imgHeight;
+			let position = 0;
+
+			pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+			heightLeft -= pageHeight;
+
+			while (heightLeft > 0) {
+				position = heightLeft - imgHeight;
+				pdf.addPage();
+				pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+				heightLeft -= pageHeight;
+			}
+
+			pdf.save(`phieu-nhap-${receipt.id}.pdf`);
+		} catch (e) {
+			console.error('Export import receipt pdf error:', e);
+			setError('Không thể xuất PDF. Vui lòng thử lại.');
+		} finally {
+			document.body.removeChild(exportRoot);
+			setIsExporting(false);
 		}
 	};
 
@@ -242,7 +361,15 @@ const ImportReceiptDetailModal: React.FC<ImportReceiptDetailModalProps> = ({ isO
 					) : null}
 				</div>
 
-				<div className="sticky bottom-0 bg-slate-50 border-t border-slate-200 px-6 py-4 flex justify-end">
+				<div className="sticky bottom-0 bg-slate-50 border-t border-slate-200 px-6 py-4 flex justify-end gap-3">
+					<button
+						type="button"
+						onClick={handleExportPdf}
+						disabled={isLoading || isExporting || !receipt}
+						className="px-6 py-2 rounded bg-emerald-600 text-white font-medium hover:bg-emerald-700 transition disabled:opacity-60 disabled:cursor-not-allowed"
+					>
+						{isExporting ? 'Đang xuất PDF...' : 'Xuất PDF'}
+					</button>
 					<button
 						type="button"
 						onClick={onClose}
