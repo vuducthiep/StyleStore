@@ -142,6 +142,69 @@ INSERT INTO `comments` VALUES (1,'Áo đẹp mà rẻ quá','2026-01-27 12:48:04
 UNLOCK TABLES;
 
 --
+-- Table structure for table `import_receipt_items`
+--
+
+DROP TABLE IF EXISTS `import_receipt_items`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `import_receipt_items` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `receipt_id` bigint NOT NULL,
+  `product_id` bigint NOT NULL,
+  `size_id` bigint NOT NULL,
+  `quantity` int NOT NULL,
+  `import_price` decimal(10,2) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `receipt_id` (`receipt_id`),
+  KEY `product_id` (`product_id`),
+  KEY `size_id` (`size_id`),
+  CONSTRAINT `import_receipt_items_ibfk_1` FOREIGN KEY (`receipt_id`) REFERENCES `import_receipts` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `import_receipt_items_ibfk_2` FOREIGN KEY (`product_id`) REFERENCES `products` (`id`),
+  CONSTRAINT `import_receipt_items_ibfk_3` FOREIGN KEY (`size_id`) REFERENCES `sizes` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `import_receipt_items`
+--
+
+LOCK TABLES `import_receipt_items` WRITE;
+/*!40000 ALTER TABLE `import_receipt_items` DISABLE KEYS */;
+/*!40000 ALTER TABLE `import_receipt_items` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `import_receipts`
+--
+
+DROP TABLE IF EXISTS `import_receipts`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `import_receipts` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `supplier_id` bigint NOT NULL,
+  `created_by` bigint DEFAULT NULL,
+  `note` varchar(255) DEFAULT NULL,
+  `status` varchar(20) DEFAULT 'COMPLETED',
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `supplier_id` (`supplier_id`),
+  CONSTRAINT `import_receipts_ibfk_1` FOREIGN KEY (`supplier_id`) REFERENCES `suppliers` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `import_receipts`
+--
+
+LOCK TABLES `import_receipts` WRITE;
+/*!40000 ALTER TABLE `import_receipts` DISABLE KEYS */;
+/*!40000 ALTER TABLE `import_receipts` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `messages`
 --
 
@@ -478,4 +541,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-04-14 10:10:08
+-- Dump completed on 2026-04-14 10:26:30
