@@ -31,8 +31,9 @@ const Sidebar: React.FC = () => {
         { label: 'Tổng quan', path: '/admin/dashboard', icon: <DashboardOutlined /> },
         { label: 'Quản lý người dùng', path: '/admin/user-manager', icon: <UserOutlined /> },
         { label: 'Quản lý đơn hàng', path: '/admin/order-manager', icon: <ShoppingCartOutlined /> },
-        { label: 'Hỗ trợ khách hàng', path: '/admin/support-chat', icon: <MessageOutlined /> },
     ];
+
+    const supportItem: SidebarItem = { label: 'Hỗ trợ khách hàng', path: '/admin/support-chat', icon: <MessageOutlined /> };
 
     const productSubmenuItems: SidebarItem[] = [
         { label: 'Quản lý sản phẩm', path: '/admin/product-manager', icon: <ShoppingOutlined /> },
@@ -141,6 +142,14 @@ const Sidebar: React.FC = () => {
                             </div>
                         </div>
                     </div>
+
+                    <Link
+                        to={supportItem.path}
+                        className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 ${isActive(supportItem.path) ? 'bg-blue-600 text-white shadow-lg' : 'text-gray-300 hover:bg-gray-800'}`}
+                    >
+                        <span className="text-base">{supportItem.icon}</span>
+                        {isOpen && <span className="font-medium text-sm">{supportItem.label}</span>}
+                    </Link>
                 </nav>
 
                 <div className="px-3 py-4 border-t border-gray-800 shrink-0">
