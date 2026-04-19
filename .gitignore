@@ -70,3 +70,26 @@ target/
 *.h2.db
 *.trace.db
 
+# =========================
+# Python / AI Service
+# =========================
+.venv/
+**/.venv/
+venv/
+**/venv/
+
+__pycache__/
+**/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Local AI data/index artifacts
+StyleStore_AI/data/
+StyleStore_AI/chroma/
+chroma/
+
