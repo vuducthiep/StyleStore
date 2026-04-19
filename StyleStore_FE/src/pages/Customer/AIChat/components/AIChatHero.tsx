@@ -42,7 +42,7 @@ const AIChatHero = ({ quickPrompts, onPromptClick }: AIChatHeroProps) => {
                             <Bot className="h-6 w-6" />
                         </div>
                         <div>
-                            <p className="text-sm text-slate-300">Tư vấn theo catalog thực tế</p>
+                            <p className="text-sm text-slate-300">Tư vấn theo sản phẩm thực tế của shop</p>
                             <p className="text-lg font-semibold">RAG + LangChain</p>
                         </div>
                     </div>
