@@ -76,6 +76,7 @@ class RecommendedProduct(BaseModel):
 
 class ChatResponse(BaseModel):
     answer: str
+    product_ids: list[int] = Field(default_factory=list)
     products: list[RecommendedProduct] = Field(default_factory=list)
     source_count: int = 0
 

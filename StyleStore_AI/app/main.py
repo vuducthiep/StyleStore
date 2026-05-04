@@ -44,7 +44,7 @@ async def chat(request: ChatRequest) -> ChatResponse:
     top_k = request.top_k or settings.top_k
 
     try:
-        answer, products, source_count = answer_question(
+        answer, product_ids, products, source_count = answer_question(
             settings=settings,
             question=request.question,
             top_k=top_k,
@@ -59,7 +59,7 @@ async def chat(request: ChatRequest) -> ChatResponse:
             catalog = await fetch_all_products(settings)
             if catalog:
                 rebuild_vectorstore(settings, catalog)
-                answer, products, source_count = answer_question(
+                answer, product_ids, products, source_count = answer_question(
                     settings=settings,
                     question=request.question,
                     top_k=top_k,
@@ -71,7 +71,7 @@ async def chat(request: ChatRequest) -> ChatResponse:
     except Exception as exc:  # pragma: no cover - surfaced to API caller
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 
-    return ChatResponse(answer=answer, products=products, source_count=source_count)
+    return ChatResponse(answer=answer, product_ids=product_ids, products=products, source_count=source_count)
 
 
 @app.on_event("startup")

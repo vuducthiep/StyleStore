@@ -5,7 +5,7 @@ import AIChatHero from './components/AIChatHero';
 import AIChatChatPanel from './components/AIChatChatPanel';
 import AIChatSidebar from './components/AIChatSidebar';
 import type { ChatMessage } from './AIChat.types';
-import { askProductAi } from '../../../services/aiChat';
+import { askProductAi, fetchAiProductById, type AiRecommendedProduct } from '../../../services/aiChat';
 
 const quickPrompts = [
     'Gợi ý áo nam dưới 500k dễ phối đồ',
@@ -129,6 +129,33 @@ const AIChatPage = () => {
         return [];
     }, [messages]);
 
+    const hydrateProducts = async (products: AiRecommendedProduct[], productIds: number[]): Promise<AiRecommendedProduct[]> => {
+        const productMap = new Map<number, AiRecommendedProduct>();
+
+        products.forEach((product) => {
+            if (typeof product.id === 'number') {
+                productMap.set(product.id, product);
+            }
+        });
+
+        if (productIds.length === 0) {
+            return products;
+        }
+
+        const resolved = await Promise.all(
+            productIds.map(async (productId) => {
+                const existing = productMap.get(productId);
+                if (existing) {
+                    return existing;
+                }
+
+                return (await fetchAiProductById(productId)) ?? { id: productId, name: `Sản phẩm #${productId}` };
+            })
+        );
+
+        return resolved.filter((product): product is AiRecommendedProduct => Boolean(product && product.name));
+    };
+
     const sendMessage = async (question: string) => {
         const trimmed = question.trim();
         if (!trimmed || isLoading) {
@@ -155,11 +182,13 @@ const AIChatPage = () => {
                 max_price: maxPrice,
             });
 
+            const products = await hydrateProducts(result.products || [], result.product_ids || []);
+
             const assistantMessage: ChatMessage = {
                 id: `assistant-${Date.now()}`,
                 role: 'assistant',
                 content: result.answer || 'Mình chưa tìm thấy gợi ý phù hợp. Hãy thử mô tả cụ thể hơn.',
-                products: result.products || [],
+                products,
             };
 
             setMessages((prev) => [...prev, assistantMessage]);
