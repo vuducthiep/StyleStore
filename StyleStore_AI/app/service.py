@@ -1,12 +1,9 @@
 from __future__ import annotations
 
-import json
 import unicodedata
 import re
 from typing import Any
 
-from langchain.chains import create_retrieval_chain
-from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_community.chat_models import ChatOllama
 from langchain_google_genai import ChatGoogleGenerativeAI
@@ -61,27 +58,6 @@ def _strip_markdown(value: str) -> str:
     cleaned = re.sub(r"[*_`~]+", "", value)
     cleaned = re.sub(r"\s+", " ", cleaned)
     return cleaned.strip()
-
-
-def _extract_answer_text(raw_response: str) -> str:
-    text = raw_response.strip()
-    candidate = text
-
-    fenced_match = re.search(r"```(?:json)?\s*(\{.*\})\s*```", candidate, flags=re.S | re.I)
-    if fenced_match:
-        candidate = fenced_match.group(1).strip()
-    else:
-        json_match = re.search(r"\{.*\}", candidate, flags=re.S)
-        if json_match:
-            candidate = json_match.group(0).strip()
-
-    try:
-        payload = json.loads(candidate)
-    except json.JSONDecodeError:
-        return text
-
-    answer = str(payload.get("answer", "")).strip()
-    return answer or text
 
 
 def _pick_product_ids_from_answer(answer: str, docs: list[Any], max_price: float | None = None) -> list[int]:
@@ -165,9 +141,9 @@ def answer_question(
     category: str | None = None,
     brand: str | None = None,
     max_price: float | None = None,
-) -> tuple[str, list[dict[str, Any]], int]:
+) -> tuple[str, list[int], list[dict[str, Any]], int]:
     vectorstore = get_vectorstore(settings)
-    search_kwargs: dict[str, Any] = {"k": max(top_k * 3, top_k)}
+    search_kwargs: dict[str, Any] = {"k": max(1, top_k)}
 
     metadata_filter: dict[str, Any] = {}
     if gender:
@@ -198,8 +174,6 @@ def answer_question(
         ]
     )
 
-    combine_docs_chain = create_stuff_documents_chain(llm, prompt)
-    retrieval_chain = create_retrieval_chain(retriever, combine_docs_chain)
     constraints = []
     if gender:
         constraints.append(f"gender={gender}")
@@ -214,10 +188,11 @@ def answer_question(
     if constraints:
         input_text = f"{question}\n\nConstraints: {', '.join(constraints)}"
 
-    result = retrieval_chain.invoke({"input": input_text})
-
-    docs = result.get("context", [])
-    answer_text = _extract_answer_text(result.get("answer", ""))
+    docs = retriever.invoke(input_text)
+    context = "\n\n".join(doc.page_content for doc in docs)
+    messages = prompt.format_messages(input=input_text, context=context)
+    result = llm.invoke(messages)
+    answer_text = str(getattr(result, "content", result)).strip()
 
     metadata_by_id: dict[int, dict[str, Any]] = {}
     for doc in docs:
@@ -227,17 +202,6 @@ def answer_question(
             metadata_by_id[product_id] = metadata
 
     product_ids = _pick_product_ids_from_answer(answer_text, docs, max_price=max_price)
-    if not product_ids:
-        for doc in docs:
-            metadata = doc.metadata or {}
-            product_id = metadata.get("product_id")
-            price = metadata.get("price")
-            if max_price is not None and isinstance(price, (int, float)) and price > max_price:
-                continue
-            if isinstance(product_id, int):
-                product_ids.append(product_id)
-                if len(product_ids) >= top_k:
-                    break
 
     products = []
     seen_ids: set[int] = set()
