@@ -236,17 +236,16 @@ export default function ListProduct({
                                             <div className="mb-4">
                                                 <p className="text-xs font-semibold text-gray-700 mb-2">Size:</p>
                                                 <div className="flex flex-wrap gap-2">
-                                                    {product.productSizes.map((ps) => (
-                                                        <span
-                                                            key={ps.id}
-                                                            className={`text-xs px-2 py-1 rounded border transition-colors ${ps.stock > 0
-                                                                ? "border-blue-400 text-gray-700 hover:border-blue-500 hover:text-blue-600"
-                                                                : "border-gray-200 text-gray-400 line-through"
-                                                                }`}
-                                                        >
-                                                            {ps.size.name}
-                                                        </span>
-                                                    ))}
+                                                    {product.productSizes
+                                                        .filter((ps) => ps.stock > 0)
+                                                        .map((ps) => (
+                                                            <span
+                                                                key={ps.id}
+                                                                className="text-xs px-2 py-1 rounded border border-blue-400 text-gray-700 hover:border-blue-500 hover:text-blue-600"
+                                                            >
+                                                                {ps.size.name}
+                                                            </span>
+                                                        ))}
                                                 </div>
                                             </div>
 
