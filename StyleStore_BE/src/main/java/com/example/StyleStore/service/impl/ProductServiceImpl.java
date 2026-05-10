@@ -118,12 +118,45 @@ public class ProductServiceImpl implements ProductService {
                     if (newProduct.getCategory() != null) product.setCategory(newProduct.getCategory());
 
                     if (newProduct.getProductSizes() != null && !newProduct.getProductSizes().isEmpty()) {
-                        product.getProductSizes().forEach(existingSize ->
-                            newProduct.getProductSizes().forEach(newSize -> {
-                                if (existingSize.getId().equals(newSize.getId()) && newSize.getStock() != null) {
-                                    existingSize.setStock(newSize.getStock());
+                        // Update existing sizes' stock when matching by productSize.id
+                        // Also add new ProductSize records when a size (size.id) is provided but not present for this product
+                        for (var newSize : newProduct.getProductSizes()) {
+                            // If incoming model contains productSize id, try to update existing by id
+                            if (newSize.getId() != null) {
+                                for (var existingSize : product.getProductSizes()) {
+                                    if (existingSize.getId().equals(newSize.getId())) {
+                                        if (newSize.getStock() != null) {
+                                            existingSize.setStock(newSize.getStock());
+                                        }
+                                        break;
+                                    }
                                 }
-                            }));
+                            } else if (newSize.getSize() != null && newSize.getSize().getId() != null) {
+                                Long sizeId = newSize.getSize().getId();
+                                // Check if a ProductSize for this product & size already exists
+                                var existing = productSizeRepository.findByProduct_IdAndSize_Id(product.getId(), sizeId);
+                                if (existing.isPresent()) {
+                                    var ex = existing.get();
+                                    if (newSize.getStock() != null) {
+                                        ex.setStock(newSize.getStock());
+                                        productSizeRepository.save(ex);
+                                    }
+                                } else {
+                                    // create new ProductSize record
+                                    var sizeEntity = sizeRepository.findById(sizeId).orElse(null);
+                                    if (sizeEntity != null) {
+                                        ProductSize ps = ProductSize.builder()
+                                                .product(product)
+                                                .size(sizeEntity)
+                                                .stock(newSize.getStock() != null ? newSize.getStock() : 0)
+                                                .build();
+                                        ProductSize saved = productSizeRepository.save(ps);
+                                        // attach to product in-memory for response
+                                        product.getProductSizes().add(saved);
+                                    }
+                                }
+                            }
+                        }
                     }
 
                     return productRepository.save(product);
