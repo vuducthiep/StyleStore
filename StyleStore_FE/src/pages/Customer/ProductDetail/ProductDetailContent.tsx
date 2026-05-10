@@ -1,5 +1,6 @@
-import { ShoppingCart, Check } from "lucide-react";
-import type { Product, ProductSize } from "./productDetail.types";
+import { ShoppingCart, Check, ChevronLeft, ChevronRight } from "lucide-react";
+import { useState, useRef } from "react";
+import type { Product, ProductSize, ProductImage } from "./productDetail.types";
 
 type ProductDetailContentProps = {
     product: Product;
@@ -26,19 +27,184 @@ export default function ProductDetailContent({
     onAddToCart,
     formatPrice,
 }: ProductDetailContentProps) {
+    const [currentImageIndex, setCurrentImageIndex] = useState(0);
+    const [isTransitioning, setIsTransitioning] = useState(false);
+    const [thumbnailScrollOffset, setThumbnailScrollOffset] = useState(0);
+    const thumbnailContainerRef = useRef<HTMLDivElement>(null);
+
+    // Check if product is new (created within 30 days)
+    const isNewProduct = () => {
+        const createdAt = new Date(product.createdAt);
+        const now = new Date();
+        const daysDifference = (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24);
+        return daysDifference < 30;
+    };
+
+    // Combine thumbnail with product images for carousel
+    const allImages: ProductImage[] = [
+        { imageUrl: product.thumbnail, displayOrder: 0 },
+        ...(product.productImages || []).sort((a, b) => a.displayOrder - b.displayOrder)
+    ];
+
+    const currentImage = allImages[currentImageIndex];
+    const thumbnailWidth = 80; // 64px (w-16) + 16px gap
+    const maxScrollOffset = Math.max(0, (allImages.length * thumbnailWidth) - 400);
+
+    const changeImage = (newIndex: number) => {
+        setIsTransitioning(true);
+        setTimeout(() => {
+            setCurrentImageIndex(newIndex);
+            setIsTransitioning(false);
+        }, 150);
+    };
+
+    const goToPreviousImage = () => {
+        const newIndex = (currentImageIndex - 1 + allImages.length) % allImages.length;
+        changeImage(newIndex);
+    };
+
+    const goToNextImage = () => {
+        const newIndex = (currentImageIndex + 1) % allImages.length;
+        changeImage(newIndex);
+    };
+
+    const goToImage = (index: number) => {
+        changeImage(index);
+    };
+
+    const scrollThumbnailsLeft = () => {
+        const newOffset = Math.max(0, thumbnailScrollOffset - 100);
+        setThumbnailScrollOffset(newOffset);
+    };
+
+    const scrollThumbnailsRight = () => {
+        const newOffset = Math.min(maxScrollOffset, thumbnailScrollOffset + 100);
+        setThumbnailScrollOffset(newOffset);
+    };
     return (
         <div className="max-w-7xl mx-auto px-4 py-12">
+            <style>{`
+                @keyframes blink {
+                    0%, 100% {
+                        opacity: 1;
+                        transform: scale(1);
+                    }
+                    50% {
+                        opacity: 0.6;
+                        transform: scale(0.98);
+                    }
+                }
+                .animate-blink {
+                    animation: blink 0.5s infinite;
+                }
+            `}</style>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div className="flex items-center justify-center">
-                    <div className="relative w-full aspect-square bg-gray-200 rounded-lg overflow-hidden">
-                        <img
-                            src={product.thumbnail}
-                            alt={product.name}
-                            className="w-full h-full object-cover"
-                        />
-                        {product.status === "ACTIVE" && (
-                            <div className="absolute top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-full font-semibold">
-                                Có sẵn
+                    {/* Image Carousel */}
+                    <div className="relative w-full group">
+                        {/* Image Container */}
+                        <div className="relative w-full aspect-square bg-gray-200 rounded-lg overflow-hidden">
+                            <img
+                                src={currentImage.imageUrl}
+                                alt={product.name}
+                                className={`w-full h-full object-cover transition-opacity duration-300 ${
+                                    isTransitioning ? 'opacity-0' : 'opacity-100'
+                                }`}
+                            />
+                            {isNewProduct() && (
+                                <div className="absolute top-4 right-4 bg-red-500 text-white px-4 py-2 rounded-full font-bold text-lg animate-blink shadow-lg">
+                                    NEW
+                                </div>
+                            )}
+
+                            {/* Previous Button */}
+                            {allImages.length > 1 && (
+                                <button
+                                    onClick={goToPreviousImage}
+                                    className="absolute left-4 top-1/2 transform -translate-y-1/2 z-10 bg-white/80 hover:bg-white text-gray-800 rounded-full p-2 transition-all opacity-0 group-hover:opacity-100 shadow-lg"
+                                    aria-label="Previous image"
+                                >
+                                    <ChevronLeft className="w-6 h-6" />
+                                </button>
+                            )}
+
+                            {/* Next Button */}
+                            {allImages.length > 1 && (
+                                <button
+                                    onClick={goToNextImage}
+                                    className="absolute right-4 top-1/2 transform -translate-y-1/2 z-10 bg-white/80 hover:bg-white text-gray-800 rounded-full p-2 transition-all opacity-0 group-hover:opacity-100 shadow-lg"
+                                    aria-label="Next image"
+                                >
+                                    <ChevronRight className="w-6 h-6" />
+                                </button>
+                            )}
+                        </div>
+
+                        {/* Thumbnails Strip */}
+                        {allImages.length > 1 && (
+                            <div className="mt-4">
+                                <div className="relative flex items-center gap-3 group">
+                                    {/* Left Button */}
+                                    <button
+                                        onClick={scrollThumbnailsLeft}
+                                        className={`flex-shrink-0 p-2 rounded-full transition-all ${
+                                            thumbnailScrollOffset === 0
+                                                ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                                                : 'bg-gray-200 hover:bg-gray-300 text-gray-700'
+                                        }`}
+                                        disabled={thumbnailScrollOffset === 0}
+                                        aria-label="Scroll thumbnails left"
+                                    >
+                                        <ChevronLeft className="w-4 h-4" />
+                                    </button>
+
+                                    {/* Thumbnails Container */}
+                                    <div className="flex-1 overflow-hidden">
+                                        <div
+                                            ref={thumbnailContainerRef}
+                                            className="flex justify-center gap-4 transition-transform duration-300"
+                                            style={{ transform: `translateX(-${thumbnailScrollOffset}px)` }}
+                                        >
+                                            {allImages.map((img, index) => (
+                                                <button
+                                                    key={index}
+                                                    onClick={() => goToImage(index)}
+                                                    className={`flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-all ${
+                                                        index === currentImageIndex
+                                                            ? 'border-blue-600 shadow-md scale-105'
+                                                            : 'border-gray-300 hover:border-gray-400'
+                                                    }`}
+                                                    aria-label={`Select image ${index + 1}`}
+                                                >
+                                                    <img
+                                                        src={img.imageUrl}
+                                                        alt={`Thumbnail ${index + 1}`}
+                                                        className="w-full h-full object-cover"
+                                                    />
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {/* Right Button */}
+                                    <button
+                                        onClick={scrollThumbnailsRight}
+                                        className={`flex-shrink-0 p-2 rounded-full transition-all ${
+                                            thumbnailScrollOffset >= maxScrollOffset
+                                                ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                                                : 'bg-gray-200 hover:bg-gray-300 text-gray-700'
+                                        }`}
+                                        disabled={thumbnailScrollOffset >= maxScrollOffset}
+                                        aria-label="Scroll thumbnails right"
+                                    >
+                                        <ChevronRight className="w-4 h-4" />
+                                    </button>
+                                </div>
+
+                                {/* Image counter */}
+                                <div className="text-center text-sm text-gray-600 mt-3">
+                                    {currentImageIndex + 1} / {allImages.length}
+                                </div>
                             </div>
                         )}
                     </div>

@@ -9,6 +9,13 @@ export interface ProductSize {
     stock: number;
 }
 
+export interface ProductImage {
+    id?: number;
+    imageUrl: string;
+    displayOrder: number;
+    createdAt?: string;
+}
+
 export interface Category {
     id: number;
     name: string;
@@ -33,6 +40,7 @@ export interface Product {
     updatedAt: string;
     category: Category;
     productSizes: ProductSize[];
+    productImages?: ProductImage[];
 }
 
 export interface ApiResponse {

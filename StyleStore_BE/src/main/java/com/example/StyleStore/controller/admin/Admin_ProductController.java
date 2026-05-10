@@ -2,6 +2,7 @@ package com.example.StyleStore.controller.admin;
 
 import com.example.StyleStore.dto.response.ApiResponse;
 import com.example.StyleStore.model.Product;
+import com.example.StyleStore.model.ProductImage;
 import com.example.StyleStore.service.ProductService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -21,6 +22,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
 import java.util.Optional;
 
 @RestController
@@ -110,5 +112,70 @@ public class Admin_ProductController {
         return deleted
                 ? ResponseEntity.ok(ApiResponse.ok("Xóa sản phẩm thành công", null))
                 : ResponseEntity.status(404).body(ApiResponse.fail("Không tìm thấy sản phẩm"));
+    }
+
+    // ============ Product Images Endpoints ============
+
+    @GetMapping("/{productId}/images")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<List<ProductImage>>> getProductImages(@PathVariable Long productId) {
+        try {
+            List<ProductImage> images = productService.getProductImages(productId);
+            return ResponseEntity.ok(ApiResponse.ok("Lấy danh sách hình ảnh thành công", images));
+        } catch (Exception e) {
+            return ResponseEntity.status(400).body(ApiResponse.fail("Lỗi khi lấy hình ảnh: " + e.getMessage()));
+        }
+    }
+
+    @PostMapping("/{productId}/images")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<ProductImage>> addProductImage(
+            @PathVariable Long productId,
+            @RequestBody ProductImage productImage) {
+        if (productImage == null || productImage.getImageUrl() == null) {
+            return ResponseEntity.badRequest().body(ApiResponse.fail("URL hình ảnh không được để trống"));
+        }
+        try {
+            ProductImage createdImage = productService.addProductImage(productId, productImage);
+            return ResponseEntity.status(201).body(ApiResponse.ok("Thêm hình ảnh thành công", createdImage));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(404).body(ApiResponse.fail(e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(400).body(ApiResponse.fail("Lỗi khi thêm hình ảnh: " + e.getMessage()));
+        }
+    }
+
+    @PutMapping("/{productId}/images/{imageId}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<ProductImage>> updateProductImage(
+            @PathVariable Long productId,
+            @PathVariable Long imageId,
+            @RequestBody ProductImage productImage) {
+        if (productImage == null) {
+            return ResponseEntity.badRequest().body(ApiResponse.fail("Yêu cầu không hợp lệ"));
+        }
+        try {
+            ProductImage updatedImage = productService.updateProductImage(imageId, productImage);
+            return ResponseEntity.ok(ApiResponse.ok("Cập nhật hình ảnh thành công", updatedImage));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(404).body(ApiResponse.fail(e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(400).body(ApiResponse.fail("Lỗi khi cập nhật hình ảnh: " + e.getMessage()));
+        }
+    }
+
+    @DeleteMapping("/{productId}/images/{imageId}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<Void>> deleteProductImage(
+            @PathVariable Long productId,
+            @PathVariable Long imageId) {
+        try {
+            boolean deleted = productService.deleteProductImage(imageId);
+            return deleted
+                    ? ResponseEntity.ok(ApiResponse.ok("Xóa hình ảnh thành công", null))
+                    : ResponseEntity.status(404).body(ApiResponse.fail("Không tìm thấy hình ảnh"));
+        } catch (Exception e) {
+            return ResponseEntity.status(400).body(ApiResponse.fail("Lỗi khi xóa hình ảnh: " + e.getMessage()));
+        }
     }
 }

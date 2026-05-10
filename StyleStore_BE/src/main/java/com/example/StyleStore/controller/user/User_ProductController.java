@@ -3,6 +3,7 @@ package com.example.StyleStore.controller.user;
 import com.example.StyleStore.dto.response.ApiResponse;
 import com.example.StyleStore.model.Category;
 import com.example.StyleStore.model.Product;
+import com.example.StyleStore.model.ProductImage;
 import com.example.StyleStore.service.CategoryService;
 import com.example.StyleStore.service.ProductService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,6 +20,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
 import java.util.Optional;
 
 @RestController
@@ -92,6 +94,17 @@ public class User_ProductController {
         Pageable pageable = PageRequest.of(page, size, sort);
         Page<Product> result = productService.searchProductsByName(name, pageable);
         return ResponseEntity.ok(ApiResponse.ok("Tìm kiếm sản phẩm thành công", result));
+    }
+
+    // Lấy các hình ảnh phụ của sản phẩm
+    @GetMapping("/{productId}/images")
+    public ResponseEntity<ApiResponse<List<ProductImage>>> getProductImages(@PathVariable Long productId) {
+        try {
+            List<ProductImage> images = productService.getProductImages(productId);
+            return ResponseEntity.ok(ApiResponse.ok("Lấy danh sách hình ảnh thành công", images));
+        } catch (Exception e) {
+            return ResponseEntity.status(400).body(ApiResponse.fail("Lỗi khi lấy hình ảnh: " + e.getMessage()));
+        }
     }
 
 }

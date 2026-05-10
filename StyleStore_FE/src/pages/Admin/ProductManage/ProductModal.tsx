@@ -50,6 +50,13 @@ type SizeOption = { id: number; name: string };
 
 type AdminProductDetail = AdminProduct & { productSizes?: ProductSizeDto[] };
 
+interface ProductImage {
+    id?: number;
+    imageUrl: string;
+    displayOrder: number;
+    createdAt?: string;
+}
+
 const ProductModal: React.FC<ProductModalProps> = ({ isOpen, productId, onClose, onSaved }) => {
     const [form, setForm] = useState<ProductForm>({ name: '', description: '', gender: '', brand: '', material: '', color: '', price: '', thumbnail: '', status: 'ACTIVE' });
     const [isLoading, setIsLoading] = useState(false);
@@ -61,6 +68,11 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, productId, onClose,
     const [productDetailSizes, setProductDetailSizes] = useState<ProductSizeDto[] | null>(null);
     const [imageFile, setImageFile] = useState<File | null>(null);
     const [imagePreview, setImagePreview] = useState<string>('');
+    const [productImages, setProductImages] = useState<ProductImage[]>([]);
+    const [newImageFile, setNewImageFile] = useState<File | null>(null);
+    const [newImagePreview, setNewImagePreview] = useState<string>('');
+    const [newImageDisplayOrder, setNewImageDisplayOrder] = useState<number>(1);
+    const [isDraggingImage, setIsDraggingImage] = useState(false);
     const { pushToast } = useToast();
 
     const mergeSizesWithStocks = (allSizes: SizeOption[], existing: ProductSizeDto[] | null | undefined): ProductSizeDto[] => {
@@ -74,7 +86,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, productId, onClose,
         });
     };
 
-    // Fetch categories
+    // Fetch categories and sizes
     useEffect(() => {
         if (!isOpen) return;
         const fetchCategories = async () => {
@@ -96,7 +108,6 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, productId, onClose,
                 console.error('Fetch categories error:', e);
             }
         };
-
 
         const fetchSizes = async () => {
             try {
@@ -137,6 +148,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, productId, onClose,
         }
     }, [isOpen, productId, sizes]);
 
+    // Fetch product detail and images
     useEffect(() => {
         if (!isOpen) return;
         if (!productId) {
@@ -145,6 +157,9 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, productId, onClose,
             setProductDetailSizes(null);
             setImageFile(null);
             setImagePreview('');
+            setProductImages([]);
+            setNewImageFile(null);
+            setNewImagePreview('');
             setError('');
             return;
         }
@@ -209,6 +224,9 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, productId, onClose,
                     })) || null
                 );
                 setImagePreview(product.thumbnail || '');
+
+                // Fetch product images
+                await fetchProductImages(productId);
             } catch (e) {
                 if (isAuthTokenMissingError(e)) {
                     setError('Bạn chưa đăng nhập hoặc thiếu token.');
@@ -222,6 +240,27 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, productId, onClose,
         };
         fetchDetail();
     }, [isOpen, productId]);
+
+    // Fetch product images
+    const fetchProductImages = async (pId: number) => {
+        try {
+            const authHeaders = buildAuthHeaders();
+            const res = await fetch(`http://localhost:8080/api/admin/products/${pId}/images`, {
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...authHeaders,
+                },
+            });
+            if (res.ok) {
+                const data: ApiResponse<ProductImage[]> = await res.json();
+                if (data.success && data.data) {
+                    setProductImages(data.data);
+                }
+            }
+        } catch (e) {
+            console.error('Fetch product images error:', e);
+        }
+    };
 
     // When sizes load for edit, merge to ensure all sizes appear with default 0
     useEffect(() => {
@@ -248,14 +287,56 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, productId, onClose,
         }
     };
 
-    const uploadImage = async (): Promise<string | null> => {
-        if (!imageFile) return form.thumbnail || null;
+    const handleNewImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            setNewImageFile(file);
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setNewImagePreview(reader.result as string);
+            };
+            reader.readAsDataURL(file);
+        }
+    };
 
-        setIsUploading(true);
+    const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDraggingImage(true);
+    };
+
+    const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDraggingImage(false);
+    };
+
+    const handleDropImage = (e: React.DragEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDraggingImage(false);
+
+        const files = e.dataTransfer.files;
+        if (files && files.length > 0) {
+            const file = files[0];
+            if (file.type.startsWith('image/')) {
+                setNewImageFile(file);
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    setNewImagePreview(reader.result as string);
+                };
+                reader.readAsDataURL(file);
+            } else {
+                setError('Vui lòng thả một file ảnh');
+            }
+        }
+    };
+
+    const uploadImage = async (file: File): Promise<string | null> => {
         try {
             const authHeaders = buildAuthHeaders();
             const formData = new FormData();
-            formData.append('image', imageFile);
+            formData.append('image', file);
 
             const res = await fetch('http://localhost:8080/api/admin/upload/image', {
                 method: 'POST',
@@ -276,8 +357,149 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, productId, onClose,
             throw new Error('Không nhận được URL ảnh');
         } catch (e) {
             console.error('Upload image error:', e);
-            setError('Upload ảnh thất bại. Vui lòng thử lại.');
             return null;
+        }
+    };
+
+    const handleAddProductImage = async () => {
+        if (!newImageFile) {
+            setError('Vui lòng chọn ảnh để thêm');
+            return;
+        }
+        if (!productId) {
+            setError('Vui lòng lưu sản phẩm trước khi thêm ảnh phụ');
+            return;
+        }
+
+        setIsUploading(true);
+        try {
+            const uploadedUrl = await uploadImage(newImageFile);
+            if (!uploadedUrl) {
+                setError('Upload ảnh thất bại');
+                setIsUploading(false);
+                return;
+            }
+
+            const authHeaders = buildAuthHeaders();
+            const res = await fetch(`http://localhost:8080/api/admin/products/${productId}/images`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...authHeaders,
+                },
+                body: JSON.stringify({
+                    imageUrl: uploadedUrl,
+                    displayOrder: newImageDisplayOrder,
+                }),
+            });
+
+            if (!res.ok) {
+                const text = await res.text();
+                const data = text ? JSON.parse(text) : {};
+                const message = data.message || 'Thêm ảnh thất bại';
+                setError(message);
+                setIsUploading(false);
+                return;
+            }
+
+            const data: ApiResponse<ProductImage> = await res.json();
+            if (!data.success) {
+                setError(data.message || 'Thêm ảnh thất bại');
+                setIsUploading(false);
+                return;
+            }
+
+            pushToast('Thêm ảnh thành công', 'success');
+            setNewImageFile(null);
+            setNewImagePreview('');
+            setNewImageDisplayOrder(1);
+            await fetchProductImages(productId);
+        } catch (e) {
+            console.error('Add product image error:', e);
+            setError('Không thể kết nối máy chủ');
+        } finally {
+            setIsUploading(false);
+        }
+    };
+
+    const handleDeleteProductImage = async (imageId: number) => {
+        if (!confirm('Bạn chắc chắn muốn xóa ảnh này?')) return;
+        if (!productId) return;
+
+        try {
+            const authHeaders = buildAuthHeaders();
+            const res = await fetch(`http://localhost:8080/api/admin/products/${productId}/images/${imageId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...authHeaders,
+                },
+            });
+
+            if (!res.ok) {
+                const text = await res.text();
+                const data = text ? JSON.parse(text) : {};
+                const message = data.message || 'Xóa ảnh thất bại';
+                setError(message);
+                return;
+            }
+
+            const data: ApiResponse<void> = await res.json();
+            if (!data.success) {
+                setError(data.message || 'Xóa ảnh thất bại');
+                return;
+            }
+
+            pushToast('Xóa ảnh thành công', 'success');
+            await fetchProductImages(productId);
+        } catch (e) {
+            console.error('Delete product image error:', e);
+            setError('Không thể kết nối máy chủ');
+        }
+    };
+
+    const handleUpdateImageDisplayOrder = async (imageId: number, newOrder: number) => {
+        if (!productId) return;
+
+        try {
+            const authHeaders = buildAuthHeaders();
+            const res = await fetch(`http://localhost:8080/api/admin/products/${productId}/images/${imageId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...authHeaders,
+                },
+                body: JSON.stringify({
+                    displayOrder: newOrder,
+                }),
+            });
+
+            if (!res.ok) {
+                const text = await res.text();
+                const data = text ? JSON.parse(text) : {};
+                const message = data.message || 'Cập nhật thất bại';
+                setError(message);
+                return;
+            }
+
+            await fetchProductImages(productId);
+            pushToast('Cập nhật thứ tự ảnh thành công', 'success');
+        } catch (e) {
+            console.error('Update image display order error:', e);
+            setError('Không thể kết nối máy chủ');
+        }
+    };
+
+    const uploadMainImage = async (): Promise<string | null> => {
+        if (!imageFile) return form.thumbnail || null;
+
+        setIsUploading(true);
+        try {
+            const url = await uploadImage(imageFile);
+            if (!url) {
+                setError('Upload ảnh thất bại. Vui lòng thử lại.');
+            }
+            return url;
         } finally {
             setIsUploading(false);
         }
@@ -303,7 +525,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, productId, onClose,
             // Upload image if new file selected
             let thumbnailUrl: string | undefined = form.thumbnail;
             if (imageFile) {
-                const uploadedUrl = await uploadImage();
+                const uploadedUrl = await uploadMainImage();
                 if (!uploadedUrl) {
                     setIsSaving(false);
                     return;
@@ -567,6 +789,136 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, productId, onClose,
                                         <option value="INACTIVE">INACTIVE</option>
                                     </select>
                                 </label>
+
+                                {/* Product Images Section */}
+                                {productId && (
+                                    <div className="mt-6 pt-6 border-t border-slate-200">
+                                        <div className="text-lg font-semibold text-slate-800 mb-4">Hình ảnh phụ</div>
+
+                                        {/* Add new image */}
+                                        <div className="bg-slate-50 rounded p-4 mb-4 space-y-3">
+                                            <div className="text-sm font-medium text-slate-700">Thêm hình ảnh mới</div>
+                                            
+                                            {/* Drag and drop area */}
+                                            <div
+                                                onDragOver={handleDragOver}
+                                                onDragLeave={handleDragLeave}
+                                                onDrop={handleDropImage}
+                                                className={`relative border-2 border-dashed rounded-lg p-6 text-center transition ${
+                                                    isDraggingImage
+                                                        ? 'border-blue-500 bg-blue-50'
+                                                        : 'border-slate-300 bg-white hover:border-blue-400'
+                                                }`}
+                                            >
+                                                <input
+                                                    type="file"
+                                                    accept="image/*"
+                                                    id="dropzone-file"
+                                                    className="hidden"
+                                                    onChange={handleNewImageChange}
+                                                    disabled={isUploading}
+                                                />
+                                                <label
+                                                    htmlFor="dropzone-file"
+                                                    className="cursor-pointer block"
+                                                >
+                                                    <div className="flex flex-col items-center justify-center">
+                                                        <svg
+                                                            className="w-8 h-8 text-slate-400 mb-2"
+                                                            fill="none"
+                                                            stroke="currentColor"
+                                                            viewBox="0 0 24 24"
+                                                        >
+                                                            <path
+                                                                strokeLinecap="round"
+                                                                strokeLinejoin="round"
+                                                                strokeWidth={2}
+                                                                d="M12 4v16m8-8H4"
+                                                            />
+                                                        </svg>
+                                                        <p className="text-sm text-slate-600">
+                                                            <span className="font-semibold">Kéo thả ảnh</span> hoặc{' '}
+                                                            <span className="text-blue-600 font-semibold">chọn file</span>
+                                                        </p>
+                                                        <p className="text-xs text-slate-500 mt-1">PNG, JPG, GIF tối đa 10MB</p>
+                                                    </div>
+                                                </label>
+                                            </div>
+
+                                            {newImagePreview && (
+                                                <div className="mt-3">
+                                                    <p className="text-xs text-slate-600 mb-2">Preview ảnh:</p>
+                                                    <img
+                                                        src={newImagePreview}
+                                                        alt="New Preview"
+                                                        className="w-32 h-32 object-cover rounded border border-slate-200 mx-auto"
+                                                    />
+                                                </div>
+                                            )}
+                                            <label className="text-sm text-slate-700">
+                                                Thứ tự hiển thị
+                                                <input
+                                                    type="number"
+                                                    className="mt-1 w-full rounded border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                                                    value={newImageDisplayOrder}
+                                                    onChange={(e) => setNewImageDisplayOrder(parseInt(e.target.value) || 1)}
+                                                    min={1}
+                                                />
+                                            </label>
+                                            <button
+                                                type="button"
+                                                onClick={handleAddProductImage}
+                                                disabled={isUploading || !newImageFile}
+                                                className="w-full px-3 py-2 rounded bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 transition disabled:opacity-50"
+                                            >
+                                                {isUploading ? 'Đang upload...' : 'Thêm ảnh'}
+                                            </button>
+                                        </div>
+
+                                        {/* List existing images */}
+                                        {productImages.length > 0 ? (
+                                            <div className="space-y-2">
+                                                <div className="text-sm font-medium text-slate-700 mb-3">Danh sách ảnh phụ ({productImages.length})</div>
+                                                {productImages.map((img) => (
+                                                    <div key={img.id} className="flex items-center gap-3 bg-slate-50 rounded p-3 border border-slate-200">
+                                                        <img
+                                                            src={img.imageUrl}
+                                                            alt="Product"
+                                                            className="w-16 h-16 object-cover rounded border border-slate-300"
+                                                        />
+                                                        <div className="flex-1 min-w-0">
+                                                            <p className="text-xs text-slate-500">ID: {img.id}</p>
+                                                            <div className="text-xs text-slate-600 truncate">{img.imageUrl}</div>
+                                                            <div className="flex items-center gap-2 mt-2">
+                                                                <label className="text-xs text-slate-700">
+                                                                    Thứ tự:
+                                                                    <input
+                                                                        type="number"
+                                                                        className="ml-1 w-12 rounded border border-slate-300 px-2 py-1 text-xs focus:border-blue-500 focus:outline-none"
+                                                                        value={img.displayOrder}
+                                                                        onChange={(e) => handleUpdateImageDisplayOrder(img.id || 0, parseInt(e.target.value) || 1)}
+                                                                        min={1}
+                                                                    />
+                                                                </label>
+                                                            </div>
+                                                        </div>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => handleDeleteProductImage(img.id || 0)}
+                                                            className="px-3 py-2 rounded bg-red-100 text-red-700 hover:bg-red-200 text-xs font-medium transition"
+                                                        >
+                                                            Xóa
+                                                        </button>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <div className="text-xs text-slate-500 text-center py-4 bg-slate-50 rounded border border-dashed border-slate-300">
+                                                Chưa có ảnh phụ
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
                             </div>
                         </>
                     )}

@@ -63,6 +63,10 @@ public class Product {
     @JsonManagedReference
     private List<ProductSize> productSizes;
 
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonManagedReference
+    private List<ProductImage> productImages;
+
     // auto set time
     @PrePersist
     public void prePersist() {

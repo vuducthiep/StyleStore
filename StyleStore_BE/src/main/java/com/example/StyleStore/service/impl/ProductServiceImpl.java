@@ -3,10 +3,12 @@ package com.example.StyleStore.service.impl;
 import com.example.StyleStore.dto.response.stats.CategoryStockDto;
 import com.example.StyleStore.model.Category;
 import com.example.StyleStore.model.Product;
+import com.example.StyleStore.model.ProductImage;
 import com.example.StyleStore.model.ProductSize;
 import com.example.StyleStore.model.Size;
 import com.example.StyleStore.model.enums.ProductStatus;
 import com.example.StyleStore.repository.CategoryRepository;
+import com.example.StyleStore.repository.ProductImageRepository;
 import com.example.StyleStore.repository.ProductRepository;
 import com.example.StyleStore.repository.ProductSizeRepository;
 import com.example.StyleStore.repository.SizeRepository;
@@ -29,11 +31,12 @@ import java.util.stream.Collectors;
 public class ProductServiceImpl implements ProductService {
 
 
-    public ProductServiceImpl(ProductRepository productRepository, SizeRepository sizeRepository, ProductSizeRepository productSizeRepository, CategoryRepository categoryRepository) {
+    public ProductServiceImpl(ProductRepository productRepository, SizeRepository sizeRepository, ProductSizeRepository productSizeRepository, CategoryRepository categoryRepository, ProductImageRepository productImageRepository) {
         this.productRepository = productRepository;
         this.sizeRepository = sizeRepository;
         this.productSizeRepository = productSizeRepository;
         this.categoryRepository = categoryRepository;
+        this.productImageRepository = productImageRepository;
     }
 
     @Autowired
@@ -47,6 +50,9 @@ public class ProductServiceImpl implements ProductService {
 
     @Autowired
     private CategoryRepository categoryRepository;
+
+    @Autowired
+    private ProductImageRepository productImageRepository;
 
     @Override
     public Page<Product> getProducts(Pageable pageable) {
@@ -156,5 +162,44 @@ public class ProductServiceImpl implements ProductService {
     @Override
     public Page<Product> searchProductsByNameOrCategory(String keyword, Pageable pageable) {
         return productRepository.searchByNameOrCategory(keyword, ProductStatus.ACTIVE, pageable);
+    }
+
+    @Override
+    public List<ProductImage> getProductImages(Long productId) {
+        return productImageRepository.findByProductIdOrderByDisplayOrder(productId);
+    }
+
+    @Override
+    public ProductImage addProductImage(Long productId, ProductImage productImage) {
+        Optional<Product> product = productRepository.findById(productId);
+        if (product.isEmpty()) {
+            throw new RuntimeException("Product not found with id: " + productId);
+        }
+        productImage.setProduct(product.get());
+        return productImageRepository.save(productImage);
+    }
+
+    @Override
+    public ProductImage updateProductImage(Long imageId, ProductImage productImage) {
+        return productImageRepository.findById(imageId)
+                .map(image -> {
+                    if (productImage.getImageUrl() != null) {
+                        image.setImageUrl(productImage.getImageUrl());
+                    }
+                    if (productImage.getDisplayOrder() != null) {
+                        image.setDisplayOrder(productImage.getDisplayOrder());
+                    }
+                    return productImageRepository.save(image);
+                })
+                .orElseThrow(() -> new RuntimeException("Product image not found with id: " + imageId));
+    }
+
+    @Override
+    public boolean deleteProductImage(Long imageId) {
+        if (!productImageRepository.existsById(imageId)) {
+            return false;
+        }
+        productImageRepository.deleteById(imageId);
+        return true;
     }
 }

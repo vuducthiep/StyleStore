@@ -3,6 +3,7 @@ package com.example.StyleStore.service;
 import com.example.StyleStore.dto.response.stats.CategoryStockDto;
 import com.example.StyleStore.model.Category;
 import com.example.StyleStore.model.Product;
+import com.example.StyleStore.model.ProductImage;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -21,4 +22,10 @@ public interface ProductService {
     List<CategoryStockDto> getStockByCategory();
     Page<Product> searchProductsByName(String name, Pageable pageable);
     Page<Product> searchProductsByNameOrCategory(String keyword, Pageable pageable);
+    
+    // ProductImage methods
+    List<ProductImage> getProductImages(Long productId);
+    ProductImage addProductImage(Long productId, ProductImage productImage);
+    ProductImage updateProductImage(Long imageId, ProductImage productImage);
+    boolean deleteProductImage(Long imageId);
 }
