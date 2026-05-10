@@ -440,4 +440,29 @@ public class OrderServiceImpl implements OrderService {
     public List<BestSellingProductsInCategoriesDTO> getBestSellingProductsInCategories() {
         return orderRepository.getBestSellingProductsInCategories();
     }    
+
+    @Override
+    public List<BestSellingProductsInCategoriesDTO> getTop5BestSellingProductsInCategories() {
+        return orderRepository.getTop5BestSellingProductsInCategories();
+    }
+
+    @Override
+    public List<com.example.StyleStore.dto.response.stats.TopProductDto> getTop5ProductsOverall() {
+        return orderRepository.getTop5ProductsOverall().stream()
+                .map(p -> new com.example.StyleStore.dto.response.stats.TopProductDto(
+                        p.getProductId(), p.getProductName(), p.getProductThumbnail(), p.getTotalSold()
+                ))
+                .collect(java.util.stream.Collectors.toList());
+    }
+
+    @Override
+    public List<com.example.StyleStore.dto.response.stats.TopProductDto> getTop5ProductsByCategory(Long categoryId) {
+        if (categoryId == null) return getTop5ProductsOverall();
+        return orderRepository.getTop5ProductsByCategory(categoryId).stream()
+                .map(p -> new com.example.StyleStore.dto.response.stats.TopProductDto(
+                        p.getProductId(), p.getProductName(), p.getProductThumbnail(), p.getTotalSold()
+                ))
+                .collect(java.util.stream.Collectors.toList());
+    }
 }
+

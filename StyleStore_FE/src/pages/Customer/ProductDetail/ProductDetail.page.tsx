@@ -5,7 +5,15 @@ import Header from "../../../components/Header";
 import Comments from "./Comments";
 import Footer from '../../../components/Footer';
 import ProductDetailContent from "./ProductDetailContent";
+import BestSellingProductsSidebar from "./BestSellingProductsSidebar";
 import type { ApiResponse, Product } from "./productDetail.types";
+
+type TopProduct = {
+    productId: number;
+    productName: string;
+    productThumbnail: string;
+    totalSold: number;
+};
 
 // interface CartItem {
 //     productId: number;
@@ -26,12 +34,45 @@ export default function ProductDetail() {
     const [selectedSize, setSelectedSize] = useState<number | null>(null);
     const [quantity, setQuantity] = useState(1);
     const [addedToCart, setAddedToCart] = useState(false);
+    const [topProducts, setTopProducts] = useState<TopProduct[]>([]);
+    const [topProductsLoading, setTopProductsLoading] = useState(false);
 
     useEffect(() => {
         if (id) {
             fetchProduct(parseInt(id));
         }
     }, [id]);
+
+    useEffect(() => {
+        const categoryId = product?.category?.id;
+        if (!categoryId) {
+            setTopProducts([]);
+            return;
+        }
+
+        const fetchTopProducts = async () => {
+            try {
+                setTopProductsLoading(true);
+                const response = await fetch(
+                    `http://localhost:8080/api/user/products/best-selling/top5?categoryId=${categoryId}`
+                );
+
+                if (!response.ok) {
+                    throw new Error("Không thể lấy sản phẩm bán chạy");
+                }
+
+                const data = await response.json();
+                setTopProducts(data.data || []);
+            } catch (err) {
+                console.error("Error fetching top products:", err);
+                setTopProducts([]);
+            } finally {
+                setTopProductsLoading(false);
+            }
+        };
+
+        fetchTopProducts();
+    }, [product?.category?.id]);
 
     const fetchProduct = async (productId: number) => {
         try {
@@ -158,20 +199,33 @@ export default function ProductDetail() {
                 </div>
             </div>
 
+            <div className="max-w-7xl mx-auto px-4 py-6">
+                <div className="flex flex-col lg:flex-row gap-6 items-start">
+                    <div className="min-w-0 flex-1 order-1 lg:order-1">
+                        <ProductDetailContent
+                            product={product}
+                            availableSizes={availableSizes}
+                            selectedSize={selectedSize}
+                            quantity={quantity}
+                            addedToCart={addedToCart}
+                            onSelectSize={setSelectedSize}
+                            onDecreaseQuantity={() => setQuantity(Math.max(1, quantity - 1))}
+                            onIncreaseQuantity={() => setQuantity(quantity + 1)}
+                            onAddToCart={handleAddToCart}
+                            formatPrice={formatPrice}
+                        />
+                    </div>
 
-            {/* Product Detail */}
-            <ProductDetailContent
-                product={product}
-                availableSizes={availableSizes}
-                selectedSize={selectedSize}
-                quantity={quantity}
-                addedToCart={addedToCart}
-                onSelectSize={setSelectedSize}
-                onDecreaseQuantity={() => setQuantity(Math.max(1, quantity - 1))}
-                onIncreaseQuantity={() => setQuantity(quantity + 1)}
-                onAddToCart={handleAddToCart}
-                formatPrice={formatPrice}
-            />
+                    <div className="order-2 lg:order-2 w-full lg:w-[400px]">
+                        <BestSellingProductsSidebar
+                            currentProductId={product.id}
+                            topProducts={topProducts}
+                            loading={topProductsLoading}
+                            onSelectProduct={(productId) => navigate(`/product/${productId}`)}
+                        />
+                    </div>
+                </div>
+            </div>
 
             {/* cmt */}
             <Comments productId={product.id} />

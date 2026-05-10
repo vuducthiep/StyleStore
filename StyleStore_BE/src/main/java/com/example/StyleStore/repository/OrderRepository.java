@@ -144,7 +144,65 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
                 JOIN order_items oi ON oi.product_id = p.id
                 GROUP BY c.id, c.name, p.id, p.name, p.thumbnail
             ) t
-            WHERE rn = 1;
+                        WHERE rn = 1;
                     """, nativeQuery = true)
     List<BestSellingProductsInCategoriesDTO> getBestSellingProductsInCategories();
+
+        @Query(value = """
+                                        SELECT category_id, category_name, product_id, product_name, product_thumbnail, total_sold
+                        FROM (
+                                SELECT
+                                        c.id AS category_id,
+                                        c.name AS category_name,
+                                        p.name AS product_name,
+                                        p.id AS product_id,
+                                        p.thumbnail AS product_thumbnail,
+                                        SUM(oi.quantity) AS total_sold,
+                                        ROW_NUMBER() OVER (
+                                                PARTITION BY c.id
+                                                ORDER BY SUM(oi.quantity) DESC
+                                        ) AS rn
+                                FROM categories c
+                                JOIN products p ON c.id = p.category_id
+                                JOIN order_items oi ON oi.product_id = p.id
+                                GROUP BY c.id, c.name, p.id, p.name, p.thumbnail
+                        ) t
+                        WHERE rn <= 5;
+                                        """, nativeQuery = true)
+        List<BestSellingProductsInCategoriesDTO> getTop5BestSellingProductsInCategories();
+
+    interface TopProductProjection {
+        Long getProductId();
+        String getProductName();
+        String getProductThumbnail();
+        Long getTotalSold();
+    }
+
+    @Query(value = """
+            SELECT p.id AS product_id,
+                   p.name AS product_name,
+                   p.thumbnail AS product_thumbnail,
+                   COALESCE(SUM(oi.quantity),0) AS total_sold
+            FROM order_items oi
+            JOIN products p ON p.id = oi.product_id
+            GROUP BY p.id, p.name, p.thumbnail
+            ORDER BY total_sold DESC
+            LIMIT 5
+            """, nativeQuery = true)
+    List<TopProductProjection> getTop5ProductsOverall();
+
+    @Query(value = """
+            SELECT p.id AS product_id,
+                   p.name AS product_name,
+                   p.thumbnail AS product_thumbnail,
+                   COALESCE(SUM(oi.quantity),0) AS total_sold
+            FROM order_items oi
+            JOIN products p ON p.id = oi.product_id
+            WHERE p.category_id = :categoryId
+            GROUP BY p.id, p.name, p.thumbnail
+            ORDER BY total_sold DESC
+            LIMIT 5
+            """, nativeQuery = true)
+    List<TopProductProjection> getTop5ProductsByCategory(@Param("categoryId") Long categoryId);
 }
+

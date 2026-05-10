@@ -22,6 +22,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 import java.util.Optional;
+import com.example.StyleStore.dto.response.stats.BestSellingProductsInCategoriesDTO;
+import com.example.StyleStore.service.OrderService;
 
 @RestController
 @RequestMapping("/api/user/products")
@@ -32,6 +34,9 @@ public class User_ProductController {
 
     @Autowired
     private CategoryService categoryService;
+
+    @Autowired
+    private OrderService orderService;
 
     // Lấy danh sách sản phẩm (có phân trang)
     @GetMapping
@@ -104,6 +109,21 @@ public class User_ProductController {
             return ResponseEntity.ok(ApiResponse.ok("Lấy danh sách hình ảnh thành công", images));
         } catch (Exception e) {
             return ResponseEntity.status(400).body(ApiResponse.fail("Lỗi khi lấy hình ảnh: " + e.getMessage()));
+        }
+    }
+
+    // Lấy top 5 sản phẩm bán chạy (tùy chọn theo danh mục)
+    @GetMapping("/best-selling/top5")
+    public ResponseEntity<ApiResponse<List<com.example.StyleStore.dto.response.stats.TopProductDto>>> getTop5BestSellingProducts(
+            @RequestParam(name = "categoryId", required = false) Long categoryId) {
+        try {
+            List<com.example.StyleStore.dto.response.stats.TopProductDto> result =
+                    (categoryId == null)
+                            ? orderService.getTop5ProductsOverall()
+                            : orderService.getTop5ProductsByCategory(categoryId);
+            return ResponseEntity.ok(ApiResponse.ok("Lấy top 5 sản phẩm bán chạy thành công", result));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(ApiResponse.fail("Lỗi server: " + e.getMessage()));
         }
     }
 

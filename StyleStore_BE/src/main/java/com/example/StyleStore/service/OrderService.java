@@ -29,4 +29,10 @@ public interface OrderService {
     OrderResponse deliveredOrder(long id);
     OrderResponse createOrder(User user, UserOrderRequest request);
     List<BestSellingProductsInCategoriesDTO> getBestSellingProductsInCategories();
+    List<BestSellingProductsInCategoriesDTO> getTop5BestSellingProductsInCategories();
+
+    List<com.example.StyleStore.dto.response.stats.TopProductDto> getTop5ProductsOverall();
+
+    List<com.example.StyleStore.dto.response.stats.TopProductDto> getTop5ProductsByCategory(Long categoryId);
 }
+

@@ -101,9 +101,9 @@ export default function ProductDetailContent({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div className="flex items-center justify-center">
                     {/* Image Carousel */}
-                    <div className="relative w-full group">
+                    <div className="relative w-full max-w-[720px] mx-auto group">
                         {/* Image Container */}
-                        <div className="relative w-full aspect-square bg-gray-200 rounded-lg overflow-hidden">
+                        <div className="relative w-full aspect-[4/5] min-h-[560px] bg-gray-200 rounded-lg overflow-hidden">
                             <img
                                 src={currentImage.imageUrl}
                                 alt={product.name}
