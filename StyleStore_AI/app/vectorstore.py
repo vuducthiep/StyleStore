@@ -46,6 +46,15 @@ def rebuild_vectorstore(settings: Settings, catalog: list[CatalogDocument]) -> i
 
     for item in catalog:
         category_name = item.product.category.name if item.product.category and item.product.category.name else None
+        # compute aggregated stock from productSizes when available
+        total_stock = 0
+        try:
+            for ps in item.product.productSizes:
+                if ps and getattr(ps, "stock", None) is not None:
+                    total_stock += int(ps.stock or 0)
+        except Exception:
+            total_stock = 0
+
         metadata = _sanitize_metadata(
             {
                 "product_id": item.product.id,
@@ -55,6 +64,9 @@ def rebuild_vectorstore(settings: Settings, catalog: list[CatalogDocument]) -> i
                 "brand": item.product.brand,
                 "price": item.product.price,
                 "thumbnail": item.product.thumbnail,
+                "material": item.product.material,
+                "color": item.product.color,
+                "stock": total_stock,
             }
         )
         documents.append(

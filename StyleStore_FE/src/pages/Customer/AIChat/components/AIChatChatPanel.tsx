@@ -39,14 +39,14 @@ const ProductPreview = ({ messageId, product }: { messageId: string; product: Ai
                 </div>
                 <div className="min-w-0 flex-1">
                     <div className="flex items-start justify-between gap-3">
-                        <div>
+                        <div className="min-w-0">
                             <p className="truncate text-sm font-semibold text-slate-900">{product.name}</p>
                             <p className="mt-1 text-xs text-slate-500">
                                 {product.category || 'Không rõ danh mục'}
                                 {product.brand ? ` • ${product.brand}` : ''}
                             </p>
                         </div>
-                        <span className="rounded-full bg-orange-100 px-2.5 py-1 text-xs font-semibold text-orange-700">
+                        <span className="flex-shrink-0 whitespace-nowrap rounded-full bg-orange-100 px-2.5 py-1 text-xs font-semibold text-orange-700">
                             {formatPrice(product.price)}
                         </span>
                     </div>
