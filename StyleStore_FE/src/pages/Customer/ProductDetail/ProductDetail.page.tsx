@@ -6,6 +6,7 @@ import Comments from "./Comments";
 import Footer from '../../../components/Footer';
 import ProductDetailContent from "./ProductDetailContent";
 import BestSellingProductsSidebar from "./BestSellingProductsSidebar";
+import { useToast } from "../../../components/ToastProvider";
 import type { ApiResponse, Product } from "./productDetail.types";
 
 type TopProduct = {
@@ -27,6 +28,7 @@ type TopProduct = {
 export default function ProductDetail() {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
+    const { pushToast } = useToast();
 
     const [product, setProduct] = useState<Product | null>(null);
     const [loading, setLoading] = useState(true);
@@ -103,7 +105,7 @@ export default function ProductDetail() {
 
     const handleAddToCart = async () => {
         if (!selectedSize) {
-            alert("Vui lòng chọn size");
+            pushToast("Vui lòng chọn size", "error");
             return;
         }
 
@@ -141,6 +143,7 @@ export default function ProductDetail() {
                 throw new Error(errorData.message || "Lỗi khi thêm vào giỏ hàng");
             }
 
+            pushToast("Thêm vào giỏ hàng thành công!", "success");
             setAddedToCart(true);
 
             // Reset sau 2 giây
@@ -150,7 +153,7 @@ export default function ProductDetail() {
                 setQuantity(1);
             }, 2000);
         } catch (error) {
-            alert(error instanceof Error ? error.message : "Có lỗi xảy ra");
+            pushToast(error instanceof Error ? error.message : "Có lỗi xảy ra", "error");
             console.error("Error adding to cart:", error);
         }
     };

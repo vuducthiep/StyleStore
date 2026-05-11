@@ -15,6 +15,18 @@ interface ApiResponse<T> {
     data?: T;
 }
 
+interface FlyingSpark {
+    id: number;
+    startX: number;
+    startY: number;
+    deltaX: number;
+    deltaY: number;
+    curveX: number;
+    curveY: number;
+    size: number;
+    delay: number;
+}
+
 export const Header = () => {
     const [searchQuery, setSearchQuery] = useState('');
 
@@ -46,7 +58,10 @@ export const Header = () => {
     });
     const [userMenuOpen, setUserMenuOpen] = useState(false);
     const [cartCount, setCartCount] = useState(0);
+    const [pendingOrderCount, setPendingOrderCount] = useState(0);
+    const [flyingSparks, setFlyingSparks] = useState<FlyingSpark[]>([]);
     const userMenuRef = useRef<HTMLDivElement>(null);
+    const ordersIconRef = useRef<HTMLDivElement>(null);
     const navigate = useNavigate();
     const location = useLocation();
 
@@ -101,9 +116,47 @@ export const Header = () => {
         }
     }, [user.isLoggedIn]);
 
+    const fetchPendingOrderCount = useCallback(async () => {
+        if (!user.isLoggedIn) {
+            setPendingOrderCount(0);
+            return;
+        }
+
+        try {
+            const authHeaders = buildAuthHeaders();
+            const response = await fetch('http://localhost:8080/api/user/orders/pending-count', {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...authHeaders,
+                },
+            });
+
+            if (!response.ok) {
+                setPendingOrderCount(0);
+                return;
+            }
+
+            const result: ApiResponse<number> = await response.json();
+            if (result.success && typeof result.data === 'number') {
+                setPendingOrderCount(result.data);
+                return;
+            }
+
+            setPendingOrderCount(0);
+        } catch (error) {
+            if (isAuthTokenMissingError(error)) {
+                setPendingOrderCount(0);
+                return;
+            }
+            setPendingOrderCount(0);
+        }
+    }, [user.isLoggedIn]);
+
     useEffect(() => {
         fetchCartCount();
-    }, [fetchCartCount, location.pathname]);
+        fetchPendingOrderCount();
+    }, [fetchCartCount, fetchPendingOrderCount, location.pathname]);
 
     useEffect(() => {
         const handleCartUpdated = () => {
@@ -113,6 +166,51 @@ export const Header = () => {
         window.addEventListener('cart-updated', handleCartUpdated);
         return () => window.removeEventListener('cart-updated', handleCartUpdated);
     }, [fetchCartCount]);
+
+    useEffect(() => {
+        const handleOrdersUpdated = () => {
+            fetchPendingOrderCount();
+        };
+
+        window.addEventListener('orders-updated', handleOrdersUpdated);
+        return () => window.removeEventListener('orders-updated', handleOrdersUpdated);
+    }, [fetchPendingOrderCount]);
+
+    const triggerFlyToOrdersAnimation = (fromX: number, fromY: number) => {
+        if (!ordersIconRef.current) return;
+
+        const ordersRect = ordersIconRef.current.getBoundingClientRect();
+        const toX = ordersRect.left + ordersRect.width / 2;
+        const toY = ordersRect.top + ordersRect.height / 2;
+
+        const sparks: FlyingSpark[] = Array.from({ length: 14 }, (_, i) => ({
+            id: Date.now() + i,
+            startX: fromX,
+            startY: fromY,
+            deltaX: toX - fromX,
+            deltaY: toY - fromY,
+            curveX: (Math.random() - 0.5) * 200,
+            curveY: (Math.random() - 0.5) * 200,
+            size: 8 + Math.random() * 7,
+            delay: i * 24,
+        }));
+
+        setFlyingSparks(sparks);
+        setTimeout(() => {
+            setFlyingSparks([]);
+            window.dispatchEvent(new Event('orders-updated'));
+        }, 1050);
+    };
+
+    useEffect(() => {
+        const handleOrderCheckout = (event: any) => {
+            const { fromX, fromY } = event.detail;
+            triggerFlyToOrdersAnimation(fromX, fromY);
+        };
+
+        window.addEventListener('order-checkout-success', handleOrderCheckout);
+        return () => window.removeEventListener('order-checkout-success', handleOrderCheckout);
+    }, []);
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
@@ -204,10 +302,17 @@ export const Header = () => {
                         {/* Purchase History Button */}
                         <button
                             onClick={() => navigate('/orders')}
-                            className="flex items-center gap-2 text-slate-100 hover:text-purple-200 transition-colors"
+                            className="flex items-center gap-2 text-slate-100 hover:text-purple-200 transition-colors relative group"
                             title="Lịch sử mua hàng"
                         >
-                            <History className="w-6 h-6" />
+                            <div className="relative" ref={ordersIconRef} data-orders-icon-anchor="true">
+                                <History className="w-6 h-6" />
+                                {user.isLoggedIn && pendingOrderCount > 0 && (
+                                    <span className="absolute -top-2 -right-2 min-w-[18px] h-[18px] px-1 rounded-full bg-amber-500 text-white text-[11px] leading-[18px] text-center font-semibold shadow">
+                                        {pendingOrderCount > 99 ? '99+' : pendingOrderCount}
+                                    </span>
+                                )}
+                            </div>
                             <span className="text-sm font-medium hidden sm:inline">Lịch sử đơn hàng</span>
                         </button>
 
@@ -285,6 +390,81 @@ export const Header = () => {
                     </div>
                 </div>
             </div>
+
+            {/* Flying Sparks to Orders */}
+            <svg
+                className="fixed inset-0 pointer-events-none"
+                style={{ zIndex: 40, width: '100%', height: '100%' }}
+            >
+                <defs>
+                    <radialGradient id="sparkGradientOrders" cx="30%" cy="30%">
+                        <stop offset="0%" stopColor="#fbbf24" stopOpacity="1" />
+                        <stop offset="70%" stopColor="#f59e0b" stopOpacity="0.8" />
+                        <stop offset="100%" stopColor="#d97706" stopOpacity="0" />
+                    </radialGradient>
+                </defs>
+                {flyingSparks.map((spark) => (
+                    <g key={spark.id}>
+                        <circle
+                            cx={spark.startX}
+                            cy={spark.startY}
+                            r={spark.size / 2}
+                            fill="url(#sparkGradientOrders)"
+                            opacity="0.9"
+                            style={
+                                {
+                                    animation: `sparkFlyToOrders 1.05s cubic-bezier(0.2, 0.75, 0.2, 1) forwards`,
+                                    animationDelay: `${spark.delay}ms`,
+                                } as any
+                            }
+                            filter="drop-shadow(0 0 8px rgba(251, 191, 36, 0.8)) drop-shadow(0 0 4px rgba(245, 158, 11, 0.6))"
+                        >
+                            <animate
+                                attributeName="cx"
+                                values={`${spark.startX};${spark.startX + spark.deltaX / 2 + spark.curveX};${spark.startX + spark.deltaX}`}
+                                dur="1.05s"
+                                keyTimes="0;0.5;1"
+                                keySplines="0.2 0.75 0.2 1; 0.2 0.75 0.2 1"
+                                fill="freeze"
+                                style={{ animationDelay: `${spark.delay}ms` } as any}
+                            />
+                            <animate
+                                attributeName="cy"
+                                values={`${spark.startY};${spark.startY + spark.deltaY / 2 + spark.curveY};${spark.startY + spark.deltaY}`}
+                                dur="1.05s"
+                                keyTimes="0;0.5;1"
+                                keySplines="0.2 0.75 0.2 1; 0.2 0.75 0.2 1"
+                                fill="freeze"
+                                style={{ animationDelay: `${spark.delay}ms` } as any}
+                            />
+                            <animate
+                                attributeName="opacity"
+                                values="0.9;0.6;0"
+                                dur="1.05s"
+                                fill="freeze"
+                                style={{ animationDelay: `${spark.delay}ms` } as any}
+                            />
+                        </circle>
+                    </g>
+                ))}
+            </svg>
+
+            <style>{`
+                @keyframes sparkFlyToOrders {
+                    0% {
+                        opacity: 0.9;
+                        filter: drop-shadow(0 0 8px rgba(251, 191, 36, 0.8)) drop-shadow(0 0 4px rgba(245, 158, 11, 0.6));
+                    }
+                    50% {
+                        opacity: 0.6;
+                        filter: drop-shadow(0 0 12px rgba(251, 191, 36, 0.9)) drop-shadow(0 0 6px rgba(245, 158, 11, 0.7));
+                    }
+                    100% {
+                        opacity: 0;
+                        filter: drop-shadow(0 0 2px rgba(251, 191, 36, 0.2));
+                    }
+                }
+            `}</style>
         </header>
     );
 };

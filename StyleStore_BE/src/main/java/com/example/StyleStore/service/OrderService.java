@@ -34,5 +34,8 @@ public interface OrderService {
     List<com.example.StyleStore.dto.response.stats.TopProductDto> getTop5ProductsOverall();
 
     List<com.example.StyleStore.dto.response.stats.TopProductDto> getTop5ProductsByCategory(Long categoryId);
+
+    // Đếm số đơn hàng theo userId với trạng thái SHIPPING hoặc CREATED
+    long countPendingOrders(Long userId);
 }
 

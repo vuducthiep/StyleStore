@@ -418,6 +418,18 @@ export default function CartPage() {
             }
 
             pushToast("Đặt hàng thành công", "success");
+                        // Trigger animation bay từ checkout button tới orders icon
+                        const checkoutButton = document.querySelector('[data-checkout-button="true"]');
+                        if (checkoutButton) {
+                            const rect = checkoutButton.getBoundingClientRect();
+                            window.dispatchEvent(new CustomEvent('order-checkout-success', {
+                                detail: {
+                                    fromX: rect.left + rect.width / 2,
+                                    fromY: rect.top + rect.height / 2,
+                                },
+                            }));
+                        }
+
             setShowConfirmCheckout(false);
             setTimeout(() => {
                 navigate("/orders");

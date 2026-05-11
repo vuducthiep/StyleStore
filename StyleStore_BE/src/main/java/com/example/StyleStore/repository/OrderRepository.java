@@ -204,5 +204,8 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
             LIMIT 5
             """, nativeQuery = true)
     List<TopProductProjection> getTop5ProductsByCategory(@Param("categoryId") Long categoryId);
+
+    // Đếm số đơn hàng theo userId và status
+    long countByUser_IdAndStatusIn(Long userId, List<OrderStatus> statuses);
 }
 

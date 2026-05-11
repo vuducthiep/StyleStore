@@ -464,5 +464,13 @@ public class OrderServiceImpl implements OrderService {
                 ))
                 .collect(java.util.stream.Collectors.toList());
     }
+
+    @Override
+    public long countPendingOrders(Long userId) {
+        return orderRepository.countByUser_IdAndStatusIn(
+                userId,
+                List.of(OrderStatus.SHIPPING, OrderStatus.CREATED)
+        );
+    }
 }
 

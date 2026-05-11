@@ -56,6 +56,18 @@ public class User_OrderController {
         }
     }
 
+    // API đếm số đơn hàng với trạng thái SHIPPING hoặc CREATED
+    @GetMapping("/pending-count")
+    public ResponseEntity<ApiResponse<Long>> getPendingOrderCount() {
+        try {
+            User currentUser = getCurrentUser();
+            long count = orderService.countPendingOrders(currentUser.getId());
+            return ResponseEntity.ok(ApiResponse.ok("Lấy số đơn hàng chờ xử lý thành công", count));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(ApiResponse.fail("Lỗi: " + e.getMessage()));
+        }
+    }
+
     // API tạo đơn hàng
     @PostMapping
     public ResponseEntity<ApiResponse<OrderResponse>> createOrder(@RequestBody UserOrderRequest request) {

@@ -159,6 +159,7 @@ export default function OrderSummary({
                 onClick={onCheckout}
                 disabled={isSubmitting}
                 className="w-full bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700 transition mb-2 disabled:opacity-60 disabled:cursor-not-allowed"
+                            data-checkout-button="true"
             >
                 {isSubmitting ? "Đang xử lý..." : "Đặt hàng"}
             </button>
