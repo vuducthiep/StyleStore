@@ -329,7 +329,7 @@ const SupportChatPage = () => {
                             return (
                                 <div
                                     key={message.id}
-                                    className={`max-w-[75%] rounded-lg px-3 py-2 ${isMine ? 'ml-auto bg-blue-600 text-white' : 'mr-auto bg-gray-200 text-gray-800'
+                                    className={`max-w-[300px] rounded-lg px-3 py-2 ${isMine ? 'ml-auto bg-blue-600 text-white' : 'mr-auto bg-gray-200 text-gray-800'
                                         }`}
                                 >
                                     <p className="text-sm break-words">{message.content}</p>

@@ -65,6 +65,11 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    public Page<Product> getProductsByGender(String gender, Pageable pageable) {
+        return productRepository.findByGenderAndStatus(gender, ProductStatus.ACTIVE, pageable);
+    }
+
+    @Override
     public Optional<Product> getProductById(Long id) {
         return productRepository.findById(id);
     }

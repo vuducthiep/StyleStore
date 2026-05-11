@@ -38,19 +38,27 @@ public class User_ProductController {
     @Autowired
     private OrderService orderService;
 
-    // Lấy danh sách sản phẩm (có phân trang)
+    // Lấy danh sách sản phẩm (có phân trang và lọc theo giới tính)
     @GetMapping
     public ResponseEntity<ApiResponse<Page<Product>>> getAllProducts(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "12") int size,
             @RequestParam(defaultValue = "createdAt") String sortBy,
-            @RequestParam(defaultValue = "desc") String sortDir) {
+            @RequestParam(defaultValue = "desc") String sortDir,
+            @RequestParam(required = false) String gender) {
 
         Sort sort = sortDir.equalsIgnoreCase("asc")
                 ? Sort.by(sortBy).ascending()
                 : Sort.by(sortBy).descending();
         Pageable pageable = PageRequest.of(page, size, sort);
-        Page<Product> result = productService.getProducts(pageable);
+        
+        Page<Product> result;
+        if (gender != null && !gender.trim().isEmpty()) {
+            result = productService.getProductsByGender(gender.toLowerCase().trim(), pageable);
+        } else {
+            result = productService.getProducts(pageable);
+        }
+        
         return ResponseEntity.ok(ApiResponse.ok("Lấy danh sách sản phẩm thành công", result));
     }
 

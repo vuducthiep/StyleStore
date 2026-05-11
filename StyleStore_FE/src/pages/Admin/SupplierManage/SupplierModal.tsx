@@ -22,9 +22,29 @@ const SupplierModal: React.FC<SupplierModalProps> = ({ isOpen, supplier, onClose
 	});
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [error, setError] = useState('');
+	const [phoneError, setPhoneError] = useState('');
+	const [emailError, setEmailError] = useState('');
 	const { pushToast } = useToast();
 
 	const isEdit = Boolean(supplier);
+
+	// Validation functions
+	const validatePhone = (phone: string): string | null => {
+		if (!phone) return null; // Optional field
+		if (!/^0\d{9}$/.test(phone)) {
+			return 'Số điện thoại phải gồm 10 chữ số và bắt đầu từ số 0 (ví dụ: 0123456789)';
+		}
+		return null;
+	};
+
+	const validateEmail = (email: string): string | null => {
+		if (!email) return null; // Optional field
+		const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+		if (!emailRegex.test(email)) {
+			return 'Email không hợp lệ (ví dụ: abc@example.com)';
+		}
+		return null;
+	};
 
 	useEffect(() => {
 		if (supplier) {
@@ -47,12 +67,31 @@ const SupplierModal: React.FC<SupplierModalProps> = ({ isOpen, supplier, onClose
 			});
 		}
 		setError('');
+		setPhoneError('');
+		setEmailError('');
 	}, [supplier, isOpen]);
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
 		setError('');
 		setIsSubmitting(true);
+
+		// Validate phone and email
+		const phoneError = validatePhone(formData.phone);
+		if (phoneError) {
+			setError(phoneError);
+			setIsSubmitting(false);
+			pushToast(phoneError, 'error');
+			return;
+		}
+
+		const emailError = validateEmail(formData.email);
+		if (emailError) {
+			setError(emailError);
+			setIsSubmitting(false);
+			pushToast(emailError, 'error');
+			return;
+		}
 
 		try {
 			const authHeaders = buildAuthHeaders();
@@ -133,10 +172,19 @@ const SupplierModal: React.FC<SupplierModalProps> = ({ isOpen, supplier, onClose
 							<input
 								type="text"
 								value={formData.phone}
-								onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-								className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+								onChange={(e) => {
+									setFormData({ ...formData, phone: e.target.value });
+									const error = validatePhone(e.target.value);
+									setPhoneError(error || '');
+								}}
+								className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 ${
+									phoneError ? 'border-red-500 focus:ring-red-500' : 'border-slate-300 focus:ring-blue-500'
+								}`}
 								placeholder="Nhập số điện thoại"
 							/>
+							{phoneError && (
+								<p className="text-red-500 text-sm mt-1">{phoneError}</p>
+							)}
 						</div>
 
 						<div>
@@ -144,10 +192,19 @@ const SupplierModal: React.FC<SupplierModalProps> = ({ isOpen, supplier, onClose
 							<input
 								type="email"
 								value={formData.email}
-								onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-								className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+								onChange={(e) => {
+									setFormData({ ...formData, email: e.target.value });
+									const error = validateEmail(e.target.value);
+									setEmailError(error || '');
+								}}
+								className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 ${
+									emailError ? 'border-red-500 focus:ring-red-500' : 'border-slate-300 focus:ring-blue-500'
+								}`}
 								placeholder="Nhập email"
 							/>
+							{emailError && (
+								<p className="text-red-500 text-sm mt-1">{emailError}</p>
+							)}
 						</div>
 
 						<div className="md:col-span-2">

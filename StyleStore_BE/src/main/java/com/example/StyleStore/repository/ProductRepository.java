@@ -18,6 +18,8 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 
     Page<Product> findByCategoryAndStatus(Category category, ProductStatus status, Pageable pageable);
 
+    Page<Product> findByGenderAndStatus(String gender, ProductStatus status, Pageable pageable);
+
     Page<Product> findByNameAndStatus(String name, ProductStatus status, Pageable pageable);
 
     // Tìm kiếm theo tên sản phẩm (LIKE)

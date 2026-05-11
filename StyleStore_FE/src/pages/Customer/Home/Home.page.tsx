@@ -25,21 +25,46 @@ const Home: React.FC = () => {
     const [currentPage, setCurrentPage] = useState(0);
     const [totalPages, setTotalPages] = useState(0);
     const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
+    const [selectedGender, setSelectedGender] = useState<string | null>(null);
 
     const pageSize = 12;
 
-    useEffect(() => {
-        fetchProducts(currentPage, selectedCategoryId);
-    }, [currentPage, selectedCategoryId]);
+    // Map English gender to Vietnamese
+    const mapGenderToVietnamese = (gender: string | null): string | null => {
+        if (!gender) return null;
+        const mapping: Record<string, string> = {
+            'male': 'Nam',
+            'female': 'Nữ',
+            'unisex': 'Unisex'
+        };
+        return mapping[gender] || gender;
+    };
 
-    const fetchProducts = async (page: number, categoryId: number | null) => {
+    useEffect(() => {
+        fetchProducts(currentPage, selectedCategoryId, selectedGender);
+    }, [currentPage, selectedCategoryId, selectedGender]);
+
+    const fetchProducts = async (page: number, categoryId: number | null, gender: string | null) => {
         try {
             setLoading(true);
             const baseUrl = categoryId
                 ? `http://localhost:8080/api/user/products/category/${categoryId}`
                 : `http://localhost:8080/api/user/products`;
 
-            const res = await fetch(`${baseUrl}?page=${page}&size=${pageSize}&sortBy=createdAt&sortDir=desc`);
+            // Build query parameters
+            const params = new URLSearchParams();
+            params.append('page', page.toString());
+            params.append('size', pageSize.toString());
+            params.append('sortBy', 'createdAt');
+            params.append('sortDir', 'desc');
+            
+            // Map gender to Vietnamese before sending
+            const vietnameseGender = mapGenderToVietnamese(gender);
+            if (vietnameseGender) {
+                params.append('gender', vietnameseGender);
+            }
+
+            const res = await fetch(`${baseUrl}?${params.toString()}`);
             if (!res.ok) {
                 throw new Error('Không thể lấy dữ liệu sản phẩm');
             }
@@ -74,6 +99,11 @@ const Home: React.FC = () => {
         setCurrentPage(0);
     };
 
+    const handleGenderChange = (gender: string | null) => {
+        setSelectedGender(gender);
+        setCurrentPage(0);
+    };
+
     return (
         <div>
             <Header />
@@ -85,6 +115,8 @@ const Home: React.FC = () => {
                 error={error}
                 currentPage={currentPage}
                 totalPages={totalPages}
+                genderFilter={selectedGender}
+                onGenderChange={handleGenderChange}
                 onNextPage={handleNextPage}
                 onPrevPage={handlePrevPage}
             />

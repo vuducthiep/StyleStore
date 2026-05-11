@@ -45,6 +45,8 @@ export type ListProductProps = {
     error: string | null;
     currentPage: number;
     totalPages: number;
+    genderFilter?: string | null;
+    onGenderChange?: (gender: string | null) => void;
     onNextPage: () => void;
     onPrevPage: () => void;
 };
@@ -55,11 +57,16 @@ export default function ListProduct({
     error,
     currentPage,
     totalPages,
+    genderFilter: propGenderFilter,
+    onGenderChange,
     onNextPage,
     onPrevPage,
 }: ListProductProps) {
     const navigate = useNavigate();
     const [sortByPrice, setSortByPrice] = useState<"default" | "asc" | "desc">("default");
+    // Use prop if provided, otherwise manage locally
+    const [localGenderFilter, setLocalGenderFilter] = useState<'all' | 'female' | 'male' | 'unisex'>('all');
+    const genderFilter = (propGenderFilter as 'all' | 'female' | 'male' | 'unisex' | null) || localGenderFilter;
     const productCardRefs = useRef<Record<number, HTMLDivElement | null>>({});
     const [visibleProducts, setVisibleProducts] = useState<Set<number>>(new Set());
 
@@ -70,17 +77,14 @@ export default function ListProduct({
         }).format(price);
     };
 
-    const sortedProducts = useMemo(() => {
+
+    const filteredAndSortedProducts = useMemo(() => {
+        // No client-side gender filtering needed - server already filters
+        // Only sort by price on client
         const data = [...products];
 
-        if (sortByPrice === "asc") {
-            return data.sort((a, b) => a.price - b.price);
-        }
-
-        if (sortByPrice === "desc") {
-            return data.sort((a, b) => b.price - a.price);
-        }
-
+        if (sortByPrice === 'asc') return data.sort((a, b) => a.price - b.price);
+        if (sortByPrice === 'desc') return data.sort((a, b) => b.price - a.price);
         return data;
     }, [products, sortByPrice]);
 
@@ -111,7 +115,7 @@ export default function ListProduct({
             }
         );
 
-        sortedProducts.forEach((product) => {
+        filteredAndSortedProducts.forEach((product) => {
             const element = productCardRefs.current[product.id];
 
             if (element) {
@@ -122,7 +126,7 @@ export default function ListProduct({
         return () => {
             observer.disconnect();
         };
-    }, [sortedProducts]);
+    }, [filteredAndSortedProducts]);
 
     if (error) {
         return (
@@ -224,14 +228,14 @@ export default function ListProduct({
 
             <div className="max-w-7xl mx-auto relative z-10">
                 {/* Section Header */}
-                <div className="mb-12 text-center">
+                {/* <div className="mb-12 text-center">
                     <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-3">
                         Bộ Sưu Tập Mới
                     </h2>
                     <p className="text-gray-600 text-lg">
                         Khám phá những mẫu thiết kế đẹp mắt và xu hướng thời trang mới nhất
                     </p>
-                </div>
+                </div> */}
 
                 {/* Loading State */}
                 {loading ? (
@@ -240,34 +244,73 @@ export default function ListProduct({
                     </div>
                 ) : (
                     <>
-                        {/* Sorting */}
-                        <div className="flex justify-end mb-8">
-                            <div className="flex items-center gap-3 bg-white px-4 py-3 rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-                                <label htmlFor="price-sort" className="text-sm font-semibold text-gray-700 whitespace-nowrap">
-                                    Sắp xếp theo giá:
-                                </label>
-                                <div className="relative">
-                                    <select
-                                        id="price-sort"
-                                        value={sortByPrice}
-                                        onChange={(e) => setSortByPrice(e.target.value as "default" | "asc" | "desc")}
-                                        className="appearance-none min-w-40 pl-3 pr-8 py-2 rounded-md border border-gray-300 text-sm font-medium text-gray-700 bg-white hover:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors cursor-pointer"
-                                    >
-                                        <option value="default">Mặc định</option>
-                                        <option value="asc">Thấp đến cao</option>
-                                        <option value="desc">Cao đến thấp</option>
-                                    </select>
-                                    <ChevronRight
-                                        size={16}
-                                        className="absolute right-2 top-1/2 -translate-y-1/2 rotate-90 text-gray-500 pointer-events-none"
-                                    />
+                        {/* Filters */}
+                        <div className="mb-8 rounded-2xl border border-gray-200 bg-white/80 p-4 shadow-sm backdrop-blur-sm">
+                            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                                <div>
+                                    <h3 className="mt-1 text-lg font-bold text-gray-900">Tìm sản phẩm phù hợp hơn</h3>
+                                    <p className="mt-1 text-sm text-gray-500">Lọc theo giới tính và sắp xếp theo mức giá.</p>
+                                </div>
+
+                                <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-end">
+                                    <div className="flex flex-wrap items-center gap-2">
+                                        <span className="text-sm font-semibold text-gray-700 mr-1">Giới tính:</span>
+                                        {(['all', 'female', 'male', 'unisex'] as const).map((g) => {
+                                            const label = g === 'all' ? 'Tất cả' : g === 'female' ? 'Nữ' : g === 'male' ? 'Nam' : 'Unisex';
+                                            const active = genderFilter === g;
+                                            return (
+                                                <button
+                                                    key={g}
+                                                    type="button"
+                                                    onClick={() => {
+                                                        if (propGenderFilter !== undefined) {
+                                                            // If prop is managed by parent, notify parent
+                                                            onGenderChange?.(g === 'all' ? null : g);
+                                                        } else {
+                                                            // Otherwise manage locally
+                                                            setLocalGenderFilter(g);
+                                                        }
+                                                    }}
+                                                    className={`rounded-full border px-4 py-2 text-sm font-semibold transition-all ${
+                                                        active
+                                                            ? 'border-purple-600 bg-purple-600 text-white shadow-sm'
+                                                            : 'border-gray-200 bg-white text-gray-700 hover:border-purple-300 hover:text-purple-700'
+                                                    }`}
+                                                >
+                                                    {label}
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+
+                                    <div className="flex items-center gap-3 rounded-full border border-gray-200 bg-white px-4 py-3 shadow-sm">
+                                        <label htmlFor="price-sort" className="text-sm font-semibold text-gray-700 whitespace-nowrap">
+                                            Sắp xếp theo giá
+                                        </label>
+                                        <div className="relative">
+                                            <select
+                                                id="price-sort"
+                                                value={sortByPrice}
+                                                onChange={(e) => setSortByPrice(e.target.value as "default" | "asc" | "desc")}
+                                                className="appearance-none min-w-40 rounded-full border border-gray-200 bg-white py-2 pl-4 pr-9 text-sm font-medium text-gray-700 outline-none transition focus:border-purple-500 focus:ring-2 focus:ring-purple-200"
+                                            >
+                                                <option value="default">Mặc định</option>
+                                                <option value="asc">Thấp đến cao</option>
+                                                <option value="desc">Cao đến thấp</option>
+                                            </select>
+                                            <ChevronRight
+                                                size={16}
+                                                className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 rotate-90 text-gray-500"
+                                            />
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
                         {/* Products Grid */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-16">
-                            {sortedProducts.map((product, index) => (
+                            {filteredAndSortedProducts.map((product, index) => (
                                 <div
                                     key={product.id}
                                     ref={(node) => {
@@ -387,7 +430,7 @@ export default function ListProduct({
                         )}
 
                         {/* No Products Message */}
-                        {sortedProducts.length === 0 && !loading && (
+                        {filteredAndSortedProducts.length === 0 && !loading && (
                             <div className="text-center py-20">
                                 <p className="text-gray-500 text-xl font-medium">Không có sản phẩm để hiển thị</p>
                                 <p className="text-gray-400 text-sm mt-2">Hãy thử lựa chọn danh mục khác</p>

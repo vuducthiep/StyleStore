@@ -4,7 +4,6 @@ import { buildAuthHeaders, isAuthTokenMissingError } from '../../../../services/
 import ImportReceiptIItems from './ImportReceiptIItems';
 import ImportReceiptInput, {
 	type DraftImportReceiptItem,
-	type ProductOption,
 	type SizeOption,
 	type SupplierOption,
 } from './ImportReceiptInput';
@@ -32,13 +31,6 @@ type SizeDto = {
 	name: string;
 };
 
-type ProductDto = {
-	id: number;
-	name: string;
-	price?: number;
-	status?: string;
-};
-
 interface ImportReceiptModalProps {
 	isOpen: boolean;
 	onClose: () => void;
@@ -62,7 +54,6 @@ const parseCurrentUserId = (): number | null => {
 const ImportReceiptModal: React.FC<ImportReceiptModalProps> = ({ isOpen, onClose, onSaved }) => {
 	const [suppliers, setSuppliers] = useState<SupplierOption[]>([]);
 	const [sizes, setSizes] = useState<SizeOption[]>([]);
-	const [products, setProducts] = useState<ProductOption[]>([]);
 	const [selectedSupplierId, setSelectedSupplierId] = useState<number | null>(null);
 	const [note, setNote] = useState('');
 	const [items, setItems] = useState<DraftImportReceiptItem[]>([]);
@@ -89,7 +80,7 @@ const ImportReceiptModal: React.FC<ImportReceiptModalProps> = ({ isOpen, onClose
 			setError('');
 		};
 
-		const fetchOptions = async () => {
+			const fetchOptions = async () => {
 			setIsLoadingOptions(true);
 			setError('');
 			resetFormState();
@@ -97,7 +88,7 @@ const ImportReceiptModal: React.FC<ImportReceiptModalProps> = ({ isOpen, onClose
 			try {
 				const authHeaders = buildAuthHeaders();
 
-				const [supplierRes, sizeRes, productRes] = await Promise.all([
+					const [supplierRes, sizeRes] = await Promise.all([
 					fetch('http://localhost:8080/api/admin/suppliers?page=0&size=200&sortBy=createdAt&sortDir=desc', {
 						headers: {
 							'Content-Type': 'application/json',
@@ -105,12 +96,6 @@ const ImportReceiptModal: React.FC<ImportReceiptModalProps> = ({ isOpen, onClose
 						},
 					}),
 					fetch('http://localhost:8080/api/admin/sizes', {
-						headers: {
-							'Content-Type': 'application/json',
-							...authHeaders,
-						},
-					}),
-					fetch('http://localhost:8080/api/admin/products?page=0&size=200&sortBy=createdAt&sortDir=desc', {
 						headers: {
 							'Content-Type': 'application/json',
 							...authHeaders,
@@ -130,15 +115,8 @@ const ImportReceiptModal: React.FC<ImportReceiptModalProps> = ({ isOpen, onClose
 					throw new Error(payload.message || 'Không thể tải danh sách size.');
 				}
 
-				if (!productRes.ok) {
-					const text = await productRes.text();
-					const payload = text ? JSON.parse(text) : {};
-					throw new Error(payload.message || 'Không thể tải danh sách sản phẩm.');
-				}
-
 				const supplierPayload: ApiResponse<PageData<SupplierDto>> = await supplierRes.json();
 				const sizePayload = await sizeRes.json();
-				const productPayload: ApiResponse<PageData<ProductDto>> = await productRes.json();
 
 				const supplierOptions = supplierPayload.data?.content ?? [];
 				setSuppliers(
@@ -158,15 +136,6 @@ const ImportReceiptModal: React.FC<ImportReceiptModalProps> = ({ isOpen, onClose
 						name: size.name,
 					})),
 				);
-
-				const productOptions = (productPayload.data?.content ?? [])
-					.filter((product) => !product.status || product.status === 'ACTIVE')
-					.map((product) => ({
-						id: product.id,
-						name: product.name,
-						price: typeof product.price === 'number' ? product.price : 0,
-					}));
-				setProducts(productOptions);
 			} catch (e) {
 				if (isAuthTokenMissingError(e)) {
 					setError('Bạn chưa đăng nhập hoặc thiếu token.');
@@ -307,7 +276,6 @@ const ImportReceiptModal: React.FC<ImportReceiptModalProps> = ({ isOpen, onClose
 					<ImportReceiptInput
 						suppliers={suppliers}
 						sizes={sizes}
-						products={products}
 						selectedSupplierId={selectedSupplierId}
 						note={note}
 						isLoadingOptions={isLoadingOptions}
