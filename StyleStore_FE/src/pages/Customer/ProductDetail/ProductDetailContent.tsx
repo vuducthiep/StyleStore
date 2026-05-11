@@ -1,6 +1,19 @@
 import { ShoppingCart, Check, ChevronLeft, ChevronRight } from "lucide-react";
 import { useState, useRef } from "react";
+import type { CSSProperties } from "react";
 import type { Product, ProductSize, ProductImage } from "./productDetail.types";
+
+type FlyingSpark = {
+    id: number;
+    startX: number;
+    startY: number;
+    deltaX: number;
+    deltaY: number;
+    curveX: number;
+    curveY: number;
+    size: number;
+    delay: number;
+};
 
 type ProductDetailContentProps = {
     product: Product;
@@ -30,7 +43,9 @@ export default function ProductDetailContent({
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const [isTransitioning, setIsTransitioning] = useState(false);
     const [thumbnailScrollOffset, setThumbnailScrollOffset] = useState(0);
+    const [flyingSparks, setFlyingSparks] = useState<FlyingSpark[]>([]);
     const thumbnailContainerRef = useRef<HTMLDivElement>(null);
+    const addToCartButtonRef = useRef<HTMLButtonElement>(null);
 
     // Check if product is new (created within 30 days)
     const isNewProduct = () => {
@@ -81,6 +96,56 @@ export default function ProductDetailContent({
         const newOffset = Math.min(maxScrollOffset, thumbnailScrollOffset + 100);
         setThumbnailScrollOffset(newOffset);
     };
+
+    const triggerFlyToCartAnimation = () => {
+        const startElement = addToCartButtonRef.current;
+        const cartAnchor = document.querySelector('[data-cart-icon-anchor="true"]') as HTMLElement | null;
+
+        if (!startElement || !cartAnchor) {
+            return;
+        }
+
+        const startRect = startElement.getBoundingClientRect();
+        const targetRect = cartAnchor.getBoundingClientRect();
+
+        const startX = startRect.left + startRect.width / 2;
+        const startY = startRect.top + startRect.height / 2;
+        const targetX = targetRect.left + targetRect.width / 2;
+        const targetY = targetRect.top + targetRect.height / 2;
+
+        const sparkCount = 14;
+        const sparks = Array.from({ length: sparkCount }, (_, index) => {
+            const spreadX = (Math.random() - 0.5) * 48;
+            const spreadY = (Math.random() - 0.5) * 34;
+
+            return {
+                id: Date.now() + index,
+                startX,
+                startY,
+                deltaX: targetX - startX + spreadX,
+                deltaY: targetY - startY + spreadY,
+                curveX: (Math.random() - 0.5) * 90,
+                curveY: -60 - Math.random() * 90,
+                size: 8 + Math.random() * 7,
+                delay: index * 24,
+            };
+        });
+
+        setFlyingSparks(sparks);
+        window.setTimeout(() => {
+            setFlyingSparks([]);
+        }, 1300);
+    };
+
+    const handleAddToCartClick = () => {
+        triggerFlyToCartAnimation();
+        onAddToCart();
+
+        window.setTimeout(() => {
+            window.dispatchEvent(new CustomEvent('cart-updated'));
+        }, 950);
+    };
+
     return (
         <div className="max-w-7xl mx-auto px-4 py-12">
             <style>{`
@@ -97,7 +162,69 @@ export default function ProductDetailContent({
                 .animate-blink {
                     animation: blink 0.5s infinite;
                 }
+
+                @keyframes sparkFlyToCart {
+                    0% {
+                        transform: translate3d(0, 0, 0) scale(0.72);
+                        opacity: 0;
+                    }
+                    12% {
+                        opacity: 1;
+                    }
+                    36% {
+                        transform: translate3d(var(--cx), var(--cy), 0) scale(1.18);
+                        opacity: 1;
+                    }
+                    82% {
+                        opacity: 1;
+                    }
+                    100% {
+                        transform: translate3d(var(--dx), var(--dy), 0) scale(0.2);
+                        opacity: 0;
+                    }
+                }
+
+                .spark-fly-item {
+                    position: fixed;
+                    pointer-events: none;
+                    z-index: 120;
+                    border-radius: 9999px;
+                    background: radial-gradient(circle at 35% 35%, #fffdf0 0%, #fde68a 28%, #f59e0b 62%, rgba(245, 158, 11, 0) 85%);
+                    box-shadow:
+                        0 0 10px rgba(255, 245, 180, 0.95),
+                        0 0 20px rgba(251, 191, 36, 0.85),
+                        0 0 34px rgba(245, 158, 11, 0.55);
+                    animation: sparkFlyToCart 1.05s cubic-bezier(0.2, 0.75, 0.2, 1) forwards;
+                    will-change: transform, opacity;
+                }
+
+                .spark-fly-item::after {
+                    content: "";
+                    position: absolute;
+                    inset: -55%;
+                    border-radius: 9999px;
+                    background: radial-gradient(circle, rgba(255, 249, 196, 0.7) 0%, rgba(251, 191, 36, 0) 72%);
+                }
             `}</style>
+
+            {flyingSparks.map((spark) => (
+                <span
+                    key={spark.id}
+                    className="spark-fly-item"
+                    style={{
+                        left: `${spark.startX}px`,
+                        top: `${spark.startY}px`,
+                        width: `${spark.size}px`,
+                        height: `${spark.size}px`,
+                        animationDelay: `${spark.delay}ms`,
+                        '--cx': `${spark.curveX}px`,
+                        '--cy': `${spark.curveY}px`,
+                        '--dx': `${spark.deltaX}px`,
+                        '--dy': `${spark.deltaY}px`,
+                    } as CSSProperties & Record<'--cx' | '--cy' | '--dx' | '--dy', string>}
+                />
+            ))}
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div className="flex items-center justify-center">
                     {/* Image Carousel */}
@@ -284,7 +411,8 @@ export default function ProductDetailContent({
                     </div>
 
                     <button
-                        onClick={onAddToCart}
+                        ref={addToCartButtonRef}
+                        onClick={handleAddToCartClick}
                         disabled={availableSizes.length === 0 || addedToCart}
                         className={`w-full py-4 rounded-lg font-bold text-base transition-all flex items-center justify-center gap-2 ${addedToCart
                             ? "bg-green-500 text-white"

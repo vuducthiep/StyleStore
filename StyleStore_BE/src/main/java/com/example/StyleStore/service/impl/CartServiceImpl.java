@@ -9,6 +9,7 @@ import com.example.StyleStore.model.User;
 import com.example.StyleStore.repository.CartRepository;
 import com.example.StyleStore.repository.CartItemRepository;
 import com.example.StyleStore.repository.ProductRepository;
+import com.example.StyleStore.repository.ProductSizeRepository;
 import com.example.StyleStore.repository.SizeRepository;
 import com.example.StyleStore.repository.UserRepository;
 import com.example.StyleStore.service.CartService;
@@ -18,6 +19,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import com.example.StyleStore.model.ProductSize;
 
 @Service
 @RequiredArgsConstructor
@@ -26,6 +28,7 @@ public class CartServiceImpl implements CartService {
     private final CartRepository cartRepository;
     private final CartItemRepository cartItemRepository;
     private final ProductRepository productRepository;
+    private final ProductSizeRepository productSizeRepository;
     private final SizeRepository sizeRepository;
     private final UserRepository userRepository;
 
@@ -44,6 +47,16 @@ public class CartServiceImpl implements CartService {
             throw new RuntimeException("Số lượng phải lớn hơn 0");
         }
 
+        // Check stock availability before adding to cart
+        ProductSize productSize = productSizeRepository.findByProduct_IdAndSize_Id(productId, sizeId)
+                .orElseThrow(() -> new RuntimeException("Size không có sẵn cho sản phẩm này"));
+
+        if (productSize.getStock() < quantity) {
+            throw new RuntimeException("Sản phẩm " + productSize.getProduct().getName() + 
+                    ", size " + productSize.getSize().getName() + 
+                    " chỉ còn " + productSize.getStock() + " cái trong kho");
+        }
+
         Cart cart = getCartByUserId(userId);
 
         Product product = productRepository.findById(productId)
@@ -58,7 +71,14 @@ public class CartServiceImpl implements CartService {
         CartItem cartItem;
         if (existingItem.isPresent()) {
             cartItem = existingItem.get();
-            cartItem.setQuantity(cartItem.getQuantity() + quantity);
+            int newQuantity = cartItem.getQuantity() + quantity;
+            // Check if total quantity exceeds stock
+            if (newQuantity > productSize.getStock()) {
+                throw new RuntimeException("Sản phẩm " + product.getName() + 
+                        ", size " + size.getName() + 
+                        " chỉ còn " + productSize.getStock() + " cái trong kho, không thể thêm " + quantity + " cái nữa");
+            }
+            cartItem.setQuantity(newQuantity);
             cartItem.setUpdatedAt(LocalDateTime.now());
         } else {
             cartItem = CartItem.builder()
@@ -103,6 +123,17 @@ public class CartServiceImpl implements CartService {
 
         if (!cartItem.getCart().getId().equals(cart.getId())) {
             throw new RuntimeException("Không có quyền cập nhật sản phẩm này");
+        }
+
+        // Check stock availability when updating quantity
+        ProductSize productSize = productSizeRepository.findByProduct_IdAndSize_Id(
+                cartItem.getProduct().getId(), cartItem.getSize().getId())
+                .orElseThrow(() -> new RuntimeException("Size không có sẵn cho sản phẩm này"));
+
+        if (quantity > productSize.getStock()) {
+            throw new RuntimeException("Sản phẩm " + cartItem.getProduct().getName() + 
+                    ", size " + cartItem.getSize().getName() + 
+                    " chỉ còn " + productSize.getStock() + " cái trong kho");
         }
 
         cartItem.setQuantity(quantity);

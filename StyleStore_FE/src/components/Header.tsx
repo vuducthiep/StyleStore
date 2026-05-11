@@ -1,11 +1,18 @@
-import { useState, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { ShoppingCart, History, LogOut, User, LogIn, Sparkles } from 'lucide-react';
+import { buildAuthHeaders, isAuthTokenMissingError } from '../services/auth';
 import logo from '../assets/Logo.jpg';
 
 interface UserState {
     isLoggedIn: boolean;
     name: string;
+}
+
+interface ApiResponse<T> {
+    success: boolean;
+    message?: string;
+    data?: T;
 }
 
 export const Header = () => {
@@ -38,8 +45,10 @@ export const Header = () => {
         return { isLoggedIn: false, name: '' };
     });
     const [userMenuOpen, setUserMenuOpen] = useState(false);
+    const [cartCount, setCartCount] = useState(0);
     const userMenuRef = useRef<HTMLDivElement>(null);
     const navigate = useNavigate();
+    const location = useLocation();
 
     // Đóng menu khi click bên ngoài
     useEffect(() => {
@@ -55,6 +64,56 @@ export const Header = () => {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, [userMenuOpen]);
 
+    const fetchCartCount = useCallback(async () => {
+        if (!user.isLoggedIn) {
+            setCartCount(0);
+            return;
+        }
+
+        try {
+            const authHeaders = buildAuthHeaders();
+            const response = await fetch('http://localhost:8080/api/user/cart/count', {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...authHeaders,
+                },
+            });
+
+            if (!response.ok) {
+                setCartCount(0);
+                return;
+            }
+
+            const result: ApiResponse<number> = await response.json();
+            if (result.success && typeof result.data === 'number') {
+                setCartCount(result.data);
+                return;
+            }
+
+            setCartCount(0);
+        } catch (error) {
+            if (isAuthTokenMissingError(error)) {
+                setCartCount(0);
+                return;
+            }
+            setCartCount(0);
+        }
+    }, [user.isLoggedIn]);
+
+    useEffect(() => {
+        fetchCartCount();
+    }, [fetchCartCount, location.pathname]);
+
+    useEffect(() => {
+        const handleCartUpdated = () => {
+            fetchCartCount();
+        };
+
+        window.addEventListener('cart-updated', handleCartUpdated);
+        return () => window.removeEventListener('cart-updated', handleCartUpdated);
+    }, [fetchCartCount]);
+
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
         if (searchQuery.trim()) {
@@ -69,6 +128,7 @@ export const Header = () => {
         localStorage.removeItem('userId');
 
         setUser({ isLoggedIn: false, name: '' });
+        setCartCount(0);
         setUserMenuOpen(false);
         navigate('/login');
     };
@@ -129,7 +189,14 @@ export const Header = () => {
                             className="flex items-center gap-2 text-slate-100 hover:text-purple-200 transition-colors relative group"
                             title="Giỏ hàng"
                         >
-                            <ShoppingCart className="w-6 h-6" />
+                            <div className="relative" data-cart-icon-anchor="true">
+                                <ShoppingCart className="w-6 h-6" />
+                                {user.isLoggedIn && cartCount > 0 && (
+                                    <span className="absolute -top-2 -right-2 min-w-[18px] h-[18px] px-1 rounded-full bg-rose-500 text-white text-[11px] leading-[18px] text-center font-semibold shadow">
+                                        {cartCount > 99 ? '99+' : cartCount}
+                                    </span>
+                                )}
+                            </div>
                             <span className="text-sm font-medium hidden sm:inline">Giỏ hàng</span>
 
                         </button>

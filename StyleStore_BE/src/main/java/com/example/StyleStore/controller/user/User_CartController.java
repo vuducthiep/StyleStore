@@ -4,13 +4,11 @@ import com.example.StyleStore.dto.response.ApiResponse;
 import com.example.StyleStore.model.Cart;
 import com.example.StyleStore.model.CartItem;
 import com.example.StyleStore.service.CartService;
-import com.example.StyleStore.service.JwtService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.web.authentication.WebAuthenticationDetails;
 import org.springframework.web.bind.annotation.*;
 import com.example.StyleStore.repository.UserRepository;
 
@@ -54,6 +52,19 @@ public class User_CartController {
             Long userId = getCurrentUserId();
             Cart cart = cartService.getCartByUserId(userId);
             return ResponseEntity.ok(ApiResponse.ok("Lấy giỏ hàng thành công", cart));
+        } catch (Exception e) {
+            return ResponseEntity.status(400).body(ApiResponse.fail("Lỗi: " + e.getMessage()));
+        }
+    }
+
+    // Lấy số lượng CartDetail (số dòng sản phẩm) trong giỏ hàng của user
+    @GetMapping("/count")
+    public ResponseEntity<ApiResponse<Integer>> getCartDetailCount() {
+        try {
+            Long userId = getCurrentUserId();
+            Cart cart = cartService.getCartByUserId(userId);
+            int count = cart.getCartItems() == null ? 0 : cart.getCartItems().size();
+            return ResponseEntity.ok(ApiResponse.ok("Lấy số lượng sản phẩm trong giỏ thành công", count));
         } catch (Exception e) {
             return ResponseEntity.status(400).body(ApiResponse.fail("Lỗi: " + e.getMessage()));
         }

@@ -58,14 +58,14 @@ const Home: React.FC = () => {
     const handleNextPage = () => {
         if (currentPage < totalPages - 1) {
             setCurrentPage((prev) => prev + 1);
-            window.scrollTo({ top: 380, behavior: 'smooth' });
+            window.scrollTo({ top: 980, behavior: 'smooth' });
         }
     };
 
     const handlePrevPage = () => {
         if (currentPage > 0) {
             setCurrentPage((prev) => prev - 1);
-            window.scrollTo({ top: 380, behavior: 'smooth' });
+            window.scrollTo({ top: 980, behavior: 'smooth' });
         }
     };
 
