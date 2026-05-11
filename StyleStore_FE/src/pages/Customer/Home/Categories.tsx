@@ -70,42 +70,68 @@ export default function Categories({ selectedCategoryId, onSelect }: CategoriesP
     }
 
     return (
-        <div className="bg-gradient-to-r from-purple-50 to-pink-50 py-8">
-            <div className="container mx-auto px-4">
-                <h2 className="text-3xl font-bold text-center mb-8 text-gray-800">
-                    Danh Mục Sản Phẩm
-                </h2>
+        <div className="bg-white py-12 border-b border-gray-200">
+            <style>{`
+                @keyframes categorySlideIn {
+                    0% {
+                        opacity: 0;
+                        transform: translateY(10px);
+                    }
+                    100% {
+                        opacity: 1;
+                        transform: translateY(0);
+                    }
+                }
 
-                <div className="flex flex-wrap justify-center gap-4">
+                .category-btn {
+                    animation: categorySlideIn 0.5s ease-out;
+                }
+            `}</style>
+
+            <div className="max-w-7xl mx-auto px-4">
+                {/* Header */}
+                <div className="text-center mb-10">
+                    <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">
+                        Danh Mục Sản Phẩm
+                    </h2>
+                    <p className="text-gray-600 text-sm md:text-base">
+                        Tìm kiếm sản phẩm yêu thích của bạn
+                    </p>
+                </div>
+
+                {/* Categories */}
+                <div className="flex flex-wrap justify-center gap-3 md:gap-4">
                     {/* All categories button */}
                     <button
                         onClick={() => onSelect(null)}
-                        className={`px-6 py-3 rounded-full font-medium transition-all duration-300 transform hover:scale-105 ${selectedCategoryId === null
-                            ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg"
-                            : "bg-white text-gray-700 hover:bg-gray-100 shadow-md"
-                            }`}
+                        className={`category-btn px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 active:scale-95 text-sm md:text-base whitespace-nowrap ${
+                            selectedCategoryId === null
+                                ? "bg-gradient-to-r from-purple-600 to-purple-700 text-white shadow-lg hover:shadow-xl"
+                                : "bg-gray-100 text-gray-700 hover:bg-gray-200 hover:shadow-md"
+                        }`}
                     >
-                        Tất cả
+                        ✓ Tất Cả Sản Phẩm
                     </button>
 
                     {/* Category buttons */}
-                    {categories.map((category) => (
-                        <div key={category.id} className="relative group">
+                    {categories.map((category, index) => (
+                        <div key={category.id} className="relative group" style={{ animationDelay: `${(index + 1) * 50}ms` }}>
                             <button
                                 onClick={() => handleCategoryClick(category.id)}
-                                className={`px-6 py-3 rounded-full font-medium transition-all duration-300 transform hover:scale-105 ${selectedCategoryId === category.id
-                                    ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg"
-                                    : "bg-white text-gray-700 hover:bg-gray-100 shadow-md"
-                                    }`}
+                                className={`category-btn px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 active:scale-95 text-sm md:text-base whitespace-nowrap ${
+                                    selectedCategoryId === category.id
+                                        ? "bg-gradient-to-r from-purple-600 to-purple-700 text-white shadow-lg hover:shadow-xl"
+                                        : "bg-gray-100 text-gray-700 hover:bg-gray-200 hover:shadow-md"
+                                }`}
                             >
                                 {category.name}
                             </button>
 
-                            {/* Tooltip */}
+                            {/* Tooltip for description */}
                             {category.description && (
-                                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-4 py-2 bg-gray-800 text-white text-sm rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 whitespace-nowrap z-10 pointer-events-none">
+                                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-3 px-4 py-2 bg-gray-900 text-white text-xs md:text-sm rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 whitespace-nowrap z-20 pointer-events-none shadow-lg">
                                     {category.description}
-                                    <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-1 border-4 border-transparent border-t-gray-800"></div>
+                                    <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
                                 </div>
                             )}
                         </div>

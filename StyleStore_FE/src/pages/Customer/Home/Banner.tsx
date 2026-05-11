@@ -131,7 +131,7 @@ const Banner: React.FC = () => {
 
     const handleExplore = () => {
         window.scrollBy({
-            top: 390,
+            top: 500,
             behavior: 'smooth',
         });
     };
@@ -157,13 +157,13 @@ const Banner: React.FC = () => {
                         opacity: 0;
                     }
                     10% {
-                        opacity: 0.5;
-                    }
-                    50% {
                         opacity: 0.3;
                     }
+                    50% {
+                        opacity: 0.15;
+                    }
                     90% {
-                        opacity: 0.5;
+                        opacity: 0.3;
                     }
                     100% {
                         transform: translateY(-100vh) translateX(100px);
@@ -171,25 +171,10 @@ const Banner: React.FC = () => {
                     }
                 }
                 
-                @keyframes gradientShift {
-                    0%, 100% {
-                        background-position: 0% 50%;
-                    }
-                    50% {
-                        background-position: 100% 50%;
-                    }
-                }
-                
-                .gradient-animated {
-                    background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
-                    background-size: 400% 400%;
-                    animation: gradientShift 15s ease infinite;
-                }
-
                 @keyframes fadeUp {
                     0% {
                         opacity: 0;
-                        transform: translateY(20px);
+                        transform: translateY(30px);
                     }
                     100% {
                         opacity: 1;
@@ -197,145 +182,165 @@ const Banner: React.FC = () => {
                     }
                 }
 
-                @keyframes flashGlow {
-                    0%,
+                @keyframes slideInRight {
+                    0% {
+                        opacity: 0;
+                        transform: translateX(40px);
+                    }
                     100% {
-                        box-shadow: 0 0 0 rgba(147, 51, 234, 0.2);
-                        opacity: 0.88;
-                    }
-                    50% {
-                        box-shadow: 0 0 24px rgba(236, 72, 153, 0.5);
                         opacity: 1;
+                        transform: translateX(0);
                     }
-                }
-
-                .promo-flash {
-                    animation: flashGlow 1.2s infinite ease-in-out;
                 }
 
                 @keyframes hotBlink {
-                    0%,
-                    100% {
+                    0%, 100% {
                         opacity: 1;
                         transform: scale(1);
                     }
                     50% {
-                        opacity: 0.45;
-                        transform: scale(1.08);
+                        opacity: 0.5;
+                        transform: scale(1.05);
                     }
                 }
 
-                .hot-badge-blink {
-                    animation: hotBlink 0.9s infinite ease-in-out;
+                .promo-shine {
+                    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+                    background-size: 200% 100%;
+                    animation: shimmer 3s infinite;
+                }
+
+                @keyframes shimmer {
+                    0% {
+                        background-position: -200% 0;
+                    }
+                    100% {
+                        background-position: 200% 0;
+                    }
+                }
+
+                .hot-badge {
+                    animation: hotBlink 1.2s ease-in-out infinite;
                 }
             `}</style>
 
-            <div className="w-full min-h-[400px] relative overflow-hidden">
-                {/* Animated Gradient Background */}
-                <div className="absolute inset-0 gradient-animated opacity-20" />
+            <div className="w-full relative overflow-hidden bg-white">
+                {/* Subtle Background */}
+                <div className="absolute inset-0 bg-gradient-to-br from-gray-50 via-white to-gray-50 pointer-events-none" />
 
-                {/* Particle Background */}
-                <div className="absolute inset-0 overflow-hidden">
+                {/* Animated Particles */}
+                <div className="absolute inset-0 overflow-hidden pointer-events-none">
                     {particlesData.map((particle) => (
                         <Particle key={particle.id} particle={particle} />
                     ))}
                 </div>
 
-                {/* Content */}
-                <div className="max-w-7xl mx-auto px-4 py-8 grid grid-cols-1 lg:grid-cols-2 items-center gap-8 lg:gap-12 min-h-[400px] relative z-10">
-                    {/* Left Section - Text Introduction */}
-                    <div className="w-full max-w-[520px] mx-auto lg:mx-0 space-y-6 flex flex-col items-center lg:items-start">
-                        <div className="w-full flex flex-col items-center">
-                            <h1
-                                className="h-14 text-4xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-3 text-center"
-                                style={{ animation: 'fadeUp 0.8s ease 0s both' }}
-                            >
-                                StyleStore
+                {/* Main Content */}
+                <div className="max-w-7xl mx-auto px-4 py-12 lg:py-16 grid grid-cols-1 lg:grid-cols-2 items-center gap-8 lg:gap-12 min-h-[500px] relative z-10">
+                    {/* Left Section - Text & Promotion */}
+                    <div className="w-full space-y-6 flex flex-col items-center lg:items-start">
+                        {/* Title */}
+                        <div className="w-full flex flex-col items-center lg:items-start" style={{ animation: 'fadeUp 0.8s ease 0s both' }}>
+                            <h1 className="text-5xl lg:text-6xl font-bold text-gray-900 mb-2">
+                                StyleWearVN
                             </h1>
-                            <div
-                                className="relative w-full max-w-[460px] h-[150px] rounded-lg border border-purple-200 bg-white/80 backdrop-blur-sm px-3.5 py-3 promo-flash overflow-hidden"
-                                style={{ animation: 'fadeUp 0.8s ease 0.1s both' }}
-                            >
+                            
+                        </div>
+
+                        {/* Promotion Card */}
+                        <div
+                            className="w-full max-w-md bg-white rounded-2xl border border-gray-200 shadow-lg hover:shadow-2xl transition-shadow duration-300 overflow-visible promo-shine"
+                            style={{ animation: 'fadeUp 0.8s ease 0.1s both' }}
+                        >
+                            <div className="relative p-6">
+                                {/* Navigation Buttons */}
                                 {promotions.length > 1 && (
                                     <>
                                         <button
                                             onClick={goToPreviousPromotion}
-                                            className="absolute left-2 top-1/2 -translate-y-1/2 z-10 bg-white/90 hover:bg-white text-purple-700 rounded-full p-1 shadow-md transition"
+                                            className="absolute left-3 top-1/2 -translate-y-1/2 z-10 bg-gray-100 hover:bg-purple-600 hover:text-white text-gray-700 rounded-full p-2 transition-all"
                                             aria-label="Khuyến mãi trước"
                                         >
                                             <ChevronLeft className="w-4 h-4" />
                                         </button>
                                         <button
                                             onClick={goToNextPromotion}
-                                            className="absolute right-2 top-1/2 -translate-y-1/2 z-10 bg-white/90 hover:bg-white text-purple-700 rounded-full p-1 shadow-md transition"
+                                            className="absolute right-3 top-1/2 -translate-y-1/2 z-10 bg-gray-100 hover:bg-purple-600 hover:text-white text-gray-700 rounded-full p-2 transition-all"
                                             aria-label="Khuyến mãi tiếp theo"
                                         >
                                             <ChevronRight className="w-4 h-4" />
                                         </button>
                                     </>
                                 )}
-                                {!promotionLoading && activePromotion && (
-                                    <div className="absolute top-2 right-2 z-20">
-                                        <span className="relative inline-flex items-center justify-center px-3 py-1 rounded-full bg-gradient-to-r from-fuchsia-500 to-rose-500 text-white text-base font-extrabold tracking-wide shadow-lg ring-2 ring-white/80 hot-badge-blink">
-                                            -{activePromotion.discountPercent}%
-                                            <span className="absolute -top-2 -right-1 px-1.5 py-0.5 rounded-full bg-red-500 text-white text-[9px] font-extrabold tracking-wide leading-none">
-                                                HOT
-                                            </span>
-                                        </span>
-                                    </div>
-                                )}
-                                <p className="text-[11px] font-semibold uppercase tracking-wide text-purple-700 mb-1.5 px-10">
-                                    Ưu đãi nổi bật hôm nay
-                                </p>
 
-                                {promotionLoading ? (
-                                    <p className="text-xs text-slate-600 px-10">Đang tải khuyến mãi hấp dẫn...</p>
-                                ) : activePromotion ? (
-                                    <div className="px-10">
-                                        <div className="flex items-center justify-between gap-3">
-                                            <p className="font-extrabold text-pink-600 text-base leading-none">{activePromotion.code}</p>
-                                        </div>
-                                        <p className="text-xs font-semibold text-slate-800 mt-1">{activePromotion.name}</p>
-                                        <p className="text-[11px] text-slate-600 mt-1 line-clamp-1">{activePromotion.description}</p>
-                                        <p className="text-[11px] text-slate-500 mt-1.5">
-                                            Tối thiểu {formatPrice(activePromotion.minOrderAmount)} · Giảm tối đa {formatPrice(activePromotion.maxDiscountAmount)}
-                                        </p>
-                                        {promotions.length > 1 && (
-                                            <div className="mt-2.5 flex gap-1.5">
-                                                {promotions.map((promotion, index) => (
-                                                    <span
-                                                        key={promotion.id}
-                                                        className={`h-1.5 rounded-full transition-all ${index === promotionIndex ? 'w-6 bg-purple-600' : 'w-2 bg-purple-200'
-                                                            }`}
-                                                    />
-                                                ))}
+                                {/* HOT Badge */}
+                                {!promotionLoading && activePromotion && (
+                                    <div className="absolute -top-2 -right-2 z-50">
+                                        <div className="relative inline-flex">
+                                            <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full blur opacity-75 transition duration-1000"></div>
+                                            <div className="relative px-4 py-2.5 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full text-white font-bold text-sm shadow-lg hot-badge">
+                                                -{activePromotion.discountPercent}%
                                             </div>
-                                        )}
+                                        </div>
                                     </div>
-                                ) : (
-                                    <p className="text-sm text-slate-600 px-10">Hiện chưa có khuyến mãi khả dụng.</p>
                                 )}
+
+                                <div className="pr-8 pl-8">
+                                    <p className="text-xs font-semibold uppercase tracking-widest text-purple-600 mb-3">
+                                        ✨ Ưu đãi hôm nay
+                                    </p>
+
+                                    {promotionLoading ? (
+                                        <div className="space-y-2">
+                                            <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
+                                            <div className="h-3 bg-gray-100 rounded animate-pulse w-3/4"></div>
+                                        </div>
+                                    ) : activePromotion ? (
+                                        <>
+                                            <p className="font-bold text-lg text-purple-600 mb-2">{activePromotion.code}</p>
+                                            <p className="text-sm font-semibold text-gray-900 mb-1">{activePromotion.name}</p>
+                                            <p className="text-xs text-gray-600 mb-3 line-clamp-2">{activePromotion.description}</p>
+                                            <div className="pt-3 border-t border-gray-100">
+                                                <p className="text-xs text-gray-500">
+                                                    Tối thiểu <span className="font-semibold text-gray-700">{formatPrice(activePromotion.minOrderAmount)}</span> · Giảm tối đa <span className="font-semibold text-gray-700">{formatPrice(activePromotion.maxDiscountAmount)}</span>
+                                                </p>
+                                            </div>
+                                            {promotions.length > 1 && (
+                                                <div className="mt-3 flex gap-1.5">
+                                                    {promotions.map((promotion, index) => (
+                                                        <span
+                                                            key={promotion.id}
+                                                            className={`h-1.5 rounded-full transition-all ${index === promotionIndex ? 'w-6 bg-purple-600' : 'w-2 bg-gray-300'}`}
+                                                        />
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </>
+                                    ) : (
+                                        <p className="text-sm text-gray-600">Hiện chưa có khuyến mãi khả dụng.</p>
+                                    )}
+                                </div>
                             </div>
                         </div>
-                        <div className="flex justify-center gap-4 w-full" style={{ animation: 'fadeUp 0.8s ease 0.2s both' }}>
-                            <button
-                                onClick={handleExplore}
-                                className="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-semibold shadow-md hover:shadow-lg"
-                            >
-                                Khám Phá Ngay
-                            </button>
-                        </div>
+
+                        {/* CTA Button */}
+                        <button
+                            onClick={handleExplore}
+                            className="px-8 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-all duration-200 font-semibold shadow-lg hover:shadow-xl transform hover:scale-105"
+                            style={{ animation: 'fadeUp 0.8s ease 0.2s both' }}
+                        >
+                            ↓ Khám Phá Ngay
+                        </button>
                     </div>
 
-                    {/* Right Section - Image Carousel */}
-                    <div className="w-full max-w-[560px] mx-auto lg:mx-0 relative group" style={{ animation: 'fadeUp 0.9s ease 0.25s both' }}>
-                        {/* Image Container */}
-                        <div className="relative w-full h-80 rounded-2xl overflow-hidden shadow-2xl">
+                    {/* Right Section - Carousel */}
+                    <div className="w-full relative group" style={{ animation: 'slideInRight 0.8s ease 0.25s both' }}>
+                        {/* Main Image Container */}
+                        <div className="relative w-full h-96 rounded-2xl overflow-hidden shadow-2xl bg-gray-100">
                             {images.map((image, index) => (
                                 <div
                                     key={index}
-                                    className={`absolute w-full h-full transition-opacity duration-1000 ${index === currentIndex ? 'opacity-100' : 'opacity-0'
-                                        }`}
+                                    className={`absolute w-full h-full transition-opacity duration-1000 ${index === currentIndex ? 'opacity-100' : 'opacity-0'}`}
                                 >
                                     <img
                                         src={image}
@@ -345,36 +350,35 @@ const Banner: React.FC = () => {
                                 </div>
                             ))}
 
-                            {/* Previous Button */}
+                            {/* Navigation Buttons */}
                             <button
                                 onClick={goToPrevious}
-                                className="absolute left-4 top-1/2 transform -translate-y-1/2 z-10 bg-white/80 hover:bg-white text-slate-800 rounded-full p-2 transition-all opacity-0 group-hover:opacity-100 shadow-lg"
-                                aria-label="Previous image"
+                                className="absolute left-4 top-1/2 transform -translate-y-1/2 z-10 bg-white/90 hover:bg-white text-gray-800 rounded-full p-3 transition-all opacity-0 group-hover:opacity-100 shadow-lg hover:shadow-xl"
+                                aria-label="Ảnh trước"
                             >
                                 <ChevronLeft className="w-5 h-5" />
                             </button>
 
-                            {/* Next Button */}
                             <button
                                 onClick={goToNext}
-                                className="absolute right-4 top-1/2 transform -translate-y-1/2 z-10 bg-white/80 hover:bg-white text-slate-800 rounded-full p-2 transition-all opacity-0 group-hover:opacity-100 shadow-lg"
-                                aria-label="Next image"
+                                className="absolute right-4 top-1/2 transform -translate-y-1/2 z-10 bg-white/90 hover:bg-white text-gray-800 rounded-full p-3 transition-all opacity-0 group-hover:opacity-100 shadow-lg hover:shadow-xl"
+                                aria-label="Ảnh tiếp theo"
                             >
                                 <ChevronRight className="w-5 h-5" />
                             </button>
                         </div>
 
                         {/* Dots Navigation */}
-                        <div className="flex justify-center gap-2 mt-4">
+                        <div className="flex justify-center gap-2 mt-6">
                             {images.map((_, index) => (
                                 <button
                                     key={index}
                                     onClick={() => goToSlide(index)}
-                                    className={`w-2.5 h-2.5 rounded-full transition-all ${index === currentIndex
-                                        ? 'bg-purple-600 w-8'
-                                        : 'bg-slate-300 hover:bg-slate-400'
+                                    className={`transition-all duration-300 ${index === currentIndex
+                                        ? 'bg-purple-600 w-8 h-2.5 rounded-full'
+                                        : 'bg-gray-300 w-2.5 h-2.5 rounded-full hover:bg-gray-400'
                                         }`}
-                                    aria-label={`Go to slide ${index + 1}`}
+                                    aria-label={`Đi đến ảnh ${index + 1}`}
                                 />
                             ))}
                         </div>
