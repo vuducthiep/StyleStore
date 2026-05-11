@@ -16,6 +16,7 @@ import com.example.StyleStore.repository.PromotionRepository;
 import com.example.StyleStore.repository.ProductRepository;
 import com.example.StyleStore.repository.ProductSizeRepository;
 import com.example.StyleStore.service.OrderService;
+import com.example.StyleStore.service.InventoryAlertService;
 
 import io.jsonwebtoken.lang.Collections;
 
@@ -46,16 +47,18 @@ public class OrderServiceImpl implements OrderService {
     private final ProductRepository productRepository;
     private final ProductSizeRepository productSizeRepository;
     private final PromotionRepository promotionRepository;
+    private final InventoryAlertService inventoryAlertService;
 
 
     public OrderServiceImpl(OrderRepository orderRepository, OrderItemRepository orderItemRepository,
             ProductRepository productRepository, ProductSizeRepository productSizeRepository,
-            PromotionRepository promotionRepository) {
+            PromotionRepository promotionRepository, InventoryAlertService inventoryAlertService) {
         this.orderRepository = orderRepository;
         this.orderItemRepository = orderItemRepository;
         this.productRepository = productRepository;
         this.productSizeRepository = productSizeRepository;
         this.promotionRepository = promotionRepository;
+        this.inventoryAlertService = inventoryAlertService;
     }
 
     @Override
@@ -368,9 +371,10 @@ public class OrderServiceImpl implements OrderService {
                 ProductSize currentStock = productSizeRepository
                         .findByProduct_IdAndSize_Id(itemRequest.getProductId(), itemRequest.getSizeId())
                         .orElse(productSizeInfo);
-                throw new RuntimeException(
-                        "Sản phẩm " + product.getName() + ", size " + productSizeInfo.getSize().getName()
-                                + " chỉ còn " + currentStock.getStock() + " cái");
+                String alertMessage = "Sản phẩm " + product.getName() + ", size " + productSizeInfo.getSize().getName()
+                    + " chỉ còn " + currentStock.getStock() + " cái, không đủ để tạo đơn hàng";
+                inventoryAlertService.createInsufficientStockAlert(user, product, alertMessage);
+                throw new RuntimeException(alertMessage);
             }
             // Stock successfully decreased at database level! ✅
 
