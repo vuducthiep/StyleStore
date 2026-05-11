@@ -10,8 +10,8 @@ const Footer = () => {
                 </p>
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                     <div className="text-center sm:text-left">
-                        <img src={logo} alt="StyleStore Logo" className="h-10 w-10 rounded-full mx-auto sm:mx-0 mb-2" />
-                        <p className="text-sm font-semibold">StyleStore</p>
+                        <img src={logo} alt="StyleWearVN Logo" className="h-10 w-10 rounded-full mx-auto sm:mx-0 mb-2" />
+                        <p className="text-sm font-semibold">StyleWearVN</p>
                         <p className="text-xs text-slate-400">Fashion &amp; Style mỗi ngày</p>
                     </div>
 
@@ -39,7 +39,7 @@ const Footer = () => {
                     </div>
 
                     <div className="text-xs text-slate-400 text-center sm:text-right">
-                        © {new Date().getFullYear()} StyleStore. All rights reserved.
+                        © {new Date().getFullYear()} StyleWearVN. All rights reserved.
                     </div>
                 </div>
             </div>
