@@ -64,6 +64,12 @@ export default function ProductDetailContent({
     const currentImage = allImages[currentImageIndex];
     const thumbnailWidth = 80; // 64px (w-16) + 16px gap
     const maxScrollOffset = Math.max(0, (allImages.length * thumbnailWidth) - 400);
+    const productAttributes = [
+        { label: "Thương hiệu", value: product.brand?.trim().toUpperCase() },
+        { label: "Chất liệu", value: product.material?.trim() },
+        { label: "Màu sắc", value: product.color?.trim() },
+        { label: "Giới tính", value: product.gender?.trim() },
+    ].filter((item) => item.value);
 
     const changeImage = (newIndex: number) => {
         setIsTransitioning(true);
@@ -344,24 +350,16 @@ export default function ProductDetailContent({
 
                     <h1 className="text-2xl font-bold text-gray-900 mb-4">{product.name}</h1>
 
-                    <div className="flex gap-4 mb-6">
-                        <div>
-                            <p className="text-xs text-gray-600 uppercase">Thương hiệu</p>
-                            <p className="text-base font-semibold text-gray-900">{product.brand?.toUpperCase() || "N/A"}</p>
+                    {productAttributes.length > 0 && (
+                        <div className="flex flex-wrap gap-4 mb-6">
+                            {productAttributes.map((attribute) => (
+                                <div key={attribute.label}>
+                                    <p className="text-xs text-gray-600 uppercase">{attribute.label}</p>
+                                    <p className="text-base font-semibold text-gray-900">{attribute.value}</p>
+                                </div>
+                            ))}
                         </div>
-                        <div>
-                            <p className="text-xs text-gray-600 uppercase">Chất liệu</p>
-                            <p className="text-base font-semibold text-gray-900">{product.material || "N/A"}</p>
-                        </div>
-                        <div>
-                            <p className="text-xs text-gray-600 uppercase">Màu sắc</p>
-                            <p className="text-base font-semibold text-gray-900">{product.color || "N/A"}</p>
-                        </div>
-                        <div>
-                            <p className="text-xs text-gray-600 uppercase">Giới tính</p>
-                            <p className="text-base font-semibold text-gray-900">{product.gender}</p>
-                        </div>
-                    </div>
+                    )}
 
                     <p className="text-gray-700 text-base mb-6">{product.description}</p>
 
@@ -433,6 +431,8 @@ export default function ProductDetailContent({
                             </>
                         )}
                     </button>
+
+
 
                 </div>
             </div>

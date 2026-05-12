@@ -8,6 +8,8 @@ import ProductDetailContent from "./ProductDetailContent";
 import BestSellingProductsSidebar from "./BestSellingProductsSidebar";
 import { useToast } from "../../../components/ToastProvider";
 import type { ApiResponse, Product } from "./productDetail.types";
+import SizeSuggestionWidget from "./SizeSuggestionWidget";
+
 
 type TopProduct = {
     productId: number;
@@ -230,6 +232,14 @@ export default function ProductDetail() {
                 </div>
             </div>
 
+
+            <SizeSuggestionWidget
+                availableSizes={availableSizes}
+                selectedSize={selectedSize}
+                onSelectSize={setSelectedSize}
+                defaultGender={product.gender}
+            />
+            
             {/* cmt */}
             <Comments productId={product.id} />
             <Footer />

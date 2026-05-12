@@ -10,6 +10,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
+
 @Repository
 public interface ProductRepository extends JpaRepository<Product, Long> {
     long count();
@@ -19,6 +21,30 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     Page<Product> findByCategoryAndStatus(Category category, ProductStatus status, Pageable pageable);
 
     Page<Product> findByGenderAndStatus(String gender, ProductStatus status, Pageable pageable);
+
+        @Query("""
+          SELECT p
+          FROM Product p
+          WHERE p.status = :status
+            AND LOWER(p.gender) IN :genders
+          """)
+        Page<Product> findByGenderInAndStatusIgnoreCase(
+          @Param("genders") Collection<String> genders,
+          @Param("status") ProductStatus status,
+          Pageable pageable);
+
+        @Query("""
+          SELECT p
+          FROM Product p
+          WHERE p.category = :category
+            AND p.status = :status
+            AND LOWER(p.gender) IN :genders
+          """)
+        Page<Product> findByCategoryAndGenderInAndStatusIgnoreCase(
+          @Param("category") Category category,
+          @Param("genders") Collection<String> genders,
+          @Param("status") ProductStatus status,
+          Pageable pageable);
 
     Page<Product> findByNameAndStatus(String name, ProductStatus status, Pageable pageable);
 

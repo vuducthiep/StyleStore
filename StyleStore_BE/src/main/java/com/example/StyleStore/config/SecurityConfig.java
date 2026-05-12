@@ -12,6 +12,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -41,6 +42,7 @@ public class SecurityConfig {
                     .requestMatchers("/api/v1/auth/**", "/auth/**", "/swagger-ui/**", "/v3/api-docs/**")
                     .permitAll()
                         .requestMatchers("/oauth2/**", "/login/oauth2/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/user/comments/**").permitAll()
                         .requestMatchers("/api/user/products/**").permitAll()
                         .requestMatchers("/api/user/categories/**").permitAll()
                         .requestMatchers("/api/user/promotions/**").permitAll()

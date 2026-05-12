@@ -29,17 +29,6 @@ const Home: React.FC = () => {
 
     const pageSize = 12;
 
-    // Map English gender to Vietnamese
-    const mapGenderToVietnamese = (gender: string | null): string | null => {
-        if (!gender) return null;
-        const mapping: Record<string, string> = {
-            'male': 'Nam',
-            'female': 'Nữ',
-            'unisex': 'Unisex'
-        };
-        return mapping[gender] || gender;
-    };
-
     useEffect(() => {
         fetchProducts(currentPage, selectedCategoryId, selectedGender);
     }, [currentPage, selectedCategoryId, selectedGender]);
@@ -58,10 +47,8 @@ const Home: React.FC = () => {
             params.append('sortBy', 'createdAt');
             params.append('sortDir', 'desc');
             
-            // Map gender to Vietnamese before sending
-            const vietnameseGender = mapGenderToVietnamese(gender);
-            if (vietnameseGender) {
-                params.append('gender', vietnameseGender);
+            if (gender) {
+                params.append('gender', gender);
             }
 
             const res = await fetch(`${baseUrl}?${params.toString()}`);

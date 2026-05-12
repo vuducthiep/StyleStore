@@ -14,6 +14,7 @@ public interface ProductService {
     Page<Product> getProducts(Pageable pageable);
     Page<Product> getProductsByCategory(Category category, Pageable pageable);
     Page<Product> getProductsByGender(String gender, Pageable pageable);
+    Page<Product> getProductsByCategoryAndGender(Category category, String gender, Pageable pageable);
     Optional<Product> getProductById(Long id);
     Product createProduct(Product product);
     boolean deleteProduct(Long id);

@@ -25,6 +25,7 @@ import org.springframework.data.domain.Pageable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Locale;
 import java.util.stream.Collectors;
 
 @Service
@@ -66,7 +67,26 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public Page<Product> getProductsByGender(String gender, Pageable pageable) {
-        return productRepository.findByGenderAndStatus(gender, ProductStatus.ACTIVE, pageable);
+        List<String> genderCandidates = normalizeGenderCandidates(gender);
+        if (genderCandidates.isEmpty()) {
+            return productRepository.findByStatus(ProductStatus.ACTIVE, pageable);
+        }
+
+        return productRepository.findByGenderInAndStatusIgnoreCase(genderCandidates, ProductStatus.ACTIVE, pageable);
+    }
+
+    @Override
+    public Page<Product> getProductsByCategoryAndGender(Category category, String gender, Pageable pageable) {
+        List<String> genderCandidates = normalizeGenderCandidates(gender);
+        if (genderCandidates.isEmpty()) {
+            return productRepository.findByCategoryAndStatus(category, ProductStatus.ACTIVE, pageable);
+        }
+
+        return productRepository.findByCategoryAndGenderInAndStatusIgnoreCase(
+                category,
+                genderCandidates,
+                ProductStatus.ACTIVE,
+                pageable);
     }
 
     @Override
@@ -239,5 +259,20 @@ public class ProductServiceImpl implements ProductService {
         }
         productImageRepository.deleteById(imageId);
         return true;
+    }
+
+    private List<String> normalizeGenderCandidates(String gender) {
+        if (gender == null || gender.trim().isEmpty()) {
+            return List.of();
+        }
+
+        String normalized = gender.trim().toLowerCase(Locale.ROOT);
+
+        return switch (normalized) {
+            case "male", "nam", "m" -> List.of("male", "nam");
+            case "female", "nữ", "nu", "f" -> List.of("female", "nữ", "nu");
+            case "unisex", "other", "khác", "khac" -> List.of("unisex", "other", "khác", "khac");
+            default -> List.of(normalized);
+        };
     }
 }

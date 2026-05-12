@@ -731,32 +731,12 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, productId, onClose,
                                     <div className="text-sm font-medium text-slate-800">Kích thước & tồn kho</div>
                                     {(form.productSizes || []).map((ps, idx) => (
                                         <div key={idx} className="grid grid-cols-2 gap-3 items-center">
-                                            <label className="text-sm text-slate-700 flex flex-col">
+                                            <div className="text-sm text-slate-700 flex flex-col">
                                                 <span className="mb-1">Size</span>
-                                                <select
-                                                    className="w-full rounded border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
-                                                    value={ps.size?.id || ''}
-                                                    onChange={(e) => {
-                                                        const sizeId = parseInt(e.target.value);
-                                                        const selected = sizes.find((s) => s.id === sizeId);
-                                                        setForm((prev) => {
-                                                            const next = [...(prev.productSizes || [])];
-                                                            next[idx] = {
-                                                                ...next[idx],
-                                                                size: selected ? { id: selected.id, name: selected.name } : ps.size,
-                                                            } as ProductSizeDto;
-                                                            return { ...prev, productSizes: next };
-                                                        });
-                                                    }}
-                                                >
-                                                    <option value="">-- Chọn size --</option>
-                                                    {sizes.map((s) => (
-                                                        <option key={s.id} value={s.id}>
-                                                            {s.name}
-                                                        </option>
-                                                    ))}
-                                                </select>
-                                            </label>
+                                                <div className="w-full rounded border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900">
+                                                    {ps.size?.name || '---'}
+                                                </div>
+                                            </div>
                                             <label className="text-sm text-slate-700 flex flex-col">
                                                 <span className="mb-1">Tồn kho</span>
                                                 <input

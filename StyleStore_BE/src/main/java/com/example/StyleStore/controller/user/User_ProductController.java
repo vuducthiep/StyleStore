@@ -52,12 +52,9 @@ public class User_ProductController {
                 : Sort.by(sortBy).descending();
         Pageable pageable = PageRequest.of(page, size, sort);
         
-        Page<Product> result;
-        if (gender != null && !gender.trim().isEmpty()) {
-            result = productService.getProductsByGender(gender.toLowerCase().trim(), pageable);
-        } else {
-            result = productService.getProducts(pageable);
-        }
+        Page<Product> result = (gender != null && !gender.trim().isEmpty())
+                ? productService.getProductsByGender(gender, pageable)
+                : productService.getProducts(pageable);
         
         return ResponseEntity.ok(ApiResponse.ok("Lấy danh sách sản phẩm thành công", result));
     }
@@ -77,7 +74,8 @@ public class User_ProductController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "12") int size,
             @RequestParam(defaultValue = "createdAt") String sortBy,
-            @RequestParam(defaultValue = "desc") String sortDir) {
+            @RequestParam(defaultValue = "desc") String sortDir,
+            @RequestParam(required = false) String gender) {
 
         // Tìm danh mục
         Optional<Category> category = categoryService.getCategoryById(categoryId);
@@ -89,7 +87,9 @@ public class User_ProductController {
                 ? Sort.by(sortBy).ascending()
                 : Sort.by(sortBy).descending();
         Pageable pageable = PageRequest.of(page, size, sort);
-        Page<Product> result = productService.getProductsByCategory(category.get(), pageable);
+        Page<Product> result = (gender != null && !gender.trim().isEmpty())
+            ? productService.getProductsByCategoryAndGender(category.get(), gender, pageable)
+            : productService.getProductsByCategory(category.get(), pageable);
         return ResponseEntity.ok(ApiResponse.ok("Lấy danh sách sản phẩm theo danh mục thành công", result));
     }
 
