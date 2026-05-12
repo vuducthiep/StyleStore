@@ -21,8 +21,11 @@ public class Order {
 
     // Many-to-one relationship with User
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
+    @JoinColumn(name = "user_id")
     private User user;
+
+    @Column(name = "receiver_phone_number", nullable = false, length = 10)
+    private String receiverPhoneNumber;
 
     @Column(name = "total_amount", nullable = false)
     private Double totalAmount;

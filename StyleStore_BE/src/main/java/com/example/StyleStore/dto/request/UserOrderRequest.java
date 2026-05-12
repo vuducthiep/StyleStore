@@ -12,6 +12,7 @@ import java.util.List;
 @Builder
 public class UserOrderRequest {
     private String shippingAddress;
+    private String receiverPhoneNumber;
     private PaymentMethod paymentMethod;
     private String promotionCode;
     private List<OrderItemRequest> orderItems;

@@ -19,7 +19,7 @@ type PageResult<T> = {
 
 export interface UserOrder {
     id: number;
-    userId: number;
+    userId: number | null;
     totalAmount: number;
     discountAmount: number;
     finalAmount: number;
@@ -29,16 +29,21 @@ export interface UserOrder {
     status: string;
     createdAt: string;
     updatedAt: string;
+    receiverPhoneNumber?: string | null;
 }
 
 interface UserOrderTableProps {
     refreshKey?: number;
+    guestOrders?: UserOrder[];
+    readOnly?: boolean;
     onViewDetail?: (order: UserOrder) => void;
     onCancel?: (order: UserOrder) => void;
 }
 
 const User_OrderTable: React.FC<UserOrderTableProps> = ({
     refreshKey = 0,
+    guestOrders,
+    readOnly = false,
     onViewDetail,
     onCancel,
 }) => {
@@ -59,6 +64,17 @@ const User_OrderTable: React.FC<UserOrderTableProps> = ({
     const { pushToast } = useToast();
 
     const fetchOrders = useCallback(async (pageParam = page, sizeParam = size) => {
+        if (readOnly) {
+            setOrders(guestOrders || []);
+            setTotalPages(guestOrders && guestOrders.length > 0 ? 1 : 0);
+            setTotalElements(guestOrders?.length || 0);
+            setPage(0);
+            setSize(sizeParam);
+            setIsLoading(false);
+            setError('');
+            return;
+        }
+
         setIsLoading(true);
         setError('');
 
@@ -100,7 +116,7 @@ const User_OrderTable: React.FC<UserOrderTableProps> = ({
         } finally {
             setIsLoading(false);
         }
-    }, [page, size]);
+    }, [guestOrders, page, readOnly, size]);
 
     useEffect(() => {
         fetchOrders(page, size);
@@ -443,7 +459,7 @@ const User_OrderTable: React.FC<UserOrderTableProps> = ({
                                     Chi tiết
                                 </button>
 
-                                {canConfirmDelivery(order.status) && (
+                                {!readOnly && canConfirmDelivery(order.status) && (
                                     <button
                                         type="button"
                                         onClick={() => openConfirmDialog(order, 'confirm-delivery')}
@@ -456,7 +472,7 @@ const User_OrderTable: React.FC<UserOrderTableProps> = ({
                                     </button>
                                 )}
 
-                                {canCancelOrder(order.status) && (
+                                {!readOnly && canCancelOrder(order.status) && (
                                     <button
                                         type="button"
                                         onClick={() => openConfirmDialog(order, 'cancel')}
@@ -475,7 +491,7 @@ const User_OrderTable: React.FC<UserOrderTableProps> = ({
             )}
 
             {/* Pagination */}
-            {orders.length > 0 && (
+            {!readOnly && orders.length > 0 && (
                 <div className="mt-6 flex items-center justify-between p-4 bg-white rounded-lg border border-gray-200 flex-wrap gap-4">
                     <div className="text-sm text-gray-600">
                         Hiển thị <span className="font-semibold text-gray-900">{orders.length}</span> / <span className="font-semibold text-gray-900">{totalElements}</span> đơn hàng
@@ -514,22 +530,24 @@ const User_OrderTable: React.FC<UserOrderTableProps> = ({
             )}
 
             {/* Confirm Dialog */}
-            <ConfirmDialog
-                open={confirmState.open}
-                title={confirmState.action === 'cancel' ? 'Hủy đơn hàng' : 'Xác nhận đã nhận hàng'}
-                message={
-                    confirmState.order
-                        ? (confirmState.action === 'cancel'
-                            ? `Bạn có chắc muốn hủy đơn hàng #${confirmState.order.id}?`
-                            : `Bạn có chắc muốn xác nhận đã nhận được hàng cho đơn hàng #${confirmState.order.id}?`)
-                        : 'Bạn có chắc muốn thực hiện thao tác này?'
-                }
-                confirmText={confirmState.action === 'cancel' ? 'Hủy đơn' : 'Xác nhận'}
-                cancelText="Đóng"
-                isLoading={confirmState.isLoading}
-                onConfirm={handleConfirm}
-                onCancel={() => setConfirmState({ open: false, isLoading: false })}
-            />
+            {!readOnly && (
+                <ConfirmDialog
+                    open={confirmState.open}
+                    title={confirmState.action === 'cancel' ? 'Hủy đơn hàng' : 'Xác nhận đã nhận hàng'}
+                    message={
+                        confirmState.order
+                            ? (confirmState.action === 'cancel'
+                                ? `Bạn có chắc muốn hủy đơn hàng #${confirmState.order.id}?`
+                                : `Bạn có chắc muốn xác nhận đã nhận được hàng cho đơn hàng #${confirmState.order.id}?`)
+                            : 'Bạn có chắc muốn thực hiện thao tác này?'
+                    }
+                    confirmText={confirmState.action === 'cancel' ? 'Hủy đơn' : 'Xác nhận'}
+                    cancelText="Đóng"
+                    isLoading={confirmState.isLoading}
+                    onConfirm={handleConfirm}
+                    onCancel={() => setConfirmState({ open: false, isLoading: false })}
+                />
+            )}
         </div>
     );
 };

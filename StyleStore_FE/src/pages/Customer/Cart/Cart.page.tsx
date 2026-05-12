@@ -15,6 +15,7 @@ import {
     removeGuestCartItem,
     updateGuestCartItemQuantity,
 } from "../../../services/cartStorage";
+import { appendGuestOrder } from "../../../services/orderStorage";
 
 interface Province {
     Id: string;
@@ -98,6 +99,7 @@ interface OrderItemRequestPayload {
 
 interface CreateOrderRequestPayload {
     shippingAddress: string;
+    receiverPhoneNumber: string;
     paymentMethod: PaymentMethod;
     promotionCode: string | null;
     orderItems: OrderItemRequestPayload[];
@@ -120,6 +122,7 @@ export default function CartPage() {
     const [selectedDistrict, setSelectedDistrict] = useState("");
     const [selectedWard, setSelectedWard] = useState("");
     const [detailedAddress, setDetailedAddress] = useState("");
+    const [recipientPhoneNumber, setRecipientPhoneNumber] = useState("");
     const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("COD");
     const [selectedPromotion, setSelectedPromotion] = useState<Promotion | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -139,6 +142,12 @@ export default function CartPage() {
         fetchCart();
         fetchUserProfile();
     }, []);
+
+    useEffect(() => {
+        if (userProfile?.phoneNumber && !recipientPhoneNumber) {
+            setRecipientPhoneNumber(userProfile.phoneNumber);
+        }
+    }, [userProfile?.phoneNumber, recipientPhoneNumber]);
 
     const fetchCart = async () => {
         try {
@@ -409,10 +418,14 @@ export default function CartPage() {
             return;
         }
 
-        const token = localStorage.getItem("token");
-        if (!token) {
-            pushToast("Vui lòng đăng nhập", "error");
-            navigate("/login");
+        const normalizedPhoneNumber = recipientPhoneNumber.trim();
+        if (!normalizedPhoneNumber) {
+            pushToast("Vui lòng nhập số điện thoại người nhận", "error");
+            return;
+        }
+
+        if (!/^\d{10}$/.test(normalizedPhoneNumber)) {
+            pushToast("Số điện thoại người nhận phải gồm 10 chữ số", "error");
             return;
         }
 
@@ -426,9 +439,10 @@ export default function CartPage() {
         }
 
         const shippingAddress = getSelectedAddress();
+        const receiverPhoneNumber = recipientPhoneNumber.trim();
         const token = localStorage.getItem("token");
 
-        if (!shippingAddress || !token) {
+        if (!shippingAddress || !receiverPhoneNumber) {
             setShowConfirmCheckout(false);
             return;
         }
@@ -442,6 +456,7 @@ export default function CartPage() {
 
         const payload: CreateOrderRequestPayload = {
             shippingAddress,
+            receiverPhoneNumber,
             paymentMethod,
             promotionCode: selectedPromotion?.code || null,
             orderItems: cart.cartItems.map((item) => ({
@@ -465,7 +480,7 @@ export default function CartPage() {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`,
+                    ...(token ? { Authorization: `Bearer ${token}` } : {}),
                 },
                 body: JSON.stringify(payload),
             });
@@ -476,6 +491,11 @@ export default function CartPage() {
                 pushToast(result.message || "Tạo đơn hàng thất bại", "error");
                 setShowConfirmCheckout(false);
                 return;
+            }
+
+            if (!token && result.data) {
+                appendGuestOrder(result.data);
+                window.dispatchEvent(new Event("orders-updated"));
             }
 
             pushToast("Đặt hàng thành công", "success");
@@ -511,8 +531,9 @@ export default function CartPage() {
 
         const shippingAddress = getSelectedAddress();
         const token = localStorage.getItem("token");
+        const receiverPhoneNumber = recipientPhoneNumber.trim();
 
-        if (!shippingAddress || !token) {
+        if (!shippingAddress || !receiverPhoneNumber) {
             setShowPaymentQr(false);
             return;
         }
@@ -526,6 +547,7 @@ export default function CartPage() {
 
         const payload: CreateOrderRequestPayload = {
             shippingAddress,
+            receiverPhoneNumber,
             paymentMethod,
             promotionCode: selectedPromotion?.code || null,
             orderItems: cart.cartItems.map((item) => ({
@@ -541,7 +563,7 @@ export default function CartPage() {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`,
+                    ...(token ? { Authorization: `Bearer ${token}` } : {}),
                 },
                 body: JSON.stringify(payload),
             });
@@ -552,6 +574,11 @@ export default function CartPage() {
                 pushToast(result.message || "Tạo đơn hàng thất bại", "error");
                 setShowPaymentQr(false);
                 return;
+            }
+
+            if (!token && result.data) {
+                appendGuestOrder(result.data);
+                window.dispatchEvent(new Event("orders-updated"));
             }
 
             pushToast("Đặt hàng thành công", "success");
@@ -678,6 +705,8 @@ export default function CartPage() {
                                 selectedPromotion={selectedPromotion}
                                 discountAmount={discountAmount}
                                 finalAmount={finalAmount}
+                                recipientPhoneNumber={recipientPhoneNumber}
+                                onRecipientPhoneNumberChange={setRecipientPhoneNumber}
                                 paymentMethod={paymentMethod}
                                 onPaymentMethodChange={setPaymentMethod}
                                 onCheckout={handleCheckoutClick}

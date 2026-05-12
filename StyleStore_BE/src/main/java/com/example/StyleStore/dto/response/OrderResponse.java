@@ -17,6 +17,7 @@ public class OrderResponse {
     private Long userId;
     private String userName;
     private String phoneNumber;
+    private String receiverPhoneNumber;
     private Double totalAmount;
     private Double discountAmount;
     private Double finalAmount;

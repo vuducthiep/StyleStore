@@ -1,12 +1,15 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import User_OrderTable, { type UserOrder } from './User_OrderTable';
 import User_OrderModal from './User_OrderModal';
 import Header from "../../../components/Header";
+import { getGuestOrders } from '../../../services/orderStorage';
 
 const OrderPage: React.FC = () => {
     const [refreshKey, setRefreshKey] = useState(0);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null);
+    const isLoggedIn = Boolean(localStorage.getItem('token'));
+    const guestOrders = useMemo(() => (isLoggedIn ? [] : getGuestOrders()), [isLoggedIn, refreshKey]);
 
     const handleViewDetail = (order: UserOrder) => {
         setSelectedOrderId(order.id);
@@ -43,15 +46,19 @@ const OrderPage: React.FC = () => {
 
                     <User_OrderTable
                         refreshKey={refreshKey}
-                        onViewDetail={handleViewDetail}
-                        onCancel={handleCancelSuccess}
+                        guestOrders={guestOrders}
+                        readOnly={!isLoggedIn}
+                        onViewDetail={isLoggedIn ? handleViewDetail : undefined}
+                        onCancel={isLoggedIn ? handleCancelSuccess : undefined}
                     />
 
-                    <User_OrderModal
-                        isOpen={isModalOpen}
-                        orderId={selectedOrderId}
-                        onClose={handleCloseModal}
-                    />
+                    {isLoggedIn && (
+                        <User_OrderModal
+                            isOpen={isModalOpen}
+                            orderId={selectedOrderId}
+                            onClose={handleCloseModal}
+                        />
+                    )}
                 </div>
             </div>
         </div>

@@ -26,18 +26,29 @@ public class User_OrderController {
 
     // Lấy User từ token JWT
     private User getCurrentUser() {
+        User currentUser = getCurrentUserIfAuthenticated();
+        if (currentUser == null) {
+            throw new RuntimeException("Không tìm thấy thông tin đăng nhập");
+        }
+        return currentUser;
+    }
+
+    private User getCurrentUserIfAuthenticated() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null) {
-            throw new RuntimeException("Không tìm thấy thông tin đăng nhập");
+            return null;
         }
 
         String email = authentication.getName();
+        if (email == null || "anonymousUser".equalsIgnoreCase(email)) {
+            return null;
+        }
+
         if (authentication.getPrincipal() instanceof UserDetails) {
             email = ((UserDetails) authentication.getPrincipal()).getUsername();
         }
 
-        return userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User không tìm thấy"));
+        return userRepository.findByEmail(email).orElse(null);
     }
 
     // API lấy tất cả đơn hàng của user (phân trang)
@@ -72,12 +83,26 @@ public class User_OrderController {
     @PostMapping
     public ResponseEntity<ApiResponse<OrderResponse>> createOrder(@RequestBody UserOrderRequest request) {
         try {
-            User currentUser = getCurrentUser();
+            User currentUser = getCurrentUserIfAuthenticated();
 
             // Validate request
             if (request.getShippingAddress() == null || request.getShippingAddress().trim().isEmpty()) {
                 return ResponseEntity.status(400).body(ApiResponse.fail("Địa chỉ giao hàng không được để trống"));
             }
+
+            if (request.getReceiverPhoneNumber() == null || request.getReceiverPhoneNumber().trim().isEmpty()) {
+                if (currentUser != null && currentUser.getPhoneNumber() != null && !currentUser.getPhoneNumber().trim().isEmpty()) {
+                    request.setReceiverPhoneNumber(currentUser.getPhoneNumber());
+                } else {
+                    return ResponseEntity.status(400).body(ApiResponse.fail("Số điện thoại người nhận không được để trống"));
+                }
+            }
+
+            String receiverPhoneNumber = request.getReceiverPhoneNumber().trim();
+            if (!receiverPhoneNumber.matches("^\\d{10}$")) {
+                return ResponseEntity.status(400).body(ApiResponse.fail("Số điện thoại người nhận phải gồm 10 chữ số"));
+            }
+            request.setReceiverPhoneNumber(receiverPhoneNumber);
 
             if (request.getPaymentMethod() == null) {
                 return ResponseEntity.status(400).body(ApiResponse.fail("Vui lòng chọn phương thức thanh toán"));
@@ -122,7 +147,7 @@ public class User_OrderController {
                 return ResponseEntity.status(404).body(ApiResponse.fail("Không tìm thấy đơn hàng"));
             }
 
-            if (!order.getUserId().equals(currentUser.getId())) {
+            if (order.getUserId() == null || !order.getUserId().equals(currentUser.getId())) {
                 return ResponseEntity.status(403).body(ApiResponse.fail("Bạn không có quyền hủy đơn hàng này"));
             }
 
@@ -145,7 +170,7 @@ public class User_OrderController {
             if (order == null) {
                 return ResponseEntity.status(404).body(ApiResponse.fail("Không tìm thấy đơn hàng"));
             }
-            if (!order.getUserId().equals(currentUser.getId())) {
+            if (order.getUserId() == null || !order.getUserId().equals(currentUser.getId())) {
                 return ResponseEntity.status(403).body(ApiResponse.fail("Bạn không có quyền xác nhận đơn hàng này"));
             }
             OrderResponse deliveredOrder = orderService.deliveredOrder(orderId);

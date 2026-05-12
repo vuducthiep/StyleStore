@@ -36,6 +36,8 @@ interface OrderSummaryProps {
     selectedPromotion: Promotion | null;
     discountAmount: number;
     finalAmount: number;
+    recipientPhoneNumber: string;
+    onRecipientPhoneNumberChange: (value: string) => void;
     paymentMethod: PaymentMethod;
     onPaymentMethodChange: (method: PaymentMethod) => void;
     onCheckout: () => void;
@@ -55,6 +57,8 @@ export default function OrderSummary({
     selectedPromotion,
     discountAmount,
     finalAmount,
+    recipientPhoneNumber,
+    onRecipientPhoneNumberChange,
     paymentMethod,
     onPaymentMethodChange,
     onCheckout,
@@ -104,6 +108,23 @@ export default function OrderSummary({
             </div>
 
             <div className="mb-6">
+                <h3 className="text-lg font-bold text-gray-900 mb-3">
+                    Thông tin người nhận
+                </h3>
+                <div className="space-y-3 mb-6">
+                    <label className="block text-sm font-semibold text-gray-700">
+                        Số điện thoại người nhận
+                    </label>
+                    <input
+                        type="tel"
+                        inputMode="numeric"
+                        maxLength={10}
+                        value={recipientPhoneNumber}
+                        onChange={(e) => onRecipientPhoneNumberChange(e.target.value)}
+                        placeholder="Nhập số điện thoại người nhận"
+                        className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                </div>
                 <h3 className="text-lg font-bold text-gray-900 mb-3">
                     Phương thức thanh toán
                 </h3>
