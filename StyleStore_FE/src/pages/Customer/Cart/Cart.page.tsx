@@ -118,6 +118,7 @@ export default function CartPage() {
     const [selectedPromotion, setSelectedPromotion] = useState<Promotion | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [showConfirmCheckout, setShowConfirmCheckout] = useState(false);
+    const [showPaymentQr, setShowPaymentQr] = useState(false);
 
     const subtotal = cart?.totalPrice || 0;
     const discountAmount = selectedPromotion
@@ -156,6 +157,10 @@ export default function CartPage() {
             setLoading(false);
         }
     };
+
+    const paymentQrSrc = finalAmount > 0
+        ? `https://img.vietqr.io/image/MB-0000836840548-print.png?amount=${Math.round(finalAmount)}`
+        : "";
 
     const fetchUserProfile = async () => {
         try {
@@ -398,6 +403,14 @@ export default function CartPage() {
             })),
         };
 
+        // If payment method is MOMO or ZALOPAY, show QR image first and create order after user confirms transfer
+        if (paymentMethod === "MOMO" || paymentMethod === "ZALOPAY") {
+            setShowConfirmCheckout(false);
+            setShowPaymentQr(true);
+            return;
+        }
+
+        // Otherwise (COD) create order immediately
         setIsSubmitting(true);
         try {
             const response = await fetch("http://localhost:8080/api/user/orders", {
@@ -418,17 +431,16 @@ export default function CartPage() {
             }
 
             pushToast("Đặt hàng thành công", "success");
-                        // Trigger animation bay từ checkout button tới orders icon
-                        const checkoutButton = document.querySelector('[data-checkout-button="true"]');
-                        if (checkoutButton) {
-                            const rect = checkoutButton.getBoundingClientRect();
-                            window.dispatchEvent(new CustomEvent('order-checkout-success', {
-                                detail: {
-                                    fromX: rect.left + rect.width / 2,
-                                    fromY: rect.top + rect.height / 2,
-                                },
-                            }));
-                        }
+            const checkoutButton = document.querySelector('[data-checkout-button="true"]');
+            if (checkoutButton) {
+                const rect = checkoutButton.getBoundingClientRect();
+                window.dispatchEvent(new CustomEvent('order-checkout-success', {
+                    detail: {
+                        fromX: rect.left + rect.width / 2,
+                        fromY: rect.top + rect.height / 2,
+                    },
+                }));
+            }
 
             setShowConfirmCheckout(false);
             setTimeout(() => {
@@ -438,6 +450,82 @@ export default function CartPage() {
             console.error("Checkout error", err);
             pushToast("Có lỗi xảy ra, vui lòng thử lại", "error");
             setShowConfirmCheckout(false);
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const handleConfirmTransferAndCreateOrder = async () => {
+        if (!cart || cart.cartItems.length === 0) {
+            setShowPaymentQr(false);
+            return;
+        }
+
+        const shippingAddress = getSelectedAddress();
+        const token = localStorage.getItem("token");
+
+        if (!shippingAddress || !token) {
+            setShowPaymentQr(false);
+            return;
+        }
+
+        if (selectedPromotion && subtotal < selectedPromotion.minOrderAmount) {
+            pushToast("Khuyến mãi đã chọn không còn hợp lệ", "error");
+            setSelectedPromotion(null);
+            setShowPaymentQr(false);
+            return;
+        }
+
+        const payload: CreateOrderRequestPayload = {
+            shippingAddress,
+            paymentMethod,
+            promotionCode: selectedPromotion?.code || null,
+            orderItems: cart.cartItems.map((item) => ({
+                productId: item.product.id,
+                sizeId: item.size.id,
+                quantity: item.quantity,
+            })),
+        };
+
+        setIsSubmitting(true);
+        try {
+            const response = await fetch("http://localhost:8080/api/user/orders", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify(payload),
+            });
+
+            const result = await response.json();
+
+            if (!response.ok || !result.success) {
+                pushToast(result.message || "Tạo đơn hàng thất bại", "error");
+                setShowPaymentQr(false);
+                return;
+            }
+
+            pushToast("Đặt hàng thành công", "success");
+            setShowPaymentQr(false);
+            const checkoutButton = document.querySelector('[data-checkout-button="true"]');
+            if (checkoutButton) {
+                const rect = checkoutButton.getBoundingClientRect();
+                window.dispatchEvent(new CustomEvent('order-checkout-success', {
+                    detail: {
+                        fromX: rect.left + rect.width / 2,
+                        fromY: rect.top + rect.height / 2,
+                    },
+                }));
+            }
+
+            setTimeout(() => {
+                navigate("/orders");
+            }, 1500);
+        } catch (err) {
+            console.error("Checkout error", err);
+            pushToast("Có lỗi xảy ra, vui lòng thử lại", "error");
+            setShowPaymentQr(false);
         } finally {
             setIsSubmitting(false);
         }
@@ -554,6 +642,35 @@ export default function CartPage() {
             </div>
 
             {/* Confirm Checkout Dialog */}
+            {showPaymentQr && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center">
+                    <div className="fixed inset-0 bg-black opacity-20 z-40" onClick={() => setShowPaymentQr(false)} />
+                    <div className="bg-white rounded-lg shadow-lg p-8 z-50 max-w-xl mx-4 relative">
+                        <h3 className="text-lg font-semibold mb-2">Xác nhận thanh toán ({paymentMethod === "MOMO" ? "Momo" : "ZaloPay"})</h3>
+                        <p className="text-sm text-gray-600">Số tiền: {new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(finalAmount)}</p>
+                        
+                        <div className="flex justify-center">
+                            <img src={paymentQrSrc} alt="QR" className="mx-auto my-4 w-96 h-96 object-contain" />
+                        </div>
+                        <div className="flex justify-end gap-3 mt-4">
+                            <button
+                                onClick={() => setShowPaymentQr(false)}
+                                className="px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-300 cursor-pointer"
+                            >
+                                Hủy
+                            </button>
+                            <button
+                                onClick={handleConfirmTransferAndCreateOrder}
+                                disabled={isSubmitting}
+                                className={`px-4 py-2 bg-blue-600 text-white rounded-md ${isSubmitting ? 'opacity-50 cursor-not-allowed' : 'hover:bg-blue-700 cursor-pointer'}`}
+                            >
+                                {isSubmitting ? "Đang xử lý..." : "Đã thanh toán"}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <ConfirmDialog
                 open={showConfirmCheckout}
                 title="Xác nhận đặt hàng"
