@@ -106,6 +106,23 @@ public class Admin_OrderController {
         }
     }
 
+    @PutMapping("/{id}/deliver")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<OrderResponse>> deliverOrder(@PathVariable Long id) {
+        try {
+            OrderResponse order = orderService.deliveredOrder(id);
+            if (order != null) {
+                return ResponseEntity.ok(
+                        new ApiResponse<>(true, "Đơn hàng đã được chuyển sang trạng thái đã giao", order));
+            } else {
+                return ResponseEntity.notFound().build();
+            }
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(
+                    new ApiResponse<>(false, "Lỗi khi cập nhật trạng thái đơn hàng: " + e.getMessage(), null));
+        }
+    }
+
     // user and admin can cancel order
     @PutMapping("/{id}/cancel")
     public ResponseEntity<ApiResponse<OrderResponse>> cancelOrder(@PathVariable Long id) {

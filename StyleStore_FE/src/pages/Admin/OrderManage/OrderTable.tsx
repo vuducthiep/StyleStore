@@ -52,7 +52,7 @@ const OrderTable: React.FC<OrderTableProps> = ({ refreshKey = 0, onViewDetail })
     const lastEffectFetchKeyRef = useRef<string | null>(null);
     const [confirmState, setConfirmState] = useState<{
         open: boolean;
-        action?: 'confirm' | 'cancel';
+        action?: 'confirm' | 'cancel' | 'deliver';
         order?: AdminOrder;
         isLoading: boolean;
     }>({ open: false, isLoading: false });
@@ -185,7 +185,7 @@ const OrderTable: React.FC<OrderTableProps> = ({ refreshKey = 0, onViewDetail })
         return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
     };
 
-    const callOrderAction = async (orderId: number, action: 'confirm' | 'cancel') => {
+    const callOrderAction = async (orderId: number, action: 'confirm' | 'cancel' | 'deliver') => {
         const authHeaders = buildAuthHeaders();
         const res = await fetch(`http://localhost:8080/api/admin/orders/${orderId}/${action}`, {
             method: 'PUT',
@@ -208,6 +208,10 @@ const OrderTable: React.FC<OrderTableProps> = ({ refreshKey = 0, onViewDetail })
 
     const openConfirm = (order: AdminOrder, action: 'confirm' | 'cancel') => {
         setConfirmState({ open: true, action, order, isLoading: false });
+    };
+
+    const openDeliver = (order: AdminOrder) => {
+        setConfirmState({ open: true, action: 'deliver', order, isLoading: false });
     };
 
     const handleConfirmAction = async () => {
@@ -355,6 +359,20 @@ const OrderTable: React.FC<OrderTableProps> = ({ refreshKey = 0, onViewDetail })
                                                     <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                                                 </svg>
                                             </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => openDeliver(order)}
+                                                disabled={order.status !== 'SHIPPING'}
+                                                className={`p-2 rounded border transition ${order.status === 'SHIPPING'
+                                                    ? 'border-slate-200 hover:border-emerald-500 hover:text-emerald-600 cursor-pointer'
+                                                    : 'border-slate-100 text-slate-300 cursor-not-allowed opacity-50'
+                                                    }`}
+                                                title={order.status === 'SHIPPING' ? 'Xác nhận đã giao hàng' : 'Chỉ áp dụng cho đơn đang giao'}
+                                            >
+                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M7.5 12a4.5 4.5 0 019 0v2.25A2.25 2.25 0 0119.5 16.5v1.125c0 1.864-1.511 3.375-3.375 3.375H7.875C6.011 21 4.5 19.489 4.5 17.625V16.5A2.25 2.25 0 016.75 14.25V12z" />
+                                                </svg>
+                                            </button>
                                         </div>
                                     </td>
                                 </tr>
@@ -390,11 +408,29 @@ const OrderTable: React.FC<OrderTableProps> = ({ refreshKey = 0, onViewDetail })
             )}
             <ConfirmDialog
                 open={confirmState.open}
-                title={confirmState.action === 'confirm' ? 'Xác nhận đơn hàng' : 'Hủy đơn hàng'}
+                title={
+                    confirmState.action === 'confirm'
+                        ? 'Xác nhận đơn hàng'
+                        : confirmState.action === 'deliver'
+                            ? 'Xác nhận đã giao hàng'
+                            : 'Hủy đơn hàng'
+                }
                 message={confirmState.order
-                    ? `Bạn có chắc muốn ${confirmState.action === 'confirm' ? 'xác nhận' : 'hủy'} đơn hàng #${confirmState.order.id}?`
+                    ? `Bạn có chắc muốn ${
+                        confirmState.action === 'confirm'
+                            ? 'xác nhận'
+                            : confirmState.action === 'deliver'
+                                ? 'đánh dấu đã giao'
+                                : 'hủy'
+                    } đơn hàng #${confirmState.order.id}?`
                     : 'Bạn có chắc muốn thực hiện thao tác này?'}
-                confirmText={confirmState.action === 'confirm' ? 'Xác nhận' : 'Hủy đơn'}
+                confirmText={
+                    confirmState.action === 'confirm'
+                        ? 'Xác nhận'
+                        : confirmState.action === 'deliver'
+                            ? 'Đã giao'
+                            : 'Hủy đơn'
+                }
                 cancelText="Đóng"
                 isLoading={confirmState.isLoading}
                 onConfirm={handleConfirmAction}
