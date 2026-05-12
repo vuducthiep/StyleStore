@@ -9,6 +9,7 @@ import BestSellingProductsSidebar from "./BestSellingProductsSidebar";
 import { useToast } from "../../../components/ToastProvider";
 import type { ApiResponse, Product } from "./productDetail.types";
 import SizeSuggestionWidget from "./SizeSuggestionWidget";
+import { addGuestCartItem } from "../../../services/cartStorage";
 
 
 type TopProduct = {
@@ -121,6 +122,38 @@ export default function ProductDetail() {
             }
 
             const sizeId = selectedProductSize.size.id;
+            const token = localStorage.getItem("token");
+
+            if (!token) {
+                addGuestCartItem({
+                    productId: product.id,
+                    sizeId,
+                    product: {
+                        id: product.id,
+                        name: product.name,
+                        price: product.price,
+                        thumbnail: product.thumbnail,
+                        material: product.material,
+                        color: product.color,
+                    },
+                    size: {
+                        id: sizeId,
+                        name: selectedProductSize.size.name,
+                    },
+                    quantity,
+                });
+
+                pushToast("Thêm vào giỏ hàng thành công!", "success");
+                setAddedToCart(true);
+
+                setTimeout(() => {
+                    setAddedToCart(false);
+                    setSelectedSize(null);
+                    setQuantity(1);
+                }, 2000);
+
+                return;
+            }
 
             // Gọi API thêm vào giỏ hàng
             const params = new URLSearchParams({
@@ -135,7 +168,7 @@ export default function ProductDetail() {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
-                        Authorization: `Bearer ${localStorage.getItem("token")}`,
+                        Authorization: `Bearer ${token}`,
                     },
                 }
             );

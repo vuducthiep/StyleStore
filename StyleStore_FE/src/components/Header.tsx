@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { ShoppingCart, History, LogOut, User, LogIn, Sparkles } from 'lucide-react';
 import { buildAuthHeaders, isAuthTokenMissingError } from '../services/auth';
+import { getGuestCartCount } from '../services/cartStorage';
 import logo from '../assets/Logo.jpg';
 
 interface UserState {
@@ -81,7 +82,7 @@ export const Header = () => {
 
     const fetchCartCount = useCallback(async () => {
         if (!user.isLoggedIn) {
-            setCartCount(0);
+            setCartCount(getGuestCartCount());
             return;
         }
 
@@ -289,7 +290,7 @@ export const Header = () => {
                         >
                             <div className="relative" data-cart-icon-anchor="true">
                                 <ShoppingCart className="w-6 h-6" />
-                                {user.isLoggedIn && cartCount > 0 && (
+                                {cartCount > 0 && (
                                     <span className="absolute -top-2 -right-2 min-w-[18px] h-[18px] px-1 rounded-full bg-rose-500 text-white text-[11px] leading-[18px] text-center font-semibold shadow">
                                         {cartCount > 99 ? '99+' : cartCount}
                                     </span>

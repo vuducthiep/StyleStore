@@ -9,6 +9,12 @@ import CartItemList from "./CartItemList";
 import AddressSection from "./AddressSection";
 import OrderSummary from "./OrderSummary";
 import PromotionSelector, { type Promotion } from "./PromotionSelector";
+import {
+    clearGuestCart,
+    getGuestCart,
+    removeGuestCartItem,
+    updateGuestCartItemQuantity,
+} from "../../../services/cartStorage";
 
 interface Province {
     Id: string;
@@ -137,9 +143,17 @@ export default function CartPage() {
     const fetchCart = async () => {
         try {
             setLoading(true);
+            const token = localStorage.getItem("token");
+
+            if (!token) {
+                setCart(getGuestCart() as Cart);
+                setError(null);
+                return;
+            }
+
             const response = await fetch("http://localhost:8080/api/user/cart", {
                 headers: {
-                    Authorization: `Bearer ${localStorage.getItem("token")}`,
+                    Authorization: `Bearer ${token}`,
                 },
             });
 
@@ -164,9 +178,14 @@ export default function CartPage() {
 
     const fetchUserProfile = async () => {
         try {
+            const token = localStorage.getItem("token");
+            if (!token) {
+                return;
+            }
+
             const response = await fetch("http://localhost:8080/api/user/profile", {
                 headers: {
-                    Authorization: `Bearer ${localStorage.getItem("token")}`,
+                    Authorization: `Bearer ${token}`,
                 },
             });
 
@@ -254,6 +273,15 @@ export default function CartPage() {
     const handleUpdateQuantity = (cartItemId: number, newQuantity: number) => {
         if (newQuantity <= 0) return;
 
+        const token = localStorage.getItem("token");
+
+        if (!token) {
+            const updatedCart = updateGuestCartItemQuantity(cartItemId, newQuantity) as Cart;
+            setCart(updatedCart);
+            window.dispatchEvent(new CustomEvent("cart-updated"));
+            return;
+        }
+
         // Chỉ cập nhập state local, không gọi API
         if (cart) {
             const updatedCart = {
@@ -274,13 +302,23 @@ export default function CartPage() {
     const handleRemoveItem = async (cartItemId: number) => {
         if (!window.confirm("Bạn chắc chắn muốn xóa sản phẩm này?")) return;
 
+        const token = localStorage.getItem("token");
+
+        if (!token) {
+            const updatedCart = removeGuestCartItem(cartItemId) as Cart;
+            setCart(updatedCart);
+            window.dispatchEvent(new CustomEvent("cart-updated"));
+            pushToast("Xóa sản phẩm thành công", "success");
+            return;
+        }
+
         try {
             const response = await fetch(
                 `http://localhost:8080/api/user/cart/${cartItemId}`,
                 {
                     method: "DELETE",
                     headers: {
-                        Authorization: `Bearer ${localStorage.getItem("token")}`,
+                        Authorization: `Bearer ${token}`,
                     },
                 }
             );
@@ -312,11 +350,21 @@ export default function CartPage() {
     const handleClearCart = async () => {
         if (!window.confirm("Bạn chắc chắn muốn xóa toàn bộ giỏ hàng?")) return;
 
+        const token = localStorage.getItem("token");
+
+        if (!token) {
+            const updatedCart = clearGuestCart() as Cart;
+            setCart(updatedCart);
+            window.dispatchEvent(new CustomEvent("cart-updated"));
+            pushToast("Xóa giỏ hàng thành công", "success");
+            return;
+        }
+
         try {
             const response = await fetch("http://localhost:8080/api/user/cart/clear", {
                 method: "DELETE",
                 headers: {
-                    Authorization: `Bearer ${localStorage.getItem("token")}`,
+                    Authorization: `Bearer ${token}`,
                 },
             });
 
