@@ -1,5 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import ConfirmDialog from '../../../components/ConfirmDialog';
+import User_OrderModal from './User_OrderModal';
+import type { OrderDetail } from './User_OrderModal';
 import { useToast } from '../../../components/ToastProvider';
 import { buildAuthHeaders, isAuthTokenMissingError } from '../../../services/auth';
 
@@ -217,6 +219,68 @@ const User_OrderTable: React.FC<UserOrderTableProps> = ({
 
     const openConfirmDialog = (order: UserOrder, action: 'cancel' | 'confirm-delivery') => {
         setConfirmState({ open: true, order, action, isLoading: false });
+    };
+
+    // Modal state for viewing order details locally (guest or unauthenticated)
+    const [detailModalOpen, setDetailModalOpen] = useState(false);
+    const [detailOrderId, setDetailOrderId] = useState<number | null>(null);
+    const [detailInitialOrder, setDetailInitialOrder] = useState<OrderDetail | null>(null);
+
+    const mapUserOrderToOrderDetail = (o: UserOrder): OrderDetail => {
+        const rawItems = (o as any).orderItems || (o as any).items || [];
+        const orderItems = Array.isArray(rawItems)
+            ? rawItems.map((it: any, idx: number) => ({
+                  id: it.id ?? idx,
+                  productId: it.productId ?? it.product_id ?? 0,
+                  productName: it.productName ?? it.product_name ?? it.name ?? 'Sản phẩm',
+                  productImage: it.productImage ?? it.product_image ?? it.image ?? undefined,
+                  productColor: it.productColor ?? it.product_color ?? it.color ?? undefined,
+                  sizeId: it.sizeId ?? it.size_id ?? 0,
+                  sizeName: it.sizeName ?? it.size_name ?? it.size ?? '',
+                  quantity: it.quantity ?? it.qty ?? it.amount ?? 1,
+                  price: it.price ?? it.unitPrice ?? 0,
+                  subtotal:
+                      it.subtotal ?? it.total ?? ((it.price ?? it.unitPrice ?? 0) * (it.quantity ?? it.qty ?? 1)),
+              }))
+            : [];
+
+        return {
+            id: o.id,
+            userId: o.userId ?? 0,
+            userName: undefined,
+            phoneNumber: o.receiverPhoneNumber ?? undefined,
+            totalAmount: o.totalAmount,
+            discountAmount: o.discountAmount,
+            finalAmount: o.finalAmount,
+            promotionCode: o.promotionCode ?? null,
+            shippingAddress: o.shippingAddress,
+            paymentMethod: o.paymentMethod,
+            status: o.status,
+            createdAt: o.createdAt,
+            updatedAt: o.updatedAt,
+            orderItems,
+        };
+    };
+
+    const handleViewDetailClick = (order: UserOrder) => {
+        // If consumer provided a handler and not in readOnly mode, prefer it
+        if (!readOnly) {
+            if (onViewDetail) {
+                onViewDetail(order);
+                return;
+            }
+
+            // open modal which will fetch detail by id (requires auth)
+            setDetailOrderId(order.id);
+            setDetailInitialOrder(null);
+            setDetailModalOpen(true);
+            return;
+        }
+
+        // readOnly / guest: show modal with available order info
+        setDetailOrderId(order.id);
+        setDetailInitialOrder(mapUserOrderToOrderDetail(order));
+        setDetailModalOpen(true);
     };
 
     const handleConfirm = async () => {
@@ -449,7 +513,7 @@ const User_OrderTable: React.FC<UserOrderTableProps> = ({
                             <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex items-center justify-end gap-2 flex-wrap">
                                 <button
                                     type="button"
-                                    onClick={() => onViewDetail?.(order)}
+                                    onClick={() => handleViewDetailClick(order)}
                                     className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 text-sm font-medium hover:bg-gray-50 hover:border-gray-400 transition inline-flex items-center gap-2"
                                 >
                                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -548,6 +612,14 @@ const User_OrderTable: React.FC<UserOrderTableProps> = ({
                     onCancel={() => setConfirmState({ open: false, isLoading: false })}
                 />
             )}
+
+            {/* Local Order Detail Modal (used for guest / unauthenticated view) */}
+            <User_OrderModal
+                isOpen={detailModalOpen}
+                orderId={detailOrderId}
+                initialOrder={detailInitialOrder}
+                onClose={() => setDetailModalOpen(false)}
+            />
         </div>
     );
 };

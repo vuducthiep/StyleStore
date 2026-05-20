@@ -44,12 +44,14 @@ interface UserOrderModalProps {
     isOpen: boolean;
     orderId: number | null;
     onClose: () => void;
+    initialOrder?: OrderDetail | null;
 }
 
 const User_OrderModal: React.FC<UserOrderModalProps> = ({
     isOpen,
     orderId,
     onClose,
+    initialOrder = null,
 }) => {
     const [order, setOrder] = useState<OrderDetail | null>(null);
     const [isLoading, setIsLoading] = useState(false);
@@ -94,13 +96,26 @@ const User_OrderModal: React.FC<UserOrderModalProps> = ({
     }, [orderId]);
 
     useEffect(() => {
-        if (isOpen && orderId) {
+        if (!isOpen) {
+            setOrder(null);
+            setError('');
+            return;
+        }
+
+        // If an initialOrder is provided (guest / read-only mode), use it instead of fetching
+        if (initialOrder) {
+            setOrder(initialOrder);
+            setError('');
+            return;
+        }
+
+        if (orderId) {
             fetchOrderDetail();
         } else {
             setOrder(null);
             setError('');
         }
-    }, [isOpen, orderId, fetchOrderDetail]);
+    }, [isOpen, orderId, fetchOrderDetail, initialOrder]);
 
     const getStatusColor = (status: string) => {
         switch (status) {

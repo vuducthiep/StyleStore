@@ -103,14 +103,14 @@ export default function SearchPage() {
                             </h1>
 
                         </div>
-                        <p className="text-slate-300">
+                        {/* <p className="text-slate-300">
                             Tìm kiếm cho: <span className="font-semibold text-purple-300">"{keyword}"</span>
                             {!loading && products.length > 0 && (
                                 <span className="ml-3 text-slate-400">
                                     ({products.length} kết quả)
                                 </span>
                             )}
-                        </p>
+                        </p> */}
                     </div>
                 </div>
 

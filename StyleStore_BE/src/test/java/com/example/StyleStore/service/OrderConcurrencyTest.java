@@ -148,6 +148,7 @@ public class OrderConcurrencyTest {
                                 new UserOrderRequest.OrderItemRequest(product.getId(), size.getId(), 5)
                         ))
                         .shippingAddress("Address A")
+                        .receiverPhoneNumber("0111222333")
                         .paymentMethod(PaymentMethod.COD)
                         .build();
 
@@ -172,6 +173,7 @@ public class OrderConcurrencyTest {
                                 new UserOrderRequest.OrderItemRequest(product.getId(), size.getId(), 5)
                         ))
                         .shippingAddress("Address B")
+                        .receiverPhoneNumber("0111222334")
                         .paymentMethod(PaymentMethod.COD)
                         .build();
 
@@ -209,7 +211,8 @@ public class OrderConcurrencyTest {
         assertEquals(1, success.size(), "Phải có đúng 1 đơn hàng thành công");
         assertEquals(1, failed.size(), "Phải có đúng 1 đơn hàng thất bại");
         assertEquals(0, finalStock.getStock(), "Stock phải = 0");
-        assertTrue(failed.get(0).contains("chỉ còn"), "Lỗi phải chứa thông tin stock");
+        boolean hasStockError = failed.stream().anyMatch(err -> err.contains("chỉ còn"));
+        assertTrue(hasStockError, "Ít nhất một lỗi phải chứa thông tin stock");
 
         System.out.println("\n✅ TEST PASSED: Không bị oversell!");
         System.out.println("===============================================\n");
@@ -272,6 +275,7 @@ public class OrderConcurrencyTest {
                                     )
                             ))
                             .shippingAddress("Address " + userId)
+                            .receiverPhoneNumber("010000000" + (userId % 10))
                             .paymentMethod(PaymentMethod.COD)
                             .build();
 
@@ -307,10 +311,11 @@ public class OrderConcurrencyTest {
         System.out.println("Stock cuối: " + finalStock.getStock());
 
         // ✅ ASSERT
-        assertTrue(success.size() <= 5, "Phải có tối đa 5 đơn thành công");
+        assertEquals(10, success.size() + failed.size(), "Tổng request phải = 10");
+        assertTrue(success.size() <= 5, "Tối đa 5 đơn có thể thành công với stock=10, qty=2");
         assertTrue(totalSold <= 10, "Tổng sold phải <= 10");
-        assertEquals(10 - totalSold, finalStock.getStock(), "Stock phải bằng 10 - sold");
-        assertTrue(finalStock.getStock() >= 0, "Stock không bao giờ âm!");
+        assertEquals(10 - totalSold, finalStock.getStock(), "Stock cuối = 10 - totalSold");
+        assertTrue(finalStock.getStock() >= 0, "Stock không bao giờ được âm!");
 
         System.out.println("\n✅ STRESS TEST PASSED: Xử lý được 10 concurrent requests!");
         System.out.println("===============================================\n");
@@ -372,6 +377,7 @@ public class OrderConcurrencyTest {
                                     )
                             ))
                             .shippingAddress("Address " + userId)
+                            .receiverPhoneNumber("090000000" + (userId % 10))
                             .paymentMethod(PaymentMethod.COD)
                             .build();
 
@@ -405,10 +411,11 @@ public class OrderConcurrencyTest {
         System.out.println("Stock cuối: " + finalStock.getStock());
 
         // ✅ ASSERT
-        assertEquals(3, success.size(), "Phải có đúng 3 đơn thành công");
-        assertEquals(2, failed.size(), "Phải có đúng 2 đơn thất bại");
-        assertEquals(0, finalStock.getStock(), "Stock cuối phải = 0");
-        assertFalse(finalStock.getStock() < 0, "Stock KHÔNG BAO GIỜ được âm!");
+        assertEquals(5, success.size() + failed.size(), "Tổng request phải = 5");
+        assertEquals(3 - success.size(), finalStock.getStock(), "Stock cuối = 3 - successful_orders");
+        assertTrue(finalStock.getStock() >= 0, "Stock không bao giờ được âm!");
+        assertTrue(success.size() >= 3, "Ít nhất 3 đơn hàng phải thành công (stock=3, qty=1)");
+        assertTrue(failed.size() <= 2, "Tối đa 2 đơn hàng thất bại");
 
         System.out.println("\n✅ TEST PASSED: Stock không bao giờ âm!");
         System.out.println("===============================================\n");

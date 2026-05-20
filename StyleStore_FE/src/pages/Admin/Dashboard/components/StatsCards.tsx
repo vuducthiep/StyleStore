@@ -41,7 +41,7 @@ const StatsCards = ({ productCount, activeUsers, revenueGrowth, totalStock }: St
                                 )}
                             </p>
                         </div>
-                        <div className="bg-blue-100 p-4 rounded-full">
+                        <div className="absolute right-0 top-1/2 -translate-y-1/2 bg-blue-100 p-4 rounded-l-full">
                             <ShoppingOutlined className="text-2xl text-blue-600" />
                         </div>
                     </div>
@@ -66,7 +66,7 @@ const StatsCards = ({ productCount, activeUsers, revenueGrowth, totalStock }: St
                                 )}
                             </p>
                         </div>
-                        <div className="bg-green-100 p-4 rounded-full">
+                        <div className="absolute right-0 top-1/2 -translate-y-1/2 bg-green-100 p-4 rounded-l-full">
                             <UserOutlined className="text-2xl text-green-600" />
                         </div>
                     </div>
@@ -117,7 +117,7 @@ const StatsCards = ({ productCount, activeUsers, revenueGrowth, totalStock }: St
                                     )}
                                 </p>
                             </div>
-                            <div className="bg-orange-100 p-4 rounded-full">
+                            <div className="absolute right-0 top-1/2 -translate-y-1/2 bg-orange-100 p-4 rounded-l-full">
                                 <DollarOutlined className="text-2xl text-orange-600" />
                             </div>
                         </div>
@@ -143,7 +143,7 @@ const StatsCards = ({ productCount, activeUsers, revenueGrowth, totalStock }: St
                                 )}
                             </p>
                         </div>
-                        <div className="bg-purple-100 p-4 rounded-full">
+                        <div className="absolute right-0 top-1/2 -translate-y-1/2 bg-purple-100 p-4 rounded-l-full">
                             <ShoppingOutlined className="text-2xl text-purple-600" />
                         </div>
                     </div>
